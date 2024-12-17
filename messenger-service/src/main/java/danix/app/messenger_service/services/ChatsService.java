@@ -45,11 +45,13 @@ public class ChatsService {
         if (chat.getUser1().getId() != currentUser.getId() && chat.getUser2().getId() != currentUser.getId()) {
             throw new ChatException("User not exist in this chat");
         }
-        chat.getMessages().forEach(message -> {
-            if (!message.isRead()) {
-                message.setRead(true);
-            }
-        });
+        chat.getMessages().stream()
+                .filter(message -> message.getOwner().getId() != currentUser.getId())
+                .forEach(message -> {
+                    if (!message.isRead()) {
+                        message.setRead(true);
+                    }
+                });
         return convertToShowChatDTO(chat, page, count);
     }
 

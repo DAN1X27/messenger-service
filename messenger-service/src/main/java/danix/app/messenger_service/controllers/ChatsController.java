@@ -53,7 +53,7 @@ public class ChatsController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @MessageMapping("/{id}/message")
+    @PostMapping("/{id}/message")
     public ResponseEntity<HttpStatus> sendMessage(@RequestBody Map<String, String> message , @PathVariable int id) {
         if (!message.containsKey("message")) {
             throw new MessageException("Message must not be empty");
