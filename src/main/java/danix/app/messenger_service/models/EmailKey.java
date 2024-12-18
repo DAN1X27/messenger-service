@@ -19,7 +19,7 @@ public class EmailKey {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     private String email;
-    private int key;
+    private Integer key;
     @Column(name = "expired_time")
     private LocalDateTime expiredTime;
     private int attempts;

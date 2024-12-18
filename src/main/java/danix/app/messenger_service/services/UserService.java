@@ -326,7 +326,7 @@ public class UserService implements Image {
     @Transactional
     public void sendRegistrationKey(String email) {
         Random random = new Random();
-        int key = random.nextInt(100000, 999999);
+        Integer key = random.nextInt(100000, 999999);
         emailsKeysRepository.save(new EmailKey(email, key));
         kafkaTemplate.send("registration_key-topic", email, String.valueOf(key));
     }
@@ -334,7 +334,7 @@ public class UserService implements Image {
     @Transactional
     public void sendRecoverPasswordKey(String email) {
         Random random = new Random();
-        int key = random.nextInt(100000, 999999);
+        Integer key = random.nextInt(100000, 999999);
         emailsKeysRepository.save(new EmailKey(email, key));
         kafkaTemplate.send("recover_password-topic", email, String.valueOf(key));
     }

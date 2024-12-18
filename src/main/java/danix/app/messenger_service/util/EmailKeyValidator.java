@@ -22,21 +22,21 @@ public class EmailKeyValidator implements Validator {
 
     @Override
     public void validate(Object target, Errors errors) {
-        RequestEmailKey key = (RequestEmailKey) target;
+        RequestEmailKey requestEmailKey = (RequestEmailKey) target;
 
-        emailsKeysRepository.findByEmail(key.getEmail()).ifPresentOrElse(emailKey -> {
-            if (emailKey.getKey() != key.getKey()) {
+        emailsKeysRepository.findByEmail(requestEmailKey.getEmail()).ifPresentOrElse(emailKey -> {
+            if (!requestEmailKey.getKey().equals(emailKey.getKey())) {
                 userService.updateEmailKeyAttempts(emailKey);
                 if (emailKey.getAttempts() >= 3) {
                     userService.deleteEmailKey(emailKey);
-                    userService.deleteTempUser(key.getEmail());
+                    userService.deleteTempUser(requestEmailKey.getEmail());
                     errors.rejectValue("key", "", "The limit of attempts has been exceeded, send the key again");
                 } else {
                     errors.rejectValue("key", "", "Invalid key");
                 }
             } else if (emailKey.getExpiredTime().isBefore(LocalDateTime.now())) {
                 userService.deleteEmailKey(emailKey);
-                userService.deleteTempUser(key.getEmail());
+                userService.deleteTempUser(requestEmailKey.getEmail());
                 errors.rejectValue("key", "", "Expired key");
             } else {
                 userService.deleteEmailKey(emailKey);
