@@ -11,9 +11,9 @@
 4||10|c|G
 4||10|C|G
 4||10|T|G</Grants>
-      <IntrospectionStateNumber>12074</IntrospectionStateNumber>
+      <IntrospectionStateNumber>12092</IntrospectionStateNumber>
       <ServerVersion>17.0</ServerVersion>
-      <StartupTime>1734445802</StartupTime>
+      <StartupTime>1734523225</StartupTime>
       <TimeZones>true ACDT
 true ACSST
 false ACST
@@ -820,7 +820,7 @@ false Zulu
 14704||10|C|G
 14704||-9223372036854775808|U|G
 14704||10|U|G</Grants>
-      <IntrospectionStateNumber>12074</IntrospectionStateNumber>
+      <IntrospectionStateNumber>12092</IntrospectionStateNumber>
       <ObjectId>18589</ObjectId>
       <OwnerName>postgres</OwnerName>
     </database>
@@ -4267,8 +4267,8 @@ false Zulu
     <schema id="273" parent="5" name="public">
       <Comment>standard public schema</Comment>
       <Current>1</Current>
-      <IntrospectionStateNumber>12074</IntrospectionStateNumber>
-      <LastIntrospectionLocalTimestamp>2024-12-17.23:03:08</LastIntrospectionLocalTimestamp>
+      <IntrospectionStateNumber>12092</IntrospectionStateNumber>
+      <LastIntrospectionLocalTimestamp>2024-12-18.12:51:04</LastIntrospectionLocalTimestamp>
       <ObjectId>2200</ObjectId>
       <StateNumber>532</StateNumber>
       <OwnerName>pg_database_owner</OwnerName>
@@ -4531,7 +4531,7 @@ false Zulu
     </table>
     <table id="310" parent="273" name="groups_actions_messages">
       <ObjectId>19343</ObjectId>
-      <StateNumber>11776</StateNumber>
+      <StateNumber>12091</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>postgres</OwnerName>
     </table>
@@ -5660,7 +5660,14 @@ post_id</ColNames>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <foreign-key id="459" parent="310" name="groups_actions_messages_group_id_fkey">
+    <column id="459" parent="310" name="sent_time">
+      <NotNull>1</NotNull>
+      <Position>4</Position>
+      <StateNumber>12091</StateNumber>
+      <StoredType>timestamp|0s</StoredType>
+      <TypeId>1114</TypeId>
+    </column>
+    <foreign-key id="460" parent="310" name="groups_actions_messages_group_id_fkey">
       <ColNames>group_id</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>19350</ObjectId>
@@ -5669,7 +5676,7 @@ post_id</ColNames>
       <RefKeyColPositions>1</RefKeyColPositions>
       <RefTableId>18978</RefTableId>
     </foreign-key>
-    <index id="460" parent="310" name="groups_actions_messages_pkey">
+    <index id="461" parent="310" name="groups_actions_messages_pkey">
       <ColNames>id</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>19348</ObjectId>
@@ -5678,28 +5685,28 @@ post_id</ColNames>
       <Unique>1</Unique>
       <AccessMethodId>403</AccessMethodId>
     </index>
-    <key id="461" parent="310" name="groups_actions_messages_pkey">
+    <key id="462" parent="310" name="groups_actions_messages_pkey">
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>19349</ObjectId>
       <Primary>1</Primary>
       <StateNumber>11424</StateNumber>
       <UnderlyingIndexId>19348</UnderlyingIndexId>
     </key>
-    <column id="462" parent="311" name="user_id">
+    <column id="463" parent="311" name="user_id">
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StateNumber>11568</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="463" parent="311" name="group_id">
+    <column id="464" parent="311" name="group_id">
       <NotNull>1</NotNull>
       <Position>2</Position>
       <StateNumber>11568</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <foreign-key id="464" parent="311" name="groups_banned_users_user_id_fkey">
+    <foreign-key id="465" parent="311" name="groups_banned_users_user_id_fkey">
       <ColNames>user_id</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>19508</ObjectId>
@@ -5708,7 +5715,7 @@ post_id</ColNames>
       <RefKeyColPositions>1</RefKeyColPositions>
       <RefTableId>18591</RefTableId>
     </foreign-key>
-    <foreign-key id="465" parent="311" name="groups_banned_users_group_id_fkey">
+    <foreign-key id="466" parent="311" name="groups_banned_users_group_id_fkey">
       <ColNames>group_id</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>19513</ObjectId>
@@ -5717,7 +5724,7 @@ post_id</ColNames>
       <RefKeyColPositions>1</RefKeyColPositions>
       <RefTableId>18978</RefTableId>
     </foreign-key>
-    <index id="466" parent="311" name="groups_banned_users_pkey">
+    <index id="467" parent="311" name="groups_banned_users_pkey">
       <ColNames>user_id
 group_id</ColNames>
       <NameSurrogate>1</NameSurrogate>
@@ -5727,14 +5734,14 @@ group_id</ColNames>
       <Unique>1</Unique>
       <AccessMethodId>403</AccessMethodId>
     </index>
-    <key id="467" parent="311" name="groups_banned_users_pkey">
+    <key id="468" parent="311" name="groups_banned_users_pkey">
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>19507</ObjectId>
       <Primary>1</Primary>
       <StateNumber>11568</StateNumber>
       <UnderlyingIndexId>19506</UnderlyingIndexId>
     </key>
-    <column id="468" parent="312" name="id">
+    <column id="469" parent="312" name="id">
       <IdentityKind>always</IdentityKind>
       <NotNull>1</NotNull>
       <Position>1</Position>
@@ -5743,35 +5750,35 @@ group_id</ColNames>
       <SequenceId>19580</SequenceId>
       <TypeId>23</TypeId>
     </column>
-    <column id="469" parent="312" name="user_id">
+    <column id="470" parent="312" name="user_id">
       <NotNull>1</NotNull>
       <Position>2</Position>
       <StateNumber>11654</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="470" parent="312" name="group_id">
+    <column id="471" parent="312" name="group_id">
       <NotNull>1</NotNull>
       <Position>3</Position>
       <StateNumber>11654</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="471" parent="312" name="sent_time">
+    <column id="472" parent="312" name="sent_time">
       <NotNull>1</NotNull>
       <Position>4</Position>
       <StateNumber>11654</StateNumber>
       <StoredType>timestamp|0s</StoredType>
       <TypeId>1114</TypeId>
     </column>
-    <column id="472" parent="312" name="expired_time">
+    <column id="473" parent="312" name="expired_time">
       <NotNull>1</NotNull>
       <Position>5</Position>
       <StateNumber>11654</StateNumber>
       <StoredType>timestamp|0s</StoredType>
       <TypeId>1114</TypeId>
     </column>
-    <foreign-key id="473" parent="312" name="groups_invites_user_id_fkey">
+    <foreign-key id="474" parent="312" name="groups_invites_user_id_fkey">
       <ColNames>user_id</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>19586</ObjectId>
@@ -5780,7 +5787,7 @@ group_id</ColNames>
       <RefKeyColPositions>1</RefKeyColPositions>
       <RefTableId>18591</RefTableId>
     </foreign-key>
-    <foreign-key id="474" parent="312" name="groups_invites_group_id_fkey">
+    <foreign-key id="475" parent="312" name="groups_invites_group_id_fkey">
       <ColNames>group_id</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>19591</ObjectId>
@@ -5789,7 +5796,7 @@ group_id</ColNames>
       <RefKeyColPositions>1</RefKeyColPositions>
       <RefTableId>18978</RefTableId>
     </foreign-key>
-    <index id="475" parent="312" name="groups_invites_pkey">
+    <index id="476" parent="312" name="groups_invites_pkey">
       <ColNames>id</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>19584</ObjectId>
@@ -5798,34 +5805,34 @@ group_id</ColNames>
       <Unique>1</Unique>
       <AccessMethodId>403</AccessMethodId>
     </index>
-    <key id="476" parent="312" name="groups_invites_pkey">
+    <key id="477" parent="312" name="groups_invites_pkey">
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>19585</ObjectId>
       <Primary>1</Primary>
       <StateNumber>11654</StateNumber>
       <UnderlyingIndexId>19584</UnderlyingIndexId>
     </key>
-    <column id="477" parent="313" name="message">
+    <column id="478" parent="313" name="message">
       <NotNull>1</NotNull>
       <Position>2</Position>
       <StateNumber>11040</StateNumber>
       <StoredType>varchar|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="478" parent="313" name="message_owner">
+    <column id="479" parent="313" name="message_owner">
       <Position>3</Position>
       <StateNumber>11040</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="479" parent="313" name="group_id">
+    <column id="480" parent="313" name="group_id">
       <NotNull>1</NotNull>
       <Position>4</Position>
       <StateNumber>11042</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="480" parent="313" name="id">
+    <column id="481" parent="313" name="id">
       <IdentityKind>always</IdentityKind>
       <NotNull>1</NotNull>
       <Position>5</Position>
@@ -5834,21 +5841,21 @@ group_id</ColNames>
       <SequenceId>19040</SequenceId>
       <TypeId>20</TypeId>
     </column>
-    <column id="481" parent="313" name="sent_time">
+    <column id="482" parent="313" name="sent_time">
       <NotNull>1</NotNull>
       <Position>6</Position>
       <StateNumber>11050</StateNumber>
       <StoredType>timestamp|0s</StoredType>
       <TypeId>1114</TypeId>
     </column>
-    <column id="482" parent="313" name="content_type">
+    <column id="483" parent="313" name="content_type">
       <NotNull>1</NotNull>
       <Position>7</Position>
       <StateNumber>11843</StateNumber>
       <StoredType>varchar|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <foreign-key id="483" parent="313" name="groups_messages_message_owner_fkey">
+    <foreign-key id="484" parent="313" name="groups_messages_message_owner_fkey">
       <ColNames>message_owner</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>19014</ObjectId>
@@ -5857,7 +5864,7 @@ group_id</ColNames>
       <RefKeyColPositions>1</RefKeyColPositions>
       <RefTableId>18591</RefTableId>
     </foreign-key>
-    <foreign-key id="484" parent="313" name="groups_messages_group_id_fkey">
+    <foreign-key id="485" parent="313" name="groups_messages_group_id_fkey">
       <ColNames>group_id</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>19019</ObjectId>
@@ -5866,7 +5873,7 @@ group_id</ColNames>
       <RefKeyColPositions>1</RefKeyColPositions>
       <RefTableId>18978</RefTableId>
     </foreign-key>
-    <index id="485" parent="313" name="groups_messages_pkey">
+    <index id="486" parent="313" name="groups_messages_pkey">
       <ColNames>id</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>19041</ObjectId>
@@ -5875,14 +5882,14 @@ group_id</ColNames>
       <Unique>1</Unique>
       <AccessMethodId>403</AccessMethodId>
     </index>
-    <key id="486" parent="313" name="groups_messages_pkey">
+    <key id="487" parent="313" name="groups_messages_pkey">
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>19042</ObjectId>
       <Primary>1</Primary>
       <StateNumber>11049</StateNumber>
       <UnderlyingIndexId>19041</UnderlyingIndexId>
     </key>
-    <column id="487" parent="314" name="id">
+    <column id="488" parent="314" name="id">
       <IdentityKind>always</IdentityKind>
       <NotNull>1</NotNull>
       <Position>1</Position>
@@ -5891,54 +5898,54 @@ group_id</ColNames>
       <SequenceId>18590</SequenceId>
       <TypeId>23</TypeId>
     </column>
-    <column id="488" parent="314" name="username">
+    <column id="489" parent="314" name="username">
       <NotNull>1</NotNull>
       <Position>2</Position>
       <StateNumber>10709</StateNumber>
       <StoredType>varchar|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="489" parent="314" name="email">
+    <column id="490" parent="314" name="email">
       <NotNull>1</NotNull>
       <Position>3</Position>
       <StateNumber>10709</StateNumber>
       <StoredType>varchar|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="490" parent="314" name="password">
+    <column id="491" parent="314" name="password">
       <NotNull>1</NotNull>
       <Position>4</Position>
       <StateNumber>10709</StateNumber>
       <StoredType>varchar|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="491" parent="314" name="created_at">
+    <column id="492" parent="314" name="created_at">
       <Position>5</Position>
       <StateNumber>10709</StateNumber>
       <StoredType>timestamp|0s</StoredType>
       <TypeId>1114</TypeId>
     </column>
-    <column id="492" parent="314" name="role">
+    <column id="493" parent="314" name="role">
       <NotNull>1</NotNull>
       <Position>6</Position>
       <StateNumber>10711</StateNumber>
       <StoredType>varchar|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="493" parent="314" name="description">
+    <column id="494" parent="314" name="description">
       <Position>12</Position>
       <StateNumber>11328</StateNumber>
       <StoredType>varchar|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="494" parent="314" name="is_private">
+    <column id="495" parent="314" name="is_private">
       <NotNull>1</NotNull>
       <Position>13</Position>
       <StateNumber>11330</StateNumber>
       <StoredType>boolean|0s</StoredType>
       <TypeId>16</TypeId>
     </column>
-    <column id="495" parent="314" name="status">
+    <column id="496" parent="314" name="status">
       <DefaultExpression>&apos;REGISTERED&apos;::character varying</DefaultExpression>
       <NotNull>1</NotNull>
       <Position>15</Position>
@@ -5946,7 +5953,7 @@ group_id</ColNames>
       <StoredType>varchar|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="496" parent="314" name="image">
+    <column id="497" parent="314" name="image">
       <DefaultExpression>&apos;3a2cd62f-121a-48b5-b0aa-e54454d4d996&apos;::character varying</DefaultExpression>
       <NotNull>1</NotNull>
       <Position>19</Position>
@@ -5954,7 +5961,7 @@ group_id</ColNames>
       <StoredType>varchar|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <index id="497" parent="314" name="person_pkey">
+    <index id="498" parent="314" name="person_pkey">
       <ColNames>id</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>18596</ObjectId>
@@ -5963,7 +5970,7 @@ group_id</ColNames>
       <Unique>1</Unique>
       <AccessMethodId>403</AccessMethodId>
     </index>
-    <index id="498" parent="314" name="person_username_key">
+    <index id="499" parent="314" name="person_username_key">
       <ColNames>username</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>18598</ObjectId>
@@ -5974,7 +5981,7 @@ group_id</ColNames>
       <CollationIds>100</CollationIds>
       <CollationParentNames>pg_catalog</CollationParentNames>
     </index>
-    <index id="499" parent="314" name="person_email_key">
+    <index id="500" parent="314" name="person_email_key">
       <ColNames>email</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>18600</ObjectId>
@@ -5985,53 +5992,53 @@ group_id</ColNames>
       <CollationIds>100</CollationIds>
       <CollationParentNames>pg_catalog</CollationParentNames>
     </index>
-    <key id="500" parent="314" name="person_pkey">
+    <key id="501" parent="314" name="person_pkey">
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>18597</ObjectId>
       <Primary>1</Primary>
       <StateNumber>10709</StateNumber>
       <UnderlyingIndexId>18596</UnderlyingIndexId>
     </key>
-    <key id="501" parent="314" name="person_username_key">
+    <key id="502" parent="314" name="person_username_key">
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>18599</ObjectId>
       <StateNumber>10709</StateNumber>
       <UnderlyingIndexId>18598</UnderlyingIndexId>
     </key>
-    <key id="502" parent="314" name="person_email_key">
+    <key id="503" parent="314" name="person_email_key">
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>18601</ObjectId>
       <StateNumber>10709</StateNumber>
       <UnderlyingIndexId>18600</UnderlyingIndexId>
     </key>
-    <column id="503" parent="315" name="id">
+    <column id="504" parent="315" name="id">
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StateNumber>10881</StateNumber>
       <StoredType>varchar|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="504" parent="315" name="status">
+    <column id="505" parent="315" name="status">
       <NotNull>1</NotNull>
       <Position>2</Position>
       <StateNumber>10881</StateNumber>
       <StoredType>varchar|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <column id="505" parent="315" name="user_id">
+    <column id="506" parent="315" name="user_id">
       <NotNull>1</NotNull>
       <Position>3</Position>
       <StateNumber>10881</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="506" parent="315" name="expired_date">
+    <column id="507" parent="315" name="expired_date">
       <Position>6</Position>
       <StateNumber>10906</StateNumber>
       <StoredType>date|0s</StoredType>
       <TypeId>1082</TypeId>
     </column>
-    <foreign-key id="507" parent="315" name="tokens_user_id_fkey">
+    <foreign-key id="508" parent="315" name="tokens_user_id_fkey">
       <ColNames>user_id</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>18857</ObjectId>
@@ -6040,7 +6047,7 @@ group_id</ColNames>
       <RefKeyColPositions>1</RefKeyColPositions>
       <RefTableId>18591</RefTableId>
     </foreign-key>
-    <index id="508" parent="315" name="tokens_pkey">
+    <index id="509" parent="315" name="tokens_pkey">
       <ColNames>id</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>18855</ObjectId>
@@ -6052,14 +6059,14 @@ group_id</ColNames>
       <CollationIds>100</CollationIds>
       <CollationParentNames>pg_catalog</CollationParentNames>
     </index>
-    <key id="509" parent="315" name="tokens_pkey">
+    <key id="510" parent="315" name="tokens_pkey">
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>18856</ObjectId>
       <Primary>1</Primary>
       <StateNumber>10881</StateNumber>
       <UnderlyingIndexId>18855</UnderlyingIndexId>
     </key>
-    <column id="510" parent="316" name="id">
+    <column id="511" parent="316" name="id">
       <IdentityKind>always</IdentityKind>
       <NotNull>1</NotNull>
       <Position>1</Position>
@@ -6068,19 +6075,19 @@ group_id</ColNames>
       <SequenceId>18783</SequenceId>
       <TypeId>23</TypeId>
     </column>
-    <column id="511" parent="316" name="user1">
+    <column id="512" parent="316" name="user1">
       <Position>2</Position>
       <StateNumber>10809</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="512" parent="316" name="user2">
+    <column id="513" parent="316" name="user2">
       <Position>3</Position>
       <StateNumber>10809</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <foreign-key id="513" parent="316" name="users_chats_user1_fkey">
+    <foreign-key id="514" parent="316" name="users_chats_user1_fkey">
       <ColNames>user1</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>18789</ObjectId>
@@ -6089,7 +6096,7 @@ group_id</ColNames>
       <RefKeyColPositions>1</RefKeyColPositions>
       <RefTableId>18591</RefTableId>
     </foreign-key>
-    <foreign-key id="514" parent="316" name="users_chats_user2_fkey">
+    <foreign-key id="515" parent="316" name="users_chats_user2_fkey">
       <ColNames>user2</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>18794</ObjectId>
@@ -6098,7 +6105,7 @@ group_id</ColNames>
       <RefKeyColPositions>1</RefKeyColPositions>
       <RefTableId>18591</RefTableId>
     </foreign-key>
-    <index id="515" parent="316" name="users_chats_pkey">
+    <index id="516" parent="316" name="users_chats_pkey">
       <ColNames>id</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>18787</ObjectId>
@@ -6107,14 +6114,14 @@ group_id</ColNames>
       <Unique>1</Unique>
       <AccessMethodId>403</AccessMethodId>
     </index>
-    <key id="516" parent="316" name="users_chats_pkey">
+    <key id="517" parent="316" name="users_chats_pkey">
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>18788</ObjectId>
       <Primary>1</Primary>
       <StateNumber>10809</StateNumber>
       <UnderlyingIndexId>18787</UnderlyingIndexId>
     </key>
-    <column id="517" parent="317" name="id">
+    <column id="518" parent="317" name="id">
       <IdentityKind>always</IdentityKind>
       <NotNull>1</NotNull>
       <Position>1</Position>
@@ -6123,26 +6130,26 @@ group_id</ColNames>
       <SequenceId>18711</SequenceId>
       <TypeId>23</TypeId>
     </column>
-    <column id="518" parent="317" name="owner_id">
+    <column id="519" parent="317" name="owner_id">
       <Position>2</Position>
       <StateNumber>10777</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="519" parent="317" name="friend_id">
+    <column id="520" parent="317" name="friend_id">
       <Position>3</Position>
       <StateNumber>10778</StateNumber>
       <StoredType>integer|0s</StoredType>
       <TypeId>23</TypeId>
     </column>
-    <column id="520" parent="317" name="status">
+    <column id="521" parent="317" name="status">
       <NotNull>1</NotNull>
       <Position>4</Position>
       <StateNumber>10775</StateNumber>
       <StoredType>varchar|0s</StoredType>
       <TypeId>1043</TypeId>
     </column>
-    <foreign-key id="521" parent="317" name="users_friends_user1_id_fkey">
+    <foreign-key id="522" parent="317" name="users_friends_user1_id_fkey">
       <ColNames>owner_id</ColNames>
       <ObjectId>18717</ObjectId>
       <OnDelete>cascade</OnDelete>
@@ -6150,7 +6157,7 @@ group_id</ColNames>
       <RefKeyColPositions>1</RefKeyColPositions>
       <RefTableId>18591</RefTableId>
     </foreign-key>
-    <foreign-key id="522" parent="317" name="users_friends_user2_id_fkey">
+    <foreign-key id="523" parent="317" name="users_friends_user2_id_fkey">
       <ColNames>friend_id</ColNames>
       <ObjectId>18722</ObjectId>
       <OnDelete>cascade</OnDelete>
@@ -6158,7 +6165,7 @@ group_id</ColNames>
       <RefKeyColPositions>1</RefKeyColPositions>
       <RefTableId>18591</RefTableId>
     </foreign-key>
-    <index id="523" parent="317" name="users_friends_pkey">
+    <index id="524" parent="317" name="users_friends_pkey">
       <ColNames>id</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>18715</ObjectId>
@@ -6167,7 +6174,7 @@ group_id</ColNames>
       <Unique>1</Unique>
       <AccessMethodId>403</AccessMethodId>
     </index>
-    <key id="524" parent="317" name="users_friends_pkey">
+    <key id="525" parent="317" name="users_friends_pkey">
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>18716</ObjectId>
       <Primary>1</Primary>

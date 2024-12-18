@@ -1,6 +1,6 @@
 package danix.app.messenger_service.controllers;
 
-import danix.app.messenger_service.dto.AcceptEmailDTO;
+import danix.app.messenger_service.dto.AcceptRequestEmailKeyDTO;
 import danix.app.messenger_service.dto.AuthDTO;
 import danix.app.messenger_service.dto.RegistrationUserDTO;
 import danix.app.messenger_service.dto.RecoverPasswordDTO;
@@ -39,6 +39,7 @@ public class AuthController {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final PasswordEncoder passwordEncoder;
     private final EmailsKeysRepository emailsKeysRepository;
+    private final EmailKeyValidator emailKeyValidator;
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> login(@RequestBody AuthDTO authDTO) {
@@ -73,42 +74,22 @@ public class AuthController {
     public ResponseEntity<HttpStatus> registration(@RequestBody @Valid RegistrationUserDTO registrationUserDTO,
                                                BindingResult bindingResult) {
         ErrorHandler.handleException(bindingResult, ExceptionType.AUTHENTICATION_EXCEPTION);
-        emailsKeysRepository.findByEmail(registrationUserDTO.getEmail()).ifPresent(key -> {
-            if (key.getExpiredTime().isAfter(LocalDateTime.now())) {
-                throw new AuthenticationException("User already have an active key");
-            }
-            userService.deleteEmailKey(key);
-            userService.deleteTempUser(registrationUserDTO.getEmail());
-        });
-        userService.deleteTempUser(registrationUserDTO.getEmail());
         registrationUserValidator.validate(registrationUserDTO, bindingResult);
-        ErrorHandler.handleException(bindingResult, ExceptionType.USER_EXCEPTION);
+        ErrorHandler.handleException(bindingResult, ExceptionType.AUTHENTICATION_EXCEPTION);
+        userService.deleteTempUser(registrationUserDTO.getEmail());
         userService.temporalRegister(registrationUserDTO);
         userService.sendRegistrationKey(registrationUserDTO.getEmail());
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
     @PatchMapping("/registration/accept")
-    public ResponseEntity<HttpStatus> acceptRegistrationKey(@RequestBody @Valid AcceptEmailDTO acceptEmailDTO,
+    public ResponseEntity<HttpStatus> acceptRegistrationKey(@RequestBody @Valid AcceptRequestEmailKeyDTO acceptEmailDTO,
                                                         BindingResult bindingResult) {
         ErrorHandler.handleException(bindingResult, ExceptionType.AUTHENTICATION_EXCEPTION);
-        emailsKeysRepository.findByEmail(acceptEmailDTO.getEmail()).ifPresentOrElse(emailKey -> {
-            if (emailKey.getKey() != acceptEmailDTO.getKey()) {
-                userService.updateEmailKeyAttempts(emailKey);
-                if (emailKey.getAttempts() >= 3) {
-                    throw new AuthenticationException("The limit of attempts has been exceeded, send the key again");
-                }
-                throw new AuthenticationException("Invalid key");
-            } else if (emailKey.getExpiredTime().isBefore(LocalDateTime.now())) {
-                userService.deleteEmailKey(emailKey);
-                userService.deleteTempUser(acceptEmailDTO.getEmail());
-                throw new AuthenticationException("Expired key");
-            }
-            userService.registerUser(acceptEmailDTO.getEmail());
-        }, () -> {
-            throw new UserException("Email not found");
-        });
+        emailKeyValidator.validate(acceptEmailDTO, bindingResult);
+        ErrorHandler.handleException(bindingResult, ExceptionType.AUTHENTICATION_EXCEPTION);
         User user = userService.getByEmail(acceptEmailDTO.getEmail());
+        userService.registerUser(acceptEmailDTO.getEmail());
         kafkaTemplate.send("registration-topic", acceptEmailDTO.getEmail(), user.getUsername());
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
@@ -134,27 +115,12 @@ public class AuthController {
     @PatchMapping("/password")
     public ResponseEntity<HttpStatus> recoverPassword(@RequestBody @Valid RecoverPasswordDTO recoverPasswordDTO,
                                                  BindingResult bindingResult) {
-        ErrorHandler.handleException(bindingResult, ExceptionType.USER_EXCEPTION);
-        emailsKeysRepository.findByEmail(recoverPasswordDTO.getEmail()).ifPresentOrElse(emailKey -> {
-            if (emailKey.getKey() != recoverPasswordDTO.getKey()) {
-                userService.updateEmailKeyAttempts(emailKey);
-                if (emailKey.getAttempts() >= 3) {
-                    userService.deleteEmailKey(emailKey);
-                    throw new AuthenticationException("The limit of attempts has been exceeded, send the key again");
-                }
-                throw new AuthenticationException("Invalid key");
-            } else if (emailKey.getExpiredTime().isBefore(LocalDateTime.now())) {
-                userService.deleteEmailKey(emailKey);
-                throw new AuthenticationException("Expired key");
-            }
-            User user = userService.getByEmail(recoverPasswordDTO.getEmail());
-            user.setPassword(passwordEncoder.encode(recoverPasswordDTO.getNewPassword()));
-            userService.updateUser(user.getId(), user);
-            userService.deleteEmailKey(emailKey);
-        }, () -> {
-            throw new AuthenticationException("Email not found");
-        });
-
+        ErrorHandler.handleException(bindingResult, ExceptionType.AUTHENTICATION_EXCEPTION);
+        emailKeyValidator.validate(recoverPasswordDTO, bindingResult);
+        ErrorHandler.handleException(bindingResult, ExceptionType.AUTHENTICATION_EXCEPTION);
+        User user = userService.getByEmail(recoverPasswordDTO.getEmail());
+        user.setPassword(passwordEncoder.encode(recoverPasswordDTO.getNewPassword()));
+        userService.updateUser(user.getId(), user);
         return ResponseEntity.ok(HttpStatus.OK);
     }
 

@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
-public class RecoverPasswordDTO {
+public class RecoverPasswordDTO implements RequestEmailKey {
 
     @NotEmpty(message = "Email cannot be empty!")
     private String email;

@@ -140,7 +140,7 @@ public class UserService implements Image {
     }
 
     public User getByEmail(String email) {
-        return usersRepository.findPersonByEmail(email)
+        return usersRepository.findByEmail(email)
                 .orElseThrow(() -> new UserException("User not found"));
     }
 
@@ -177,7 +177,7 @@ public class UserService implements Image {
 
     @Transactional
     public void deleteTempUser(String email) {
-        usersRepository.findPersonByEmail(email).ifPresent(user -> {
+        usersRepository.findByEmail(email).ifPresent(user -> {
             if (user.getUserStatus() == User.Status.TEMPORALLY_REGISTERED) {
                 usersRepository.delete(user);
             }
@@ -292,13 +292,12 @@ public class UserService implements Image {
 
     @Transactional
     public void registerUser(String email) {
-        User user = usersRepository.findPersonByEmail(email)
+        User user = usersRepository.findByEmail(email)
                 .orElseThrow(() -> new UserException("User not found"));
         if (user.getUserStatus() != User.Status.TEMPORALLY_REGISTERED) {
             throw new UserException("User is already registered");
         }
         user.setUserStatus(User.Status.REGISTERED);
-        emailsKeysRepository.findByEmail(email).ifPresent(emailsKeysRepository::delete);
     }
 
     @Transactional
@@ -309,7 +308,8 @@ public class UserService implements Image {
 
     @Transactional
     public void temporalRegister(RegistrationUserDTO personDTO) {
-        usersRepository.save(User.builder()
+        usersRepository.save(
+                User.builder()
                 .username(personDTO.getUsername())
                 .createdAt(LocalDateTime.now())
                 .description(personDTO.getDescription())
@@ -319,7 +319,8 @@ public class UserService implements Image {
                 .isPrivate(personDTO.getIsPrivate() != null && personDTO.getIsPrivate())
                 .imageUUID(DEFAULT_IMAGE_UUID)
                 .userStatus(User.Status.TEMPORALLY_REGISTERED)
-                .build());
+                .build()
+        );
     }
 
     @Transactional

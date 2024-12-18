@@ -5,159 +5,32 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f061170b-aa0a-4d99-9b8a-950e7e3680e4" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/cd11a40f-918f-4000-a3ff-a6dfd8053462.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/cd11a40f-918f-4000-a3ff-a6dfd8053462.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/cd11a40f-918f-4000-a3ff-a6dfd8053462/storage_v2/_src_/database/messenger_db.KnnlyA/schema/public.abK9xQ.meta" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/cd11a40f-918f-4000-a3ff-a6dfd8053462/storage_v2/_src_/database/messenger_db.KnnlyA/schema/public.abK9xQ.meta" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/.gitattributes" beforeDir="false" afterPath="$PROJECT_DIR$/.gitattributes" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" afterPath="$PROJECT_DIR$/.mvn/wrapper/maven-wrapper.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/mvnw" beforeDir="false" afterPath="$PROJECT_DIR$/mvnw" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/mvnw.cmd" beforeDir="false" afterPath="$PROJECT_DIR$/mvnw.cmd" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/myApp.log" beforeDir="false" afterPath="$PROJECT_DIR$/myApp.log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/MessengerServiceApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/MessengerServiceApplication.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/config/JwtFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/config/JwtFilter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/config/SecurityConf.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/config/SecurityConf.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/controllers/AdminController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/controllers/AdminController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/controllers/AuthController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/controllers/AuthController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/controllers/ChannelsController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/controllers/ChannelsController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/controllers/ChatsController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/controllers/ChatsController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/controllers/GroupsController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/controllers/GroupsController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/controllers/UsersController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/controllers/UsersController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/AcceptEmailDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/AcceptEmailDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/AuthDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/AuthDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/BanChannelDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/BanChannelDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/BanUserDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/BanUserDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/ChannelUserActionDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/ChannelUserActionDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/CreateChannelDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/CreateChannelDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/CreateChannelPostCommentDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/CreateChannelPostCommentDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/CreateChannelPostDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/CreateChannelPostDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/CreateGroupDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/CreateGroupDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/RecoverPasswordDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/RecoverPasswordDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/RegistrationUserDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/RegistrationUserDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/ResponseAppMessageDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/ResponseAppMessageDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/ResponseChannelDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/ResponseChannelDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/ResponseChannelInviteDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/ResponseChannelInviteDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/ResponseChannelLogDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/ResponseChannelLogDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/ResponseChannelPostCommentDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/ResponseChannelPostCommentDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/ResponseChannelPostDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/ResponseChannelPostDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/ResponseChannelPostImageDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/ResponseChannelPostImageDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/ResponseChannelUserDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/ResponseChannelUserDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/ResponseChatDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/ResponseChatDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/ResponseChatMessageDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/ResponseChatMessageDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/ResponseGroupActionMessageDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/ResponseGroupActionMessageDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/ResponseGroupDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/ResponseGroupDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/ResponseGroupInviteDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/ResponseGroupInviteDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/ResponseGroupMessageDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/ResponseGroupMessageDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/ResponseGroupUserDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/ResponseGroupUserDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/ResponseImageDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/ResponseImageDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/ResponseUserDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/ResponseUserDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/ShowChannelDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/ShowChannelDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/ShowChatDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/ShowChatDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/ShowGroupDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/ShowGroupDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/UpdateChannelDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/UpdateChannelDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/UpdateChannelPostCommentDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/UpdateChannelPostCommentDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/UpdateChannelPostDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/UpdateChannelPostDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/UpdateGroupDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/UpdateGroupDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/UpdatePasswordDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/UpdatePasswordDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/UpdateUsernameDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/UpdateUsernameDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/dto/UserInfoDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/UserInfoDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/AppMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/AppMessage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/BannedChannelUser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/BannedChannelUser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/BannedChannelUserKey.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/BannedChannelUserKey.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/BannedGroupUserKey.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/BannedGroupUserKey.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/BannedUser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/BannedUser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/BlockedUser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/BlockedUser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/Channel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/Channel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/ChannelInvite.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/ChannelInvite.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/ChannelLog.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/ChannelLog.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/ChannelPost.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/ChannelPost.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/ChannelPostComment.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/ChannelPostComment.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/ChannelPostImage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/ChannelPostImage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/ChannelPostLike.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/ChannelPostLike.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/ChannelPostLikeKey.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/ChannelPostLikeKey.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/ChannelUser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/ChannelUser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/Chat.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/Chat.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/ChatMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/ChatMessage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/ContentType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/ContentType.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/EmailKey.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/EmailKey.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/FriendsStatus.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/FriendsStatus.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/Group.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/Group.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/GroupActionMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/GroupActionMessage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/GroupBannedUser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/GroupBannedUser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/GroupInvite.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/GroupInvite.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/GroupMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/GroupMessage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/GroupUser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/GroupUser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/Token.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/Token.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/TokenStatus.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/TokenStatus.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/User.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/models/UserFriend.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/UserFriend.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/repositories/AppMessagesRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/AppMessagesRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/repositories/BannedChannelsUsersRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/BannedChannelsUsersRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/repositories/BannedUsersRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/BannedUsersRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/repositories/BlockedUsersRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/BlockedUsersRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/repositories/ChannelsInvitesRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/ChannelsInvitesRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/repositories/ChannelsLogsRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/ChannelsLogsRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/repositories/ChannelsPostsCommentsRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/ChannelsPostsCommentsRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/repositories/ChannelsPostsImagesRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/ChannelsPostsImagesRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/repositories/ChannelsPostsLikesRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/ChannelsPostsLikesRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/repositories/ChannelsPostsRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/ChannelsPostsRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/repositories/ChannelsRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/ChannelsRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/repositories/ChannelsUsersRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/ChannelsUsersRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/repositories/ChatsMessagesRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/ChatsMessagesRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/repositories/ChatsRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/ChatsRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/repositories/EmailsKeysRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/EmailsKeysRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/repositories/GroupsActionsMessagesRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/GroupsActionsMessagesRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/repositories/GroupsBannedUsersRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/GroupsBannedUsersRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/repositories/GroupsInvitesRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/GroupsInvitesRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/repositories/GroupsMessagesRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/GroupsMessagesRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/repositories/GroupsRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/GroupsRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/repositories/GroupsUsersRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/GroupsUsersRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/repositories/TokensRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/TokensRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/repositories/UsersFriendsRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/UsersFriendsRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/repositories/UsersRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/UsersRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/security/JWTUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/security/JWTUtil.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/security/PersonDetails.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/security/PersonDetails.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/security/PersonDetailsService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/security/PersonDetailsService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/services/ChannelsPostsService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/services/ChannelsPostsService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/services/ChannelsService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/services/ChannelsService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/services/ChatsMessagesService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/services/ChatsMessagesService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/services/ChatsService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/services/ChatsService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/services/GroupsMessagesService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/services/GroupsMessagesService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/services/GroupsService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/services/GroupsService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/services/Image.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/services/Image.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/services/ImageService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/services/ImageService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/services/TokensService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/services/TokensService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/services/UserService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/services/UserService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/task/CleanTemporalResourcesTask.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/task/CleanTemporalResourcesTask.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/task/DeleteExpiredAppMessagesTask.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/task/DeleteExpiredAppMessagesTask.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/task/DeleteExpiredChannelsInvitesTask.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/task/DeleteExpiredChannelsInvitesTask.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/task/DeleteExpiredGroupsInvitesTask.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/task/DeleteExpiredGroupsInvitesTask.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/task/DeleteExpiredLogsTask.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/task/DeleteExpiredLogsTask.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/task/DeleteExpiredTokensTask.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/task/DeleteExpiredTokensTask.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/util/AbstractException.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/util/AbstractException.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/util/AuthenticationException.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/util/AuthenticationException.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/util/ChannelException.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/util/ChannelException.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/util/ChatException.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/util/ChatException.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/util/ErrorHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/util/ErrorHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/util/ErrorResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/util/ErrorResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/util/ExceptionType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/util/ExceptionType.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/util/GroupException.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/util/GroupException.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/util/ImageException.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/util/ImageException.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/util/MessageException.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/util/MessageException.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/util/PasswordValidator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/util/PasswordValidator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/util/RegistrationUserValidator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/util/RegistrationUserValidator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/java/danix/app/messenger_service/util/UserException.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/util/UserException.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/application.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/resources/shema.sql" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/shema.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/resources/templates/channels_avatars/6f03317c-1ab7-4f61-bc4e-932e36258526.png" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/templates/channels_avatars/6f03317c-1ab7-4f61-bc4e-932e36258526.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/resources/templates/groups_avatars/393de5ef-bd11-4057-9863-77d49c47c806.png" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/templates/groups_avatars/393de5ef-bd11-4057-9863-77d49c47c806.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/main/resources/templates/users_images/3a2cd62f-121a-48b5-b0aa-e54454d4d996.jpg" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/templates/users_images/3a2cd62f-121a-48b5-b0aa-e54454d4d996.jpg" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messenger-service/src/test/java/danix/app/messenger_service/MessengerServiceApplicationTests.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/danix/app/messenger_service/MessengerServiceApplicationTests.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/controllers/AuthController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/controllers/AuthController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/AcceptEmailDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/AcceptRequestEmailKeyDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/RecoverPasswordDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/RecoverPasswordDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/ResponseGroupActionMessageDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/ResponseGroupActionMessageDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/ResponseUserDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/dto/ResponseUserDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/GroupActionMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/models/GroupActionMessage.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/UsersRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/repositories/UsersRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/security/PersonDetailsService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/security/PersonDetailsService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/services/UserService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/services/UserService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/util/RegistrationUserValidator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/danix/app/messenger_service/util/RegistrationUserValidator.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+        <option value="Interface" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -171,35 +44,35 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
-    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
-    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
-    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;Spring Boot.MessengerServiceApplication.executor&quot;: &quot;Run&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/Java Projects/Store&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RequestMappingsPanelOrder0": "0",
+    "RequestMappingsPanelOrder1": "1",
+    "RequestMappingsPanelWidth0": "75",
+    "RequestMappingsPanelWidth1": "75",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "Spring Boot.MessengerServiceApplication.executor": "Run",
+    "git-widget-placeholder": "main",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "D:/Java Projects/Store",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Project",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.0",
+    "settings.editor.selected.configurable": "reference.settingsdialog.IDE.editor.colors",
+    "vue.rearranger.settings.migration": "true"
   },
-  &quot;keyToStringList&quot;: {
-    &quot;DatabaseDriversLRU&quot;: [
-      &quot;postgresql&quot;
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "postgresql"
     ]
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="D:\Java Projects\messenger-service" />
@@ -251,7 +124,8 @@
       <workItem from="1734476189828" duration="38000" />
       <workItem from="1734476233897" duration="1054000" />
       <workItem from="1734477446820" duration="1317000" />
-      <workItem from="1734478901157" duration="1554000" />
+      <workItem from="1734478901157" duration="2374000" />
+      <workItem from="1734526164726" duration="7354000" />
     </task>
     <servers />
   </component>

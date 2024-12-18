@@ -5,11 +5,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "groups_actions_messages")
 @Getter
 @Setter
-@NoArgsConstructor
 public class GroupActionMessage {
 
     @Id
@@ -21,4 +22,11 @@ public class GroupActionMessage {
     @ManyToOne
     @JoinColumn(name = "group_id", referencedColumnName = "id")
     private Group group;
+
+    @Column(name = "sent_time")
+    private LocalDateTime sentTime;
+
+    public GroupActionMessage() {
+        this.sentTime = LocalDateTime.now();
+    }
 }

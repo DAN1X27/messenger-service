@@ -7,7 +7,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class AcceptEmailDTO {
+public class AcceptRequestEmailKeyDTO implements RequestEmailKey {
     @NotEmpty(message = "Email cannot be empty")
     private String email;
     @NotNull(message = "Key cannot be empty")
