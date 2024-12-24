@@ -58,9 +58,6 @@ public class JwtFilter extends OncePerRequestFilter {
                             "Invalid JWT token");
                 }
             }
-        } else {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
-        }
 
         filterChain.doFilter(request, response);
     }
