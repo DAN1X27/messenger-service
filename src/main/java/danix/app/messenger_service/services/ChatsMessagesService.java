@@ -7,7 +7,7 @@ import danix.app.messenger_service.repositories.ChatsMessagesRepository;
 import danix.app.messenger_service.repositories.ChatsRepository;
 import danix.app.messenger_service.util.ChatException;
 import danix.app.messenger_service.util.ImageException;
-import danix.app.messenger_service.util.ImageService;
+import danix.app.messenger_service.util.ImageUtils;
 import danix.app.messenger_service.util.MessageException;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -44,7 +44,7 @@ public class ChatsMessagesService {
     public void sendImage(MultipartFile image, int chatId) {
         String uuid = UUID.randomUUID().toString();
         sendMessage(uuid, ContentType.IMAGE, chatId);
-        ImageService.upload(Path.of(CHATS_IMAGES_PATH), image, uuid);
+        ImageUtils.upload(Path.of(CHATS_IMAGES_PATH), image, uuid);
     }
 
     private void sendMessage(String message, ContentType contentType, int chatId) {
@@ -82,7 +82,7 @@ public class ChatsMessagesService {
         ChatMessage message = checkMessage(messageId);
         if (message.getContentType() == ContentType.IMAGE) {
             Path path = Path.of(CHATS_IMAGES_PATH);
-            ImageService.delete(path, message.getText());
+            ImageUtils.delete(path, message.getText());
         }
         messagesRepository.delete(message);
         messagingTemplate.convertAndSend("/topic/chat/" + message.getChat().getId(),
@@ -112,7 +112,7 @@ public class ChatsMessagesService {
         if (chatMessage.getContentType() != ContentType.IMAGE) {
             throw new ImageException("Image not found");
         }
-        return ImageService.download(Path.of(CHATS_IMAGES_PATH), chatMessage.getText());
+        return ImageUtils.download(Path.of(CHATS_IMAGES_PATH), chatMessage.getText());
     }
 
     private ChatMessage checkMessage(long messageId) {

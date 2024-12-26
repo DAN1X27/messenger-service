@@ -5,7 +5,7 @@ import danix.app.messenger_service.models.*;
 import danix.app.messenger_service.repositories.*;
 import danix.app.messenger_service.util.ChannelException;
 import danix.app.messenger_service.util.ImageException;
-import danix.app.messenger_service.util.ImageService;
+import danix.app.messenger_service.util.ImageUtils;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
@@ -110,12 +110,12 @@ public class ChannelsService implements Image {
             throw new ImageException("Current user must be owner of channel");
         }
         String uuid = UUID.randomUUID().toString();
-        ImageService.upload(Path.of(AVATARS_PATH), image, uuid);
+        ImageUtils.upload(Path.of(AVATARS_PATH), image, uuid);
         if (channel.getImage().equals(DEFAULT_IMAGE_UUID)) {
             channel.setImage(uuid);
             return;
         }
-        ImageService.delete(Path.of(AVATARS_PATH), channel.getImage());
+        ImageUtils.delete(Path.of(AVATARS_PATH), channel.getImage());
         channel.setImage(uuid);
         messagingTemplate.convertAndSend("/topic/user/" + getCurrentUser().getId() + "/main",
                 new ResponseChannelUpdatingDTO(modelMapper.map(channel, ResponseChannelDTO.class), true));
@@ -125,7 +125,7 @@ public class ChannelsService implements Image {
     public ResponseImageDTO getImage(int channelId) {
         Channel channel = getById(channelId);
         getChannelUser(getCurrentUser(), channel);
-        return ImageService.download(Path.of(AVATARS_PATH), channel.getImage());
+        return ImageUtils.download(Path.of(AVATARS_PATH), channel.getImage());
     }
 
     @Override
@@ -138,7 +138,7 @@ public class ChannelsService implements Image {
         if (channel.getImage().equals(DEFAULT_IMAGE_UUID)) {
             throw new ImageException("Channel already have default image");
         }
-        ImageService.delete(Path.of(AVATARS_PATH), channel.getImage());
+        ImageUtils.delete(Path.of(AVATARS_PATH), channel.getImage());
         channel.setImage(DEFAULT_IMAGE_UUID);
         messagingTemplate.convertAndSend("/topic/user/" + getCurrentUser().getId() + "/main",
                 new ResponseChannelUpdatingDTO(modelMapper.map(channel, ResponseChannelDTO.class), true));

@@ -5,7 +5,7 @@ import danix.app.messenger_service.models.*;
 import danix.app.messenger_service.repositories.*;
 import danix.app.messenger_service.security.UserDetailsImpl;
 import danix.app.messenger_service.util.ImageException;
-import danix.app.messenger_service.util.ImageService;
+import danix.app.messenger_service.util.ImageUtils;
 import danix.app.messenger_service.util.UserException;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -68,7 +68,7 @@ public class UserService implements Image {
     public ResponseImageDTO getImage(int id) {
         User user = usersRepository.findById(id)
                 .orElseThrow(() -> new UserException("User not found"));
-        return ImageService.download(Path.of(USERS_IMAGES_PATH), user.getImageUUID());
+        return ImageUtils.download(Path.of(USERS_IMAGES_PATH), user.getImageUUID());
     }
 
     @Override
@@ -77,12 +77,12 @@ public class UserService implements Image {
         User currentUser = usersRepository.findById(id)
                 .orElseThrow(() -> new UserException("User not found"));
         String uuid = UUID.randomUUID().toString();
-        ImageService.upload(Path.of(USERS_IMAGES_PATH), imageFile, uuid);
+        ImageUtils.upload(Path.of(USERS_IMAGES_PATH), imageFile, uuid);
         if (currentUser.getImageUUID().equals(DEFAULT_IMAGE_UUID)) {
             currentUser.setImageUUID(uuid);
             return;
         }
-        ImageService.delete(Path.of(USERS_IMAGES_PATH), currentUser.getImageUUID());
+        ImageUtils.delete(Path.of(USERS_IMAGES_PATH), currentUser.getImageUUID());
         currentUser.setImageUUID(uuid);
     }
 
@@ -94,7 +94,7 @@ public class UserService implements Image {
         if (currentUser.getImageUUID().equals(DEFAULT_IMAGE_UUID)) {
             throw new ImageException("User already have default image");
         }
-        ImageService.delete(Path.of(USERS_IMAGES_PATH), currentUser.getImageUUID());
+        ImageUtils.delete(Path.of(USERS_IMAGES_PATH), currentUser.getImageUUID());
         currentUser.setImageUUID(DEFAULT_IMAGE_UUID);
     }
 

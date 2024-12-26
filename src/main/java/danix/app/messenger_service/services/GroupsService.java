@@ -5,7 +5,7 @@ import danix.app.messenger_service.models.*;
 import danix.app.messenger_service.repositories.*;
 import danix.app.messenger_service.util.GroupException;
 import danix.app.messenger_service.util.ImageException;
-import danix.app.messenger_service.util.ImageService;
+import danix.app.messenger_service.util.ImageUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -146,7 +146,7 @@ public class GroupsService implements Image {
             throw new ImageException("User must be owner of group");
         }
         String uuid = UUID.randomUUID().toString();
-        ImageService.upload(Path.of(DEFAULT_IMAGES_PATH), image, uuid);
+        ImageUtils.upload(Path.of(DEFAULT_IMAGES_PATH), image, uuid);
         sendGroupActionMessage(id, getCurrentUser().getUsername() + " updated group image");
         messagingTemplate.convertAndSend("/topic/user/" + getCurrentUser().getId() + "/main",
                 new ResponseGroupUpdatingDTO(modelMapper.map(group, ResponseGroupDTO.class), true));
@@ -154,7 +154,7 @@ public class GroupsService implements Image {
             group.setImage(uuid);
             return;
         }
-        ImageService.delete(Path.of(DEFAULT_IMAGES_PATH), group.getImage());
+        ImageUtils.delete(Path.of(DEFAULT_IMAGES_PATH), group.getImage());
         group.setImage(uuid);
     }
 
@@ -167,7 +167,7 @@ public class GroupsService implements Image {
         } else if (group.getImage().equals(DEFAULT_IMAGE_UUID)) {
             throw new ImageException("Group already have default image");
         }
-        ImageService.delete(Path.of(DEFAULT_IMAGES_PATH), group.getImage());
+        ImageUtils.delete(Path.of(DEFAULT_IMAGES_PATH), group.getImage());
         group.setImage(DEFAULT_IMAGE_UUID);
         sendGroupActionMessage(id, getCurrentUser().getUsername() + " deleted group image");
         messagingTemplate.convertAndSend("/topic/user/" + getCurrentUser().getId() + "/main",
@@ -178,7 +178,7 @@ public class GroupsService implements Image {
     public ResponseImageDTO getImage(int id) {
         Group group = getById(id);
         getGroupUser(group, getCurrentUser());
-        return ImageService.download(Path.of(DEFAULT_IMAGES_PATH), group.getImage());
+        return ImageUtils.download(Path.of(DEFAULT_IMAGES_PATH), group.getImage());
     }
 
     @Transactional

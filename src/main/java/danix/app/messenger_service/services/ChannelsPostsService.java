@@ -5,7 +5,7 @@ import danix.app.messenger_service.models.*;
 import danix.app.messenger_service.repositories.*;
 import danix.app.messenger_service.util.ChannelException;
 import danix.app.messenger_service.util.ImageException;
-import danix.app.messenger_service.util.ImageService;
+import danix.app.messenger_service.util.ImageUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -51,7 +51,7 @@ public class ChannelsPostsService {
     @Transactional
     public void createPost(MultipartFile image, int id) {
         String uuid = UUID.randomUUID().toString();
-        ImageService.upload(Path.of(POSTS_IMAGES_PATH), image, uuid);
+        ImageUtils.upload(Path.of(POSTS_IMAGES_PATH), image, uuid);
         ChannelPost post = savePost(null, id, ContentType.IMAGE);
         ChannelPostImage postImage = new ChannelPostImage();
         postImage.setPost(post);
@@ -89,7 +89,7 @@ public class ChannelsPostsService {
                 throw new ImageException("Images limit exceeded");
             }
             String uuid = UUID.randomUUID().toString();
-            ImageService.upload(Path.of(POSTS_IMAGES_PATH), image, uuid);
+            ImageUtils.upload(Path.of(POSTS_IMAGES_PATH), image, uuid);
             ChannelPostImage postImage = new ChannelPostImage();
             postImage.setImageUUID(uuid);
             postImage.setPost(post);
@@ -109,7 +109,7 @@ public class ChannelsPostsService {
         ChannelPostImage image = imagesRepository.findById(imageId)
                 .orElseThrow(() -> new ImageException("Image not found"));
         channelsService.getChannelUser(getCurrentUser(), image.getPost().getChannel());
-        return ImageService.download(Path.of(POSTS_IMAGES_PATH), image.getImageUUID());
+        return ImageUtils.download(Path.of(POSTS_IMAGES_PATH), image.getImageUUID());
     }
 
     @Transactional
@@ -122,11 +122,11 @@ public class ChannelsPostsService {
             channelLog.setMessage(getCurrentUser().getUsername() + " deleted post");
             channelLog.setChannel(channel);
             if (post.getImages() != null && !post.getImages().isEmpty()) {
-                post.getImages().forEach(image -> ImageService.delete(Path.of(POSTS_IMAGES_PATH), image.getImageUUID()));
+                post.getImages().forEach(image -> ImageUtils.delete(Path.of(POSTS_IMAGES_PATH), image.getImageUUID()));
             }
             List<ChannelPostComment> comments = commentsRepository.findAllByPostIdAndContentType(postId, ContentType.IMAGE);
             if (comments != null && !comments.isEmpty()) {
-                comments.forEach(comment -> ImageService.delete(Path.of(COMMENTS_IMAGES_PATH), comment.getText()));
+                comments.forEach(comment -> ImageUtils.delete(Path.of(COMMENTS_IMAGES_PATH), comment.getText()));
             }
             channelsLogsRepository.save(channelLog);
             channelsPostsRepository.delete(post);
@@ -199,7 +199,7 @@ public class ChannelsPostsService {
     @Transactional
     public void createComment(long postId, MultipartFile image) {
         String uuid = UUID.randomUUID().toString();
-        ImageService.upload(Path.of(COMMENTS_IMAGES_PATH), image, uuid);
+        ImageUtils.upload(Path.of(COMMENTS_IMAGES_PATH), image, uuid);
         saveComment(postId, uuid, ContentType.IMAGE);
     }
 
@@ -229,7 +229,7 @@ public class ChannelsPostsService {
         if (comment.getContentType() != ContentType.IMAGE) {
             throw new ChannelException("Comment content type is not image");
         }
-        return ImageService.download(Path.of(COMMENTS_IMAGES_PATH), comment.getText());
+        return ImageUtils.download(Path.of(COMMENTS_IMAGES_PATH), comment.getText());
     }
 
     @Transactional
@@ -242,7 +242,7 @@ public class ChannelsPostsService {
         ChannelUser channelUser = channelsService.getChannelUser(currentUser, channel);
         if (comment.getOwner().getUsername().equals(channelUser.getUsername()) || channelUser.getIsAdmin()) {
             if (comment.getContentType() == ContentType.IMAGE) {
-                ImageService.delete(Path.of(COMMENTS_IMAGES_PATH), comment.getText());
+                ImageUtils.delete(Path.of(COMMENTS_IMAGES_PATH), comment.getText());
             }
             commentsRepository.delete(comment);
             post.getComments().remove(comment);

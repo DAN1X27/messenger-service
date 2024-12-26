@@ -4,7 +4,7 @@ import danix.app.messenger_service.dto.*;
 import danix.app.messenger_service.models.*;
 import danix.app.messenger_service.repositories.GroupsMessagesRepository;
 import danix.app.messenger_service.util.ImageException;
-import danix.app.messenger_service.util.ImageService;
+import danix.app.messenger_service.util.ImageUtils;
 import danix.app.messenger_service.util.MessageException;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -36,7 +36,7 @@ public class GroupsMessagesService {
         String uuid = UUID.randomUUID().toString();
         sendMessage(uuid, groupId, ContentType.IMAGE);
         Path path = Path.of(GROUPS_IMAGES_PATH);
-        ImageService.upload(path, image, uuid);
+        ImageUtils.upload(path, image, uuid);
     }
 
     @Transactional
@@ -49,7 +49,7 @@ public class GroupsMessagesService {
                 .orElseThrow(() -> new ImageException("Image not found"));
         Group group = groupMessage.getGroup();
         groupsService.getGroupUser(group, getCurrentUser());
-        return ImageService.download(Path.of(GROUPS_IMAGES_PATH), groupMessage.getText());
+        return ImageUtils.download(Path.of(GROUPS_IMAGES_PATH), groupMessage.getText());
     }
 
     private void sendMessage(String message, int groupId, ContentType contentType) {
@@ -81,7 +81,7 @@ public class GroupsMessagesService {
         GroupUser groupUser = groupsService.getGroupUser(group, currentUser);
         if (message.getMessageOwner().getUsername().equals(currentUser.getUsername()) || groupUser.isAdmin()) {
             if (message.getContentType() == ContentType.IMAGE) {
-                ImageService.delete(Path.of(GROUPS_IMAGES_PATH), message.getText());
+                ImageUtils.delete(Path.of(GROUPS_IMAGES_PATH), message.getText());
             }
             groupsMessagesRepository.delete(message);
             messagingTemplate.convertAndSend("/topic/group/" + group.getId(),

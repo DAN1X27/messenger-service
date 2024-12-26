@@ -14,7 +14,10 @@ import java.nio.file.Path;
 import java.util.Objects;
 
 @Slf4j
-public class ImageService {
+public final class ImageUtils {
+
+    private ImageUtils() {
+    }
 
     public static void upload(Path imagesPath, MultipartFile multipartFile, String uuid) {
         if (!Objects.requireNonNull(multipartFile.getOriginalFilename()).endsWith(".png") &&
