@@ -1,7 +1,6 @@
-package danix.app.messenger_service.services;
+package danix.app.messenger_service.util;
 
 import danix.app.messenger_service.dto.ResponseImageDTO;
-import danix.app.messenger_service.util.ImageException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,7 +18,7 @@ public class ImageService {
 
     public static void upload(Path imagesPath, MultipartFile multipartFile, String uuid) {
         if (!Objects.requireNonNull(multipartFile.getOriginalFilename()).endsWith(".png") &&
-                !Objects.requireNonNull(multipartFile.getOriginalFilename()).endsWith(".jpg")) {
+            !Objects.requireNonNull(multipartFile.getOriginalFilename()).endsWith(".jpg")) {
             throw new ImageException("Unsupported file");
         }
         File file = new File(imagesPath.toString(), uuid + (Objects.requireNonNull(multipartFile.getOriginalFilename().endsWith(".jpg") ? ".jpg" : ".png")));
@@ -37,7 +36,8 @@ public class ImageService {
                 String fileName = file.getFileName().toString().substring(0, file.getFileName().toString().lastIndexOf("."));
                 if (fileName.equals(objectUUID)) {
                     byte[] imageData = Files.readAllBytes(file);
-                    return new ResponseImageDTO(imageData, file.getFileName().endsWith(".jpg") ? MediaType.IMAGE_JPEG : MediaType.IMAGE_PNG);
+                    return new ResponseImageDTO(imageData, file.getFileName().endsWith(".jpg") ?
+                            MediaType.IMAGE_JPEG : MediaType.IMAGE_PNG);
                 }
             }
         } catch (IOException e) {

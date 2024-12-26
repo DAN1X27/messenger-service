@@ -16,7 +16,7 @@ public class ChannelPost {
     private long id;
 
     @Column(name = "post")
-    private String post;
+    private String text;
 
     @ManyToOne
     @JoinColumn(name = "channel_id", referencedColumnName = "id")

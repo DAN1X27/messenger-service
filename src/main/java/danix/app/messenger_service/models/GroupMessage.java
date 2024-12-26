@@ -19,7 +19,8 @@ public class GroupMessage {
     @Column(name = "id")
     private long id;
 
-    private String message;
+    @Column(name = "message")
+    private String text;
 
     @ManyToOne
     @JoinColumn(name = "group_id", referencedColumnName = "id")

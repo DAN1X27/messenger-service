@@ -2,7 +2,6 @@ package danix.app.messenger_service.models;
 
 import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
@@ -17,7 +16,8 @@ public class GroupActionMessage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    private String message;
+    @Column(name = "message")
+    private String text;
 
     @ManyToOne
     @JoinColumn(name = "group_id", referencedColumnName = "id")
@@ -28,5 +28,10 @@ public class GroupActionMessage {
 
     public GroupActionMessage() {
         this.sentTime = LocalDateTime.now();
+    }
+
+    public GroupActionMessage(String text, Group group) {
+        this.text = text;
+        this.group = group;
     }
 }

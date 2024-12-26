@@ -23,8 +23,13 @@ public class GroupsController {
     private final GroupsMessagesService groupsMessagesService;
 
     @GetMapping
-    public ResponseEntity<List<ResponseGroupDTO>> getUserGroups() {
-        return new ResponseEntity<>(groupsService.getAllUserGroups(), HttpStatus.OK);
+    public List<ResponseGroupDTO> getUserGroups() {
+        return groupsService.getAllUserGroups();
+    }
+
+    @GetMapping("/invites")
+    public List<ResponseGroupInviteDTO> getUserGroupInvites() {
+        return groupsService.getAllUserGroupsInvites();
     }
 
     @PatchMapping
@@ -157,10 +162,6 @@ public class GroupsController {
 
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleException(AbstractException e) {
-        ErrorResponse errorResponse = new ErrorResponse(
-                e.getMessage(),
-                System.currentTimeMillis()
-        );
-        return ResponseEntity.badRequest().body(errorResponse);
+        return new ResponseEntity<>(new ErrorResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
     }
 }

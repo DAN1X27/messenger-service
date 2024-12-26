@@ -25,11 +25,16 @@ import static danix.app.messenger_service.util.ExceptionType.MESSAGE_EXCEPTION;
 @RequestMapping("/channels")
 public class ChannelsController {
     private final ChannelsService channelsService;
-    private final ChannelsPostsService channelsPostsServiceImpl;
+    private final ChannelsPostsService channelsPostsService;
 
     @GetMapping
-    public ResponseEntity<List<ResponseChannelDTO>> getUserChannels() {
-        return new ResponseEntity<>(channelsService.getAllUserChannels(), HttpStatus.OK);
+    public List<ResponseChannelDTO> getUserChannels() {
+        return channelsService.getAllUserChannels();
+    }
+
+    @GetMapping("/invites")
+    public List<ResponseChannelInviteDTO> getInvites() {
+        return channelsService.getChannelsInvites();
     }
 
     @PostMapping("/{id}/join")
@@ -81,7 +86,7 @@ public class ChannelsController {
     @PatchMapping("/{id}/image")
     public ResponseEntity<HttpStatus> updateChannelImage(@PathVariable int id, @RequestParam("image") MultipartFile image) {
         channelsService.addImage(image, id);
-        return ResponseEntity.ok(HttpStatus.CREATED);
+        return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
     @DeleteMapping("/{id}/image")
@@ -144,25 +149,25 @@ public class ChannelsController {
     @PostMapping("/post")
     public ResponseEntity<HttpStatus> createPost(@RequestBody @Valid CreateChannelPostDTO post, BindingResult bindingResult) {
         ErrorHandler.handleException(bindingResult, CHANNEL_EXCEPTION);
-        channelsPostsServiceImpl.createPost(post);
-        return ResponseEntity.ok(HttpStatus.CREATED);
+        channelsPostsService.createPost(post);
+        return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
     @PostMapping("/{channelId}/post/image")
     public ResponseEntity<HttpStatus> createPost(@PathVariable int channelId, @RequestParam MultipartFile image) {
-        channelsPostsServiceImpl.createPost(image, channelId);
-        return ResponseEntity.ok(HttpStatus.CREATED);
+        channelsPostsService.createPost(image, channelId);
+        return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
     @PostMapping("/post/{id}/image")
     public ResponseEntity<HttpStatus> addPostImage(@PathVariable long id, @RequestParam("image") MultipartFile image) {
-        channelsPostsServiceImpl.addImage(id, image);
-        return ResponseEntity.ok(HttpStatus.CREATED);
+        channelsPostsService.addImage(id, image);
+        return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
     @GetMapping("/post/image/{imageId}")
     public ResponseEntity<?> getPostImage(@PathVariable long imageId) {
-        ResponseImageDTO image = channelsPostsServiceImpl.getPostImage(imageId);
+        ResponseImageDTO image = channelsPostsService.getPostImage(imageId);
         return ResponseEntity.status(HttpStatus.OK)
                 .contentType(image.getType())
                 .body(image.getImageData());
@@ -172,53 +177,53 @@ public class ChannelsController {
     public ResponseEntity<HttpStatus> updatePost(@RequestBody @Valid UpdateChannelPostDTO post,
                                                  BindingResult bindingResult) {
         ErrorHandler.handleException(bindingResult, CHANNEL_EXCEPTION);
-        channelsPostsServiceImpl.updatePost(post);
+        channelsPostsService.updatePost(post);
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
     @DeleteMapping("/post/{id}")
     public ResponseEntity<HttpStatus> deletePost(@PathVariable long id) {
-        channelsPostsServiceImpl.deletePost(id);
+        channelsPostsService.deletePost(id);
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
     @PostMapping("/post/like/{id}")
     public ResponseEntity<HttpStatus> likePost(@PathVariable long id) {
-        channelsPostsServiceImpl.addPostLike(id);
+        channelsPostsService.addPostLike(id);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @DeleteMapping("/post/like/{id}")
+    @DeleteMapping("/post/{id}/like")
     public ResponseEntity<HttpStatus> deletePostLike(@PathVariable long id) {
-        channelsPostsServiceImpl.deletePostLike(id);
+        channelsPostsService.deletePostLike(id);
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
-    @PostMapping("/comment")
+    @PostMapping("/post/comment")
     public ResponseEntity<HttpStatus> createComment(@RequestBody @Valid CreateChannelPostCommentDTO comment,
                                                     BindingResult bindingResult) {
         ErrorHandler.handleException(bindingResult, MESSAGE_EXCEPTION);
-        channelsPostsServiceImpl.createComment(comment);
+        channelsPostsService.createComment(comment);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
     @PostMapping("/post/{id}/comment/image")
     public ResponseEntity<HttpStatus> createComment(@PathVariable long id, @RequestParam("image") MultipartFile image) {
-        channelsPostsServiceImpl.createComment(id, image);
-        return ResponseEntity.ok(HttpStatus.CREATED);
+        channelsPostsService.createComment(id, image);
+        return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
     @GetMapping("/post/comment/{id}/image")
     public ResponseEntity<?> getCommentImage(@PathVariable long id) {
-        ResponseImageDTO image = channelsPostsServiceImpl.getCommentImage(id);
+        ResponseImageDTO image = channelsPostsService.getCommentImage(id);
         return ResponseEntity.status(HttpStatus.OK)
                 .contentType(image.getType())
                 .body(image.getImageData());
     }
 
-    @DeleteMapping("/post/comments/{id}")
+    @DeleteMapping("/post/comment/{id}")
     public ResponseEntity<HttpStatus> deleteComment(@PathVariable long id) {
-        channelsPostsServiceImpl.deleteComment(id);
+        channelsPostsService.deleteComment(id);
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
@@ -226,21 +231,17 @@ public class ChannelsController {
     public ResponseEntity<HttpStatus> updateComment(@PathVariable long id, @RequestBody @Valid UpdateChannelPostCommentDTO comment,
                                                     BindingResult bindingResult) {
         ErrorHandler.handleException(bindingResult, MESSAGE_EXCEPTION);
-        channelsPostsServiceImpl.updateComment(comment, id);
+        channelsPostsService.updateComment(comment, id);
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
-    @GetMapping("/post/comments/{id}")
+    @GetMapping("/post/{id}/comments")
     public ResponseEntity<List<ResponseChannelPostCommentDTO>> showComments(@PathVariable long id) {
-        return ResponseEntity.ok(channelsPostsServiceImpl.getPostComments(id));
+        return ResponseEntity.ok(channelsPostsService.getPostComments(id));
     }
 
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleException(AbstractException e) {
-        ErrorResponse errorResponse = new ErrorResponse(
-                e.getMessage(),
-                System.currentTimeMillis()
-        );
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(new ErrorResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
     }
 }

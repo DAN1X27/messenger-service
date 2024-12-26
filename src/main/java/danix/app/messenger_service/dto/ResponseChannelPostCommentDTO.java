@@ -7,7 +7,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ResponseChannelPostCommentDTO {
-    private String comment;
-    private long id;
+    private String text;
+    private Long id;
     private ContentType contentType;
+    private ResponseUserDTO owner;
 }

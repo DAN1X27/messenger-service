@@ -8,9 +8,8 @@ import java.util.List;
 public class ErrorHandler {
     public static void handleException(BindingResult bindingResult, ExceptionType exceptionType) {
         if (bindingResult.hasErrors()) {
-            List<FieldError> fieldErrors = bindingResult.getFieldErrors();
             StringBuilder message = new StringBuilder();
-            for (FieldError fieldError : fieldErrors) {
+            for (FieldError fieldError : bindingResult.getFieldErrors()) {
                 message.append(fieldError.getField()).append("-")
                         .append(fieldError.getDefaultMessage()).append("; ");
             }

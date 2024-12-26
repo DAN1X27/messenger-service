@@ -42,7 +42,9 @@ public class AuthController {
     private final EmailKeyValidator emailKeyValidator;
 
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> login(@RequestBody AuthDTO authDTO) {
+    public ResponseEntity<Map<String, String>> login(@RequestBody @Valid AuthDTO authDTO,
+                                                     BindingResult bindingResult) {
+        ErrorHandler.handleException(bindingResult, ExceptionType.AUTHENTICATION_EXCEPTION);
         User user = userService.getByEmail(authDTO.getEmail());
         bannedUsersRepository.findByUser(user).ifPresent(bannedUser -> {
             throw new AuthenticationException("Account has been banned for reason: " +
@@ -66,7 +68,7 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<HttpStatus> logout() {
         User currentUser = UserService.getCurrentUser();
-        tokensService.getAllUserTokens(currentUser).forEach(token -> tokensService.updateStatus(token.getId(), TokenStatus.REVOKED));
+        tokensService.banUserTokens(currentUser.getId());
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
@@ -83,7 +85,7 @@ public class AuthController {
     }
 
     @PatchMapping("/registration/accept")
-    public ResponseEntity<HttpStatus> acceptRegistrationKey(@RequestBody @Valid AcceptRequestEmailKeyDTO acceptEmailDTO,
+    public ResponseEntity<Map<String, String>> acceptRegistrationKey(@RequestBody @Valid AcceptRequestEmailKeyDTO acceptEmailDTO,
                                                         BindingResult bindingResult) {
         ErrorHandler.handleException(bindingResult, ExceptionType.AUTHENTICATION_EXCEPTION);
         emailKeyValidator.validate(acceptEmailDTO, bindingResult);
@@ -91,10 +93,12 @@ public class AuthController {
         User user = userService.getByEmail(acceptEmailDTO.getEmail());
         userService.registerUser(acceptEmailDTO.getEmail());
         kafkaTemplate.send("registration-topic", acceptEmailDTO.getEmail(), user.getUsername());
-        return new ResponseEntity<>(HttpStatus.CREATED);
+        String jwtToken = jwtUtil.generateToken(acceptEmailDTO.getEmail());
+        tokensService.create(jwtToken, userService.getByEmail(acceptEmailDTO.getEmail()));
+        return new ResponseEntity<>(Map.of("jwt-token", jwtToken), HttpStatus.CREATED);
     }
 
-    @GetMapping("/password")
+    @PostMapping("/password")
     public ResponseEntity<HttpStatus> forgotPassword(@RequestBody Map<String, String> map) {
 
         String email = map.get("email");
@@ -109,7 +113,7 @@ public class AuthController {
             userService.deleteEmailKey(key);
         });
         userService.sendRecoverPasswordKey(email);
-        return new ResponseEntity<>(HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
     @PatchMapping("/password")
@@ -126,10 +130,6 @@ public class AuthController {
 
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleException(AbstractException e) {
-        ErrorResponse errorResponse = new ErrorResponse(
-                e.getMessage(),
-                System.currentTimeMillis()
-        );
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(new ErrorResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
     }
 }

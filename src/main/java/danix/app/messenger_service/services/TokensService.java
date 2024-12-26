@@ -28,16 +28,9 @@ public class TokensService {
                 .getStatus() != REVOKED;
     }
 
-    public List<Token> getAllUserTokens(User owner) {
-        return tokensRepository.findByOwner(owner);
-    }
-
     @Transactional
-    public void updateStatus(String id, TokenStatus status) {
-        Token token = tokensRepository.findById(id)
-                .orElseThrow(() -> new IllegalStateException("Invalid token"));
-        token.setId(id);
-        token.setStatus(status);
+    public void banUserTokens(Integer userId) {
+        tokensRepository.banUserTokens(userId);
     }
 
     @Transactional

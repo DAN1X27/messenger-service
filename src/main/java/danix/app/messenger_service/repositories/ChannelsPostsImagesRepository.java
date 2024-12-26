@@ -8,5 +8,4 @@ import java.util.Optional;
 
 @Repository
 public interface ChannelsPostsImagesRepository extends JpaRepository<ChannelPostImage, Long> {
-    Optional<ChannelPostImage> findByPostIdAndId(long postId, long imageId);
 }

@@ -22,7 +22,7 @@ public class ChatMessage {
     private Chat chat;
 
     @Column(name = "message")
-    private String message;
+    private String text;
 
     @ManyToOne
     @JoinColumn(name = "message_owner", referencedColumnName = "id")

@@ -2,10 +2,12 @@ package danix.app.messenger_service.controllers;
 
 import danix.app.messenger_service.dto.*;
 import danix.app.messenger_service.models.User;
+import danix.app.messenger_service.repositories.UsersRepository;
 import danix.app.messenger_service.services.UserService;
 import danix.app.messenger_service.util.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,7 +28,7 @@ public class UsersController {
     private final PasswordValidator passwordValidator;
     private final PasswordEncoder passwordEncoder;
 
-    @GetMapping
+    @GetMapping("/info")
     public ResponseEntity<UserInfoDTO> showUserInfo() {
         return ResponseEntity.ok(userService.getUserInfo());
     }
@@ -39,10 +41,21 @@ public class UsersController {
                 .body(image.getImageData());
     }
 
+    @PatchMapping("/status")
+    public ResponseEntity<HttpStatus> updateOnlineStatus() {
+        userService.updateOnlineStatus();
+        return ResponseEntity.ok(HttpStatus.OK);
+    }
+
+    @GetMapping("/notifications")
+    public List<ResponseAppMessageDTO> showUserNotifications() {
+        return userService.getAppMessages();
+    }
+
     @PatchMapping("/image")
-    public ResponseEntity<HttpStatus> uploadImage(@RequestParam("image") MultipartFile image) {
+    public ResponseEntity<HttpStatus> updateImage(@RequestParam("image") MultipartFile image) {
         userService.addImage(image, UserService.getCurrentUser().getId());
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
     @DeleteMapping("/image")
@@ -52,9 +65,9 @@ public class UsersController {
     }
 
     @GetMapping("/find")
-    public ResponseEntity<ResponseUserDTO> findUser(@RequestBody Map<String, String> userData) {
+    public ResponseEntity<ShowUserDTO> findUser(@RequestBody Map<String, String> userData) {
         requestHelper(userData);
-        ResponseUserDTO user = userService.findUser(userData.get("username"));
+        ShowUserDTO user = userService.findUser(userData.get("username"));
         return ResponseEntity.ok(user);
     }
 
@@ -71,35 +84,27 @@ public class UsersController {
         return userService.getAllFriendsRequests();
     }
 
-    @DeleteMapping
-    public ResponseEntity<HttpStatus> unblockUser(@RequestBody Map<String, String> userData) {
-        requestHelper(userData);
-        String username = userData.get("username");
-        userService.unblockUser(username);
+    @DeleteMapping("/unblock/{id}")
+    public ResponseEntity<HttpStatus> unblockUser(@PathVariable int id) {
+        userService.unblockUser(id);
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
-    @PostMapping
-    public ResponseEntity<HttpStatus> blockUser(@RequestBody Map<String, String> userData) {
-        requestHelper(userData);
-        String username = userData.get("username");
-        userService.blockUser(username);
+    @PostMapping("/block/{id}")
+    public ResponseEntity<HttpStatus> blockUser(@PathVariable int id) {
+        userService.blockUser(id);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @DeleteMapping("/friends/request")
-    public ResponseEntity<HttpStatus> cancelFriendRequest(@RequestBody Map<String, String> userData) {
-        requestHelper(userData);
-        String username = userData.get("username");
-        userService.cancelFriendRequest(username);
+    @DeleteMapping("/friends/request/{id}")
+    public ResponseEntity<HttpStatus> cancelFriendRequest(@PathVariable int id) {
+        userService.cancelFriendRequest(id);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @PatchMapping("/friends/request")
-    public ResponseEntity<HttpStatus> acceptFriend(@RequestBody Map<String, String> userData) {
-        requestHelper(userData);
-        String username = userData.get("username");
-        userService.acceptFriend(username);
+    @PatchMapping("/friends/request/{id}")
+    public ResponseEntity<HttpStatus> acceptFriendRequest(@PathVariable int id) {
+        userService.acceptFriend(id);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
@@ -132,7 +137,7 @@ public class UsersController {
     }
 
     @GetMapping("/friends")
-    public List<ResponseUserDTO> getUserFriends() {
+    public List<ShowUserDTO> getUserFriends() {
         return userService.getAllUserFriends();
     }
 
@@ -153,17 +158,13 @@ public class UsersController {
     }
 
     private void requestHelper(Map<String, String> userData) {
-        if (userData.get("username") == null) {
+        if (userData.get("username") == null || userData.get("username").isEmpty()) {
             throw new UserException("Invalid username");
         }
     }
 
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleException(AbstractException e) {
-        ErrorResponse errorResponse = new ErrorResponse(
-                e.getMessage(),
-                System.currentTimeMillis()
-        );
-        return ResponseEntity.badRequest().body(errorResponse);
+        return new ResponseEntity<>(new ErrorResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
     }
 }

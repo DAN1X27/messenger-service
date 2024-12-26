@@ -1,7 +1,6 @@
 package danix.app.messenger_service.config;
 
-import danix.app.messenger_service.security.PersonDetailsService;
-import lombok.AllArgsConstructor;
+import danix.app.messenger_service.security.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,8 +20,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
-public class SecurityConf {
-    private final PersonDetailsService personDetailsService;
+public class SecurityConfig {
+    private final UserDetailsServiceImpl personDetailsService;
     private final JwtFilter jwtFilter;
 
     @Bean

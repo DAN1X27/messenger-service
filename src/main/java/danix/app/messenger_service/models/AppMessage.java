@@ -20,7 +20,7 @@ public class AppMessage {
     private String message;
 
     @Column(name = "sent_date")
-    private LocalDateTime sentDate;
+    private LocalDateTime sentTime;
 
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
@@ -32,7 +32,7 @@ public class AppMessage {
     public AppMessage(String message, User user) {
         this.message = message;
         this.user = user;
-        sentDate = LocalDateTime.now();
+        sentTime = LocalDateTime.now();
         removeDate = LocalDateTime.now().plusDays(3);
     }
 }

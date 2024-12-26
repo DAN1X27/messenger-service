@@ -8,8 +8,9 @@ create table person
     role        varchar not null,
     description varchar,
     is_private  boolean not null,
-    status      varchar default 'REGISTERED'::character varying                           not null,
-    image       varchar default '3a2cd62f-121a-48b5-b0aa-e54454d4d996'::character varying not null
+    status      varchar default 'REGISTERED'::character varying not null,
+    image       varchar not null,
+    online_status varchar not null
 );
 
 create table users_chats
@@ -48,12 +49,9 @@ create table email_keys
 
 create table groups
 (
-    id          integer generated always as identity
-        primary key,
+    id          integer generated always as identity primary key,
     name        varchar not null,
-    owner_id    integer
-        references person
-            on delete cascade,
+    owner_id    integer references person on delete cascade,
     created_at  date    not null,
     description varchar,
     image       varchar default '393de5ef-bd11-4057-9863-77d49c47c806'::character varying not null
@@ -61,35 +59,23 @@ create table groups
 
 create table group_users
 (
-    id       integer generated always as identity
-        primary key,
-    user_id  integer
-        references person
-            on delete cascade,
-    group_id integer
-        references groups
-            on delete cascade,
+    id       integer generated always as identity primary key,
+    user_id  integer references person on delete cascade,
+    group_id integer references groups on delete cascade,
     is_admin boolean not null
 );
 
 create table groups_actions_messages
 (
-    id       bigint generated always as identity
-        primary key,
+    id       bigint generated always as identity primary key,
     message  varchar not null,
-    group_id integer
-        references groups
-            on delete cascade
+    group_id integer references groups on delete cascade
 );
 
 create table groups_banned_users
 (
-    user_id  integer not null
-        references person
-            on delete cascade,
-    group_id integer not null
-        references groups
-            on delete cascade,
+    user_id  integer not null references person on delete cascade,
+    group_id integer not null references groups on delete cascade,
     primary key (user_id, group_id)
 );
 
@@ -293,5 +279,3 @@ create table tokens
             on delete cascade,
     expired_date date
 );
-
-

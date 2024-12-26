@@ -1,13 +1,13 @@
 package danix.app.messenger_service.models;
 
 import jakarta.persistence.*;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
 @Entity
 @Table(name = "channels_posts_likes")
-@Getter
-@Setter
+@Data
 public class ChannelPostLike {
 
     @EmbeddedId

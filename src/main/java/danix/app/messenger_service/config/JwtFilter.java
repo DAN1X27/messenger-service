@@ -2,7 +2,7 @@ package danix.app.messenger_service.config;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import danix.app.messenger_service.security.JWTUtil;
-import danix.app.messenger_service.security.PersonDetailsService;
+import danix.app.messenger_service.security.UserDetailsServiceImpl;
 import danix.app.messenger_service.services.TokensService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -21,44 +21,40 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
     private final JWTUtil jwtUtil;
-    private final PersonDetailsService detailsService;
+    private final UserDetailsServiceImpl detailsService;
     private final TokensService tokensService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String authHeader = request.getHeader("Authorization");
 
-        if(authHeader != null && !authHeader.isBlank() && authHeader.startsWith("Bearer ")) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
-        try {
-            if(!tokensService.isValid(jwtUtil.getIdFromToken(token))) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+            if (token.isBlank()) {
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
-        }catch (IllegalStateException e) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-        }
-            if (token.isBlank()) {
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                        "Invalid JWT token in Bearer Header");
-            }else {
-                try {
-                    String email = jwtUtil.validateTokenAndRetrieveClaim(token);
-                    UserDetails userDetails = detailsService.loadUserByUsername(email);
-                    UsernamePasswordAuthenticationToken authToken =
-                            new UsernamePasswordAuthenticationToken(userDetails,
-                                    userDetails.getPassword(), userDetails.getAuthorities());
-
-                    if (SecurityContextHolder.getContext().getAuthentication() == null) {
-                        SecurityContextHolder.getContext().setAuthentication(authToken);
-                    }
-
-                }catch (JWTVerificationException e) {
-                    response.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                            "Invalid JWT token");
+            try {
+                if (!tokensService.isValid(jwtUtil.getIdFromToken(token))) {
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                    return;
                 }
+            } catch (IllegalStateException e) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
             }
-
+            try {
+                String email = jwtUtil.validateTokenAndRetrieveClaim(token);
+                UserDetails userDetails = detailsService.loadUserByUsername(email);
+                UsernamePasswordAuthenticationToken authenticationToken =
+                        new UsernamePasswordAuthenticationToken(userDetails,
+                                userDetails.getPassword(), userDetails.getAuthorities());
+                if (SecurityContextHolder.getContext().getAuthentication() == null) {
+                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                }
+            } catch (JWTVerificationException e) {
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            }
+        }
         filterChain.doFilter(request, response);
     }
 }

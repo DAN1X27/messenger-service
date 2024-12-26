@@ -10,6 +10,5 @@ import java.util.List;
 public class ShowChatDTO {
     private int id;
     private List<ResponseChatMessageDTO> messages;
-    private String user1Username;
-    private String user2Username;
+    private ResponseUserDTO user;
 }

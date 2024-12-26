@@ -3,15 +3,16 @@ package danix.app.messenger_service.services;
 import danix.app.messenger_service.dto.*;
 import danix.app.messenger_service.models.*;
 import danix.app.messenger_service.repositories.*;
-import danix.app.messenger_service.security.PersonDetails;
+import danix.app.messenger_service.security.UserDetailsImpl;
 import danix.app.messenger_service.util.ImageException;
+import danix.app.messenger_service.util.ImageService;
 import danix.app.messenger_service.util.UserException;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class UserService implements Image {
     private final UsersRepository usersRepository;
     private final ModelMapper modelMapper;
@@ -36,42 +38,21 @@ public class UserService implements Image {
     private final UsersFriendsRepository usersFriendsRepository;
     private final BlockedUsersRepository blockedUsersRepository;
     private final AppMessagesRepository appMessagesRepository;
-    private final GroupsService groupsService;
-    private final ChatsService chatsService;
     private final EmailsKeysRepository emailsKeysRepository;
-    private final ChannelsService channelsService;
     private final KafkaTemplate<String, String> kafkaTemplate;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Value("${default_user_image_uuid}")
     private String DEFAULT_IMAGE_UUID;
     @Value("${users_images_path}")
     private String USERS_IMAGES_PATH;
 
-    @Autowired
-    public UserService(UsersRepository usersRepository, ModelMapper modelMapper,
-                       @Lazy PasswordEncoder passwordEncoder, TokensService tokensService,
-                       BannedUsersRepository bannedUsersRepository, UsersFriendsRepository usersFriendsRepository,
-                       BlockedUsersRepository blockedUsersRepository, AppMessagesRepository appMessagesRepository,
-                       @Lazy GroupsService groupsService, @Lazy ChatsService chatsService, EmailsKeysRepository emailsKeysRepository,
-                       @Lazy ChannelsService channelsService, KafkaTemplate<String, String> kafkaTemplate) {
-        this.usersRepository = usersRepository;
-        this.modelMapper = modelMapper;
-        this.passwordEncoder = passwordEncoder;
-        this.tokensService = tokensService;
-        this.bannedUsersRepository = bannedUsersRepository;
-        this.usersFriendsRepository = usersFriendsRepository;
-        this.blockedUsersRepository = blockedUsersRepository;
-        this.appMessagesRepository = appMessagesRepository;
-        this.groupsService = groupsService;
-        this.chatsService = chatsService;
-        this.emailsKeysRepository = emailsKeysRepository;
-        this.channelsService = channelsService;
-        this.kafkaTemplate = kafkaTemplate;
-    }
-
-    public ResponseUserDTO findUser(String username) {
-        return convertToResponsePersonDTO(usersRepository.findByUsername(username)
-                .orElseThrow(() -> new UserException("User not found")));
+    public ShowUserDTO findUser(String username) {
+        User user = usersRepository.findByUsername(username).orElse(null);
+        if (user == null || user.getId() == getCurrentUser().getId()) {
+            return null;
+        }
+        return modelMapper.map(user, ShowUserDTO.class);
     }
 
     public User getById(int id) {
@@ -80,20 +61,7 @@ public class UserService implements Image {
     }
 
     public UserInfoDTO getUserInfo() {
-        User currentUser = getCurrentUser();
-        return UserInfoDTO.builder()
-                .username(currentUser.getUsername())
-                .email(currentUser.getEmail())
-                .appMessages(getUserMessages())
-                .groups(groupsService.getAllUserGroups())
-                .groupInvites(groupsService.getAllUserGroupsInvites().stream()
-                        .map(this::convertToResponseGroupInviteDTO)
-                        .toList())
-                .channels(channelsService.getAllUserChannels())
-                .channelInvites(channelsService.getChannelsInvites())
-                .friends(getAllUserFriends())
-                .chats(chatsService.getAllUserChats())
-                .build();
+        return modelMapper.map(getCurrentUser(), UserInfoDTO.class);
     }
 
     @Override
@@ -130,15 +98,6 @@ public class UserService implements Image {
         currentUser.setImageUUID(DEFAULT_IMAGE_UUID);
     }
 
-    private ResponseGroupInviteDTO convertToResponseGroupInviteDTO(GroupInvite groupInvite) {
-        ResponseGroupInviteDTO responseGroupInviteDTO = new ResponseGroupInviteDTO();
-        responseGroupInviteDTO.setGroupId(groupInvite.getGroup().getId());
-        responseGroupInviteDTO.setGroupName(groupInvite.getGroup().getName());
-        responseGroupInviteDTO.setGroupName(groupInvite.getGroup().getName());
-        responseGroupInviteDTO.setInvitedAt(groupInvite.getSentTime());
-        return responseGroupInviteDTO;
-    }
-
     public User getByEmail(String email) {
         return usersRepository.findByEmail(email)
                 .orElseThrow(() -> new UserException("User not found"));
@@ -149,7 +108,7 @@ public class UserService implements Image {
                 .orElseThrow(() -> new UserException("User not found"));
     }
 
-    public List<ResponseAppMessageDTO> getUserMessages() {
+    public List<ResponseAppMessageDTO> getAppMessages() {
         User currentUser = getCurrentUser();
         return appMessagesRepository.findByUser(currentUser).stream()
                 .map(msg -> modelMapper.map(msg, ResponseAppMessageDTO.class))
@@ -159,14 +118,14 @@ public class UserService implements Image {
     public List<ResponseUserDTO> getAllFriendsRequests() {
         return usersFriendsRepository.findByFriend(getCurrentUser()).stream()
                 .filter(userFriend -> userFriend.getStatus() == FriendsStatus.WAITING)
-                .map(userFriend -> convertToResponsePersonDTO(userFriend.getOwner()))
+                .map(userFriend -> modelMapper.map(userFriend, ResponseUserDTO.class))
                 .collect(Collectors.toList());
     }
 
-    public List<ResponseUserDTO> getAllUserFriends() {
+    public List<ShowUserDTO> getAllUserFriends() {
         return usersFriendsRepository.findByOwnerOrFriend(getCurrentUser(), getCurrentUser()).stream()
-                .filter(friend -> friend.getStatus() == FriendsStatus.ACCEPTED)
-                .map(friend -> convertToResponsePersonDTO(friend.getFriend()))
+                .filter(user -> user.getStatus() == FriendsStatus.ACCEPTED)
+                .map(user -> modelMapper.map(user.getFriend(), ShowUserDTO.class))
                 .collect(Collectors.toList());
     }
 
@@ -185,50 +144,45 @@ public class UserService implements Image {
     }
 
     @Transactional
-    public void cancelFriendRequest(String username) {
-        User user = getByUsername(username);
-        usersFriendsRepository.findByOwnerAndFriend(getCurrentUser(), user)
-                .ifPresentOrElse(userFriend -> {
-                    if (userFriend.getStatus() != FriendsStatus.WAITING) {
-                        throw new UserException("The person is already a friend of the user");
-                    }
-                    usersFriendsRepository.delete(userFriend);
-                }, () -> {
-                    throw new UserException("User did not send a request to this person");
-                });
+    public void cancelFriendRequest(int userId) {
+        User user = getById(userId);
+        usersFriendsRepository.findByOwnerAndFriend(getCurrentUser(), user).ifPresentOrElse(userFriend -> {
+            if (userFriend.getStatus() != FriendsStatus.WAITING) {
+                throw new UserException("User is already in your friend list");
+            }
+            usersFriendsRepository.delete(userFriend);
+        }, () -> {
+            throw new UserException("Request not found");
+        });
     }
 
     @Transactional
     public void deleteFriend(String username) {
         User friend = getByUsername(username);
         usersFriendsRepository.findByOwnerAndFriend(getCurrentUser(), friend)
-                .ifPresentOrElse(usersFriendsRepository::delete, () -> {
-                    usersFriendsRepository.findByOwnerAndFriend(friend, getCurrentUser())
-                            .ifPresentOrElse(usersFriendsRepository::delete, () -> {
-                                throw new UserException("User is not exist in your friends");
-                            });
-                });
+                .ifPresentOrElse(usersFriendsRepository::delete, () -> usersFriendsRepository.findByOwnerAndFriend(friend, getCurrentUser())
+                        .ifPresentOrElse(usersFriendsRepository::delete, () -> {
+                            throw new UserException("User is not exist in your friends");
+                        }));
     }
 
     @Transactional
-    public void blockUser(String username) {
-        User user = getByUsername(username);
+    public void blockUser(int id) {
+        User user = getById(id);
         blockedUsersRepository.findByOwnerAndBlockedUser(getCurrentUser(), user)
                 .ifPresentOrElse(blockedUser -> {
                     throw new UserException("User is already blocked");
                 }, () -> {
                     blockedUsersRepository.save(new BlockedUser(getCurrentUser(), user));
                     usersFriendsRepository.findByOwnerAndFriend(getCurrentUser(), user)
-                            .ifPresentOrElse(usersFriendsRepository::delete, () -> {
-                                usersFriendsRepository.findByOwnerAndFriend(user, getCurrentUser())
-                                        .ifPresent(usersFriendsRepository::delete);
-                            });
+                            .ifPresentOrElse(usersFriendsRepository::delete, () -> usersFriendsRepository.findByOwnerAndFriend(user, getCurrentUser())
+                                    .ifPresent(usersFriendsRepository::delete));
                 });
     }
 
     @Transactional
-    public void unblockUser(String username) {
-        User user = getByUsername(username);
+    public void unblockUser(int id) {
+        User user = getById(id);
         blockedUsersRepository.findByOwnerAndBlockedUser(getCurrentUser(), user)
                 .ifPresentOrElse(blockedUsersRepository::delete, () -> {
                     throw new UserException("User is not blocked");
@@ -236,8 +190,8 @@ public class UserService implements Image {
     }
 
     @Transactional
-    public void acceptFriend(String username) {
-        User user = getByUsername(username);
+    public void acceptFriend(int id) {
+        User user = getById(id);
         usersFriendsRepository.findByOwnerAndFriend(user, getCurrentUser())
                 .ifPresentOrElse(friendRequest -> {
                     if (friendRequest.getStatus() == FriendsStatus.ACCEPTED) {
@@ -256,10 +210,8 @@ public class UserService implements Image {
         blockedUsersRepository.findByOwnerAndBlockedUser(user, currentUser)
                 .ifPresentOrElse(blockedUser -> {
                     throw new UserException("The user has blocked you");
-                }, () -> {
-                    blockedUsersRepository.findByOwnerAndBlockedUser(currentUser, user)
-                            .ifPresent(blockedUsersRepository::delete);
-                });
+                }, () -> blockedUsersRepository.findByOwnerAndBlockedUser(currentUser, user)
+                        .ifPresent(blockedUsersRepository::delete));
         UserFriend userFriend = findUserFriend(user, currentUser);
         if (userFriend != null) {
             if (userFriend.getStatus() == FriendsStatus.WAITING) {
@@ -271,22 +223,24 @@ public class UserService implements Image {
     }
 
     @Transactional
-    public void banUser(BanUserDTO banUserDTO) {
-        User user = getByUsername(banUserDTO.getUsername());
+    public void banUser(int id, String reason) {
+        User user = getById(id);
         if (user.getUserStatus() == User.Status.BANNED) {
             throw new UserException("User is already banned");
         }
         user.setUserStatus(User.Status.BANNED);
-        tokensService.getAllUserTokens(user).forEach(token -> token.setStatus(TokenStatus.REVOKED));
-        bannedUsersRepository.save(new BannedUser(banUserDTO.getReason(), user));
+        user.setBanned(true);
+        tokensService.banUserTokens(id);
+        bannedUsersRepository.save(new BannedUser(reason, user));
     }
 
     @Transactional
-    public void unBanUser(String username) {
-        User user = getByUsername(username);
+    public void unBanUser(int id) {
+        User user = getById(id);
         BannedUser bannedUser = bannedUsersRepository.findByUser(user)
                 .orElseThrow(() -> new UserException("User is not banned"));
         user.setUserStatus(User.Status.REGISTERED);
+        user.setBanned(false);
         bannedUsersRepository.delete(bannedUser);
     }
 
@@ -310,16 +264,16 @@ public class UserService implements Image {
     public void temporalRegister(RegistrationUserDTO personDTO) {
         usersRepository.save(
                 User.builder()
-                .username(personDTO.getUsername())
-                .createdAt(LocalDateTime.now())
-                .description(personDTO.getDescription())
-                .email(personDTO.getEmail())
-                .role(User.Roles.ROLE_USER)
-                .password(passwordEncoder.encode(personDTO.getPassword()))
-                .isPrivate(personDTO.getIsPrivate() != null && personDTO.getIsPrivate())
-                .imageUUID(DEFAULT_IMAGE_UUID)
-                .userStatus(User.Status.TEMPORALLY_REGISTERED)
-                .build()
+                        .username(personDTO.getUsername())
+                        .createdAt(LocalDateTime.now())
+                        .description(personDTO.getDescription())
+                        .email(personDTO.getEmail())
+                        .role(User.Roles.ROLE_USER)
+                        .password(passwordEncoder.encode(personDTO.getPassword()))
+                        .isPrivate(personDTO.getIsPrivate() != null && personDTO.getIsPrivate())
+                        .imageUUID(DEFAULT_IMAGE_UUID)
+                        .userStatus(User.Status.TEMPORALLY_REGISTERED)
+                        .build()
         );
     }
 
@@ -344,23 +298,38 @@ public class UserService implements Image {
         key.setAttempts(key.getAttempts() + 1);
     }
 
-    UserFriend findUserFriend(User user1, User user2) {
+    @Transactional
+    public void updateOnlineStatus() {
+        User user = getById(getCurrentUser().getId());
+        switch (user.getOnlineStatus()) {
+            case ONLINE:
+                user.setOnlineStatus(User.OnlineStatus.OFFLINE);
+                break;
+            case OFFLINE:
+                user.setOnlineStatus(User.OnlineStatus.ONLINE);
+        }
+        ResponseUpdateUserOnlineStatusDTO respUser = new ResponseUpdateUserOnlineStatusDTO(user.getId(), user.getOnlineStatus());
+        user.getChats().forEach(chat -> {
+            messagingTemplate.convertAndSend("/topic/chat/" + chat.getId(), respUser);
+            int userId = chat.getUser1().getId() != user.getId() ? chat.getUser1().getId() : chat.getUser2().getId();
+            messagingTemplate.convertAndSend("/topic/user/" + userId + "/main", respUser);
+        });
+        user.getChannels().forEach(channelUser -> messagingTemplate.convertAndSend("/topic/channel/" + channelUser.getChannel().getId(), respUser));
+        user.getGroups().forEach(groupUser -> messagingTemplate.convertAndSend("/topic/group/" + groupUser.getGroup().getId(), respUser));
+    }
+
+    private UserFriend findUserFriend(User user1, User user2) {
         Optional<UserFriend> userFriend = usersFriendsRepository.findByOwnerAndFriend(user1, user2);
         if (userFriend.isPresent()) {
             return userFriend.get();
         }
         Optional<UserFriend> userFriend2 = usersFriendsRepository.findByOwnerAndFriend(user2, user1);
         return userFriend2.orElse(null);
-
-    }
-
-    private ResponseUserDTO convertToResponsePersonDTO(User user) {
-        return modelMapper.map(user, ResponseUserDTO.class);
     }
 
     public static User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        PersonDetails personDetails = (PersonDetails) authentication.getPrincipal();
-        return personDetails.getUser();
+        UserDetailsImpl userDetailsImpl = (UserDetailsImpl) authentication.getPrincipal();
+        return userDetailsImpl.getUser();
     }
 }

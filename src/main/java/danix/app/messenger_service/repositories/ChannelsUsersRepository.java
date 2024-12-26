@@ -11,7 +11,5 @@ import java.util.Optional;
 
 @Repository
 public interface ChannelsUsersRepository extends JpaRepository<ChannelUser, Integer> {
-    List<ChannelUser> findAllByUser(User user);
-
     Optional<ChannelUser> findByUserAndChannel(User user, Channel channel);
 }

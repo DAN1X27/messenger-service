@@ -7,7 +7,6 @@ import danix.app.messenger_service.util.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -26,11 +25,10 @@ public class ChatsController {
         return new ResponseEntity<>(chatsService.getAllUserChats(), HttpStatus.OK);
     }
 
-    @PostMapping()
-    public ResponseEntity<HttpStatus> createChat(@RequestBody Map<String, String> userData) {
-        requestHelper(userData);
-        chatsService.createChat(userData.get("username"));
-        return ResponseEntity.ok(HttpStatus.CREATED);
+    @PostMapping("/{userId}")
+    public ResponseEntity<HttpStatus> createChat(@PathVariable int userId) {
+        chatsService.createChat(userId);
+        return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
@@ -39,9 +37,9 @@ public class ChatsController {
         return new ResponseEntity<>(chatsService.showChat(id, page, count), HttpStatus.OK);
     }
 
-    @GetMapping("/message/image/{id}")
-    public ResponseEntity<?> getChatImages(@PathVariable long id) {
-        ResponseImageDTO image = chatsService.getChatImage(id);
+    @GetMapping("/message/{id}/image")
+    public ResponseEntity<?> getMessageImage(@PathVariable long id) {
+        ResponseImageDTO image = chatsMessagesService.getMessageImage(id);
         return ResponseEntity.status(HttpStatus.OK)
                 .contentType(image.getType())
                 .body(image.getImageData());
@@ -77,18 +75,8 @@ public class ChatsController {
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
-    private void requestHelper(Map<String, String> userData) {
-        if (userData.get("username") == null) {
-            throw new UserException("Invalid username");
-        }
-    }
-
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleException(AbstractException e) {
-        ErrorResponse errorResponse = new ErrorResponse(
-                e.getMessage(),
-                System.currentTimeMillis()
-        );
-        return ResponseEntity.badRequest().body(errorResponse);
+        return new ResponseEntity<>(new ErrorResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
     }
 }

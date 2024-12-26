@@ -10,7 +10,7 @@ import java.util.List;
 @Setter
 public class ResponseChannelPostDTO {
     private String text;
-    private String owner;
+    private ResponseUserDTO owner;
     private int commentsCount;
     private int likes;
     private boolean liked;
@@ -34,7 +34,7 @@ public class ResponseChannelPostDTO {
 
     public static class Builder {
         private String text;
-        private String owner;
+        private ResponseUserDTO owner;
         private int commentsCount;
         private int likes;
         private long id;
@@ -51,7 +51,7 @@ public class ResponseChannelPostDTO {
             return this;
         }
 
-        public Builder owner(String owner) {
+        public Builder owner(ResponseUserDTO owner) {
             this.owner = owner;
             return this;
         }

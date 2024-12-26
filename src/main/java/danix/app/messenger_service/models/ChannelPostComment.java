@@ -12,9 +12,10 @@ public class ChannelPostComment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
-    private String comment;
+    @Column(name = "comment")
+    private String text;
 
     @ManyToOne
     @JoinColumn(name = "owner_id", referencedColumnName = "id")

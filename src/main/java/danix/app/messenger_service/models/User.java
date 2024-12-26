@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 
 @Entity
 @Table(name = "Person")
@@ -33,6 +34,10 @@ public class User {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "online_status")
+    private OnlineStatus onlineStatus;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role")
@@ -87,6 +92,9 @@ public class User {
     @Column(name = "image")
     private String imageUUID;
 
+    @Column(name = "is_banned")
+    private boolean isBanned;
+
     public static Builder builder() {
         return new Builder();
     }
@@ -101,6 +109,8 @@ public class User {
         this.role = builder.role;
         this.userStatus = builder.userStatus;
         this.imageUUID = builder.imageUUID;
+        this.onlineStatus = OnlineStatus.ONLINE;
+        this.isBanned = false;
     }
 
     public static class Builder {
@@ -171,7 +181,12 @@ public class User {
     }
 
     public enum Roles {
-       ROLE_USER,
-       ROLE_ADMIN
+        ROLE_USER,
+        ROLE_ADMIN
+    }
+
+    public enum OnlineStatus {
+        ONLINE,
+        OFFLINE
     }
 }

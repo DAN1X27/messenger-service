@@ -5,11 +5,13 @@ import danix.app.messenger_service.models.*;
 import danix.app.messenger_service.repositories.*;
 import danix.app.messenger_service.util.ChannelException;
 import danix.app.messenger_service.util.ImageException;
+import danix.app.messenger_service.util.ImageService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,6 +27,7 @@ import static danix.app.messenger_service.services.UserService.getCurrentUser;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ChannelsService implements Image {
+
     private final ChannelsRepository channelsRepository;
     private final ChannelsUsersRepository channelsUsersRepository;
     private final ChannelsInvitesRepository channelsInvitesRepository;
@@ -37,7 +40,7 @@ public class ChannelsService implements Image {
     private final BannedChannelsUsersRepository bannedUsersRepository;
     private final ChannelsPostsLikesRepository channelsPostsLikesRepository;
     private final ChannelsPostsRepository channelsPostsRepository;
-
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Value("${default_channels_image_uuid}")
     private String DEFAULT_IMAGE_UUID;
@@ -45,7 +48,8 @@ public class ChannelsService implements Image {
     private String AVATARS_PATH;
 
     public List<ResponseChannelDTO> getAllUserChannels() {
-        return channelsUsersRepository.findAllByUser(getCurrentUser()).stream()
+        User currentUser = userService.getById(getCurrentUser().getId());
+        return currentUser.getChannels().stream()
                 .filter(user -> !user.getChannel().isBaned())
                 .map(user -> modelMapper.map(user.getChannel(), ResponseChannelDTO.class))
                 .collect(Collectors.toList());
@@ -57,10 +61,10 @@ public class ChannelsService implements Image {
         if (!channel.getIsPrivate() && !channel.isBaned() || getCurrentUser().getRole() == User.Roles.ROLE_ADMIN) {
             return modelMapper.map(channel, ResponseChannelDTO.class);
         }
-        throw new ChannelException("Channel not found");
+        return null;
     }
 
-    List<ResponseChannelInviteDTO> getChannelsInvites() {
+    public List<ResponseChannelInviteDTO> getChannelsInvites() {
         return channelsInvitesRepository.findAllByUser(getCurrentUser()).stream()
                 .map(this::convertToInviteDTO)
                 .collect(Collectors.toList());
@@ -93,11 +97,12 @@ public class ChannelsService implements Image {
             channelUser.setChannel(channel);
             channelUser.setUser(getCurrentUser());
             channelUser.setIsAdmin(true);
-            channelsUsersRepository.save(channelUser);
             channelsRepository.save(channel);
+            channelsUsersRepository.save(channelUser);
         });
     }
 
+    @Override
     @Transactional
     public void addImage(MultipartFile image, int channelId) {
         Channel channel = getById(channelId);
@@ -112,24 +117,31 @@ public class ChannelsService implements Image {
         }
         ImageService.delete(Path.of(AVATARS_PATH), channel.getImage());
         channel.setImage(uuid);
+        messagingTemplate.convertAndSend("/topic/user/" + getCurrentUser().getId() + "/main",
+                new ResponseChannelUpdatingDTO(modelMapper.map(channel, ResponseChannelDTO.class), true));
     }
 
+    @Override
     public ResponseImageDTO getImage(int channelId) {
         Channel channel = getById(channelId);
         getChannelUser(getCurrentUser(), channel);
         return ImageService.download(Path.of(AVATARS_PATH), channel.getImage());
     }
 
+    @Override
     @Transactional
     public void deleteImage(int channelId) {
         Channel channel = getById(channelId);
         if (channel.getOwner().getId() != getCurrentUser().getId()) {
             throw new ImageException("Current user must be owner of channel");
-        } else if (channel.getImage().equals(DEFAULT_IMAGE_UUID)) {
+        }
+        if (channel.getImage().equals(DEFAULT_IMAGE_UUID)) {
             throw new ImageException("Channel already have default image");
         }
         ImageService.delete(Path.of(AVATARS_PATH), channel.getImage());
         channel.setImage(DEFAULT_IMAGE_UUID);
+        messagingTemplate.convertAndSend("/topic/user/" + getCurrentUser().getId() + "/main",
+                new ResponseChannelUpdatingDTO(modelMapper.map(channel, ResponseChannelDTO.class), true));
     }
 
     @Transactional
@@ -143,12 +155,12 @@ public class ChannelsService implements Image {
         channelsInvitesRepository.findByUserAndChannel(user, channel).ifPresent(invite -> {
             throw new ChannelException("User already have invite to this channel");
         });
-        if (channelsUsersRepository.findByUserAndChannel(user, channel).isPresent()) {
+        channelsUsersRepository.findByUserAndChannel(user, channel).ifPresent(channelUser -> {
             throw new ChannelException("User already exist in this channel");
-        } else if (bannedUsersRepository.findByUserAndChannel(user, channel).isPresent()) {
+        });
+        bannedUsersRepository.findByUserAndChannel(user, channel).ifPresent(bannedUser -> {
             throw new ChannelException("User is banned in this channel");
-        }
-
+        });
         ChannelInvite channelInvite = new ChannelInvite();
         channelInvite.setChannel(channel);
         channelInvite.setUser(user);
@@ -169,17 +181,22 @@ public class ChannelsService implements Image {
     }
 
     @Transactional
-    public void banChannel(BanChannelDTO banChannelDTO) {
-        Channel channel = getById(banChannelDTO.getChannelId());
+    public void banChannel(int id, String reason) {
+        Channel channel = getById(id);
         if (channel.isBaned()) throw new ChannelException("Channel is already banned");
         channel.setBaned(true);
         kafkaTemplate.send("ban_channel-topic", channel.getOwner().getEmail(),
-                "Your channel with name " + channel.getName() + " has been banned for reason: " + banChannelDTO.getReason());
+                "Your channel with name " + channel.getName() + " has been banned for reason: " + reason);
         AppMessage appMessage = new AppMessage(
-                "Your channel with name " + channel.getName() + " has been banned for reason: " + banChannelDTO.getReason(),
+                "Your channel with name " + channel.getName() + " has been banned for reason: " + reason,
                 channel.getOwner()
         );
         appMessagesRepository.save(appMessage);
+        sendAppMessageToTopic(appMessage);
+        messagingTemplate.convertAndSend("/topic/user/" + getCurrentUser().getId() + "/main",
+                new ResponseChannelDeletionDTO(channel.getId()));
+        messagingTemplate.convertAndSend("/topic/channel/" + channel.getId(),
+                new ResponseChannelDeletionDTO(channel.getId()));
     }
 
     @Transactional
@@ -194,6 +211,7 @@ public class ChannelsService implements Image {
                 channel.getOwner()
         );
         appMessagesRepository.save(appMessage);
+        sendAppMessageToTopic(appMessage);
     }
 
     @Transactional
@@ -220,8 +238,7 @@ public class ChannelsService implements Image {
     public void banUser(int channelId, int userId) {
         Channel channel = getById(channelId);
         User currentUser = getCurrentUser();
-        ChannelUser channelUser = channelsUsersRepository.findByUserAndChannel(currentUser, channel)
-                .orElseThrow(() -> new ChannelException("Current user not exist in this channel"));
+        ChannelUser channelUser = getChannelUser(currentUser, channel);
         User user = userService.getById(userId);
         if (!channelUser.getIsAdmin()) {
             throw new ChannelException("Current user is not admin");
@@ -230,12 +247,17 @@ public class ChannelsService implements Image {
             throw new ChannelException("User already banned");
         });
         channelsUsersRepository.findByUserAndChannel(user, channel).ifPresent(channelUser1 -> {
-            if (channelUser1.getIsAdmin() && !channel.getOwner().getUsername().equals(getCurrentUser().getUsername())) {
+            if (channelUser1.getIsAdmin() && !channel.getOwner().getUsername().equals(currentUser.getUsername())) {
                 throw new ChannelException("Current user can't ban admin");
             }
             channelsUsersRepository.delete(channelUser1);
             AppMessage appMessage = new AppMessage("You were banned in channel - " + channel.getName(), user);
             appMessagesRepository.save(appMessage);
+            sendAppMessageToTopic(appMessage);
+            messagingTemplate.convertAndSend("/topic/user/" + getCurrentUser().getId() + "/main",
+                    new ResponseChannelDeletionDTO(channelId));
+            messagingTemplate.convertAndSend("/topic/channel/" + channelId,
+                    new ResponseBannedUserDTO(userId));
         });
         BannedChannelUser bannedChannelUser = new BannedChannelUser();
         bannedChannelUser.setChannel(channel);
@@ -318,6 +340,8 @@ public class ChannelsService implements Image {
             channel.setName(updateChannelDTO.getName() == null ? channel.getName() : updateChannelDTO.getName());
             channel.setDescription(updateChannelDTO.getDescription() == null ? channel.getDescription() : updateChannelDTO.getDescription());
             channel.setIsPrivate(updateChannelDTO.getIsPrivate() == null ? channel.getIsPrivate() : updateChannelDTO.getIsPrivate());
+            messagingTemplate.convertAndSend("/topic/user/" + getCurrentUser().getId() + "/main",
+                    new ResponseChannelUpdatingDTO(modelMapper.map(channel, ResponseChannelDTO.class), false));
         } else {
             throw new ChannelException("Current user is not owner of this channel");
         }
@@ -328,6 +352,10 @@ public class ChannelsService implements Image {
         Channel channel = getById(id);
         if (channel.getOwner().getUsername().equals(getCurrentUser().getUsername())) {
             channelsRepository.delete(channel);
+            messagingTemplate.convertAndSend("/topic/user/" + getCurrentUser().getId() + "/main",
+                    new ResponseChannelDeletionDTO(id));
+            messagingTemplate.convertAndSend("/topic/channel/" + id,
+                    new ResponseChannelDeletionDTO(id));
         } else {
             throw new ChannelException("Current user is not owner of this channel");
         }
@@ -372,17 +400,17 @@ public class ChannelsService implements Image {
                 .collect(Collectors.toList());
     }
 
-    private ResponseChannelPostDTO convertToResponseChannelPostsDTO(ChannelPost channelPost) {
+    ResponseChannelPostDTO convertToResponseChannelPostsDTO(ChannelPost channelPost) {
         ResponseChannelPostDTO responseChannelPostDTO = ResponseChannelPostDTO.builder()
-                .text(channelPost.getPost())
+                .text(channelPost.getText())
                 .id(channelPost.getId())
-                .owner(channelPost.getOwner().getUsername())
-                .commentsCount(channelPost.getComments().size())
-                .likes(channelPost.getLikes().size())
+                .owner(modelMapper.map(channelPost.getOwner(), ResponseUserDTO.class))
+                .commentsCount(channelPost.getComments() != null ? channelPost.getComments().size() : 0)
+                .likes(channelPost.getLikes() != null ? channelPost.getLikes().size() : 0)
                 .contentType(channelPost.getContentType())
-                .images(channelPost.getImages().stream()
+                .images(channelPost.getImages() != null ? channelPost.getImages().stream()
                         .map(image -> new ResponseChannelPostImageDTO(image.getId()))
-                        .toList())
+                        .toList() : Collections.emptyList())
                 .build();
         channelsPostsLikesRepository.findByUserAndPost(getCurrentUser(), channelPost)
                 .ifPresentOrElse(like -> responseChannelPostDTO.setLiked(true), () -> responseChannelPostDTO.setLiked(false));
@@ -408,6 +436,11 @@ public class ChannelsService implements Image {
         channelUser.setUser(currentUser);
         channelUser.setIsAdmin(false);
         channelsUsersRepository.save(channelUser);
+    }
+
+    private void sendAppMessageToTopic(AppMessage appMessage) {
+        messagingTemplate.convertAndSend("/topic/user/" + getCurrentUser().getId() + "/main",
+                new ResponseAppMessageDTO(appMessage.getMessage(), appMessage.getSentTime()));
     }
 
     Channel getById(int id) {
