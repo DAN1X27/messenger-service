@@ -1,23 +1,22 @@
-#DESCRIPTION
--
+# DESCRIPTION
 ```
 This is messenger on Java Spring Boot, to test this project use postman.
 ```
 
-#LAUNCH
--
+# LAUNCH
+
 ```
 Downlod and launch 'Docker Desktop' and use commands: 'docker network create messenger-service-net', 
 'docker-compose up --build' to launch project, after that launch project 'messenger-service-email-sender'.
 Use command 'docker-compose down' to turn off project.
 The database is available at 'jdbc:postgresql://localhost:5433/messenger_service_db'.
 ```
-#ENDPOINTS
--
+# ENDPOINTS
+
 ```
 Use 'localhost:8080' for all endpoints.
 ```
-**AUTHENTICATION**
+### AUTHENTICATION
 
 * POST /auth/login
 ```
@@ -49,7 +48,7 @@ Use 'localhost:8080' for all endpoints.
 -BODY: email, newPassword, key.
 -RETURNS: Http status 'OK'.
 ```
-**USER**
+### USER
 
 * GET /user/info
 ```
@@ -168,7 +167,7 @@ Use 'localhost:8080' for all endpoints.
 -BODY: password(current password), newPassword.
 -RETURNS: Http status 'OK'.
 ```
-**ADMIN**
+### ADMIN
 ```
 To use these endpoints the user must have a role 'ADMIN'.
 You can change the user role in the database console with the command 'update table person set role = 'ROLE_ADMIN' where id = id'.
@@ -199,7 +198,7 @@ You can change the user role in the database console with the command 'update ta
 -HEADERS: 'Authorization' - 'Bearer ' + jwt token.
 -RETURNS: Http status 'OK'.
 ```
-**CHATS**
+### CHATS
 * GET /chats
 ```
 -ACTION: Returns all user chats.
@@ -269,7 +268,7 @@ You can change the user role in the database console with the command 'update ta
 -BODY: message(updated message).
 -RETURNS: Http status 'OK'.
 ```
-**GROUPS**
+### GROUPS
 * GET /groups
 ```
 -ACTION: Returns user groups.
@@ -427,7 +426,7 @@ desription(new group description, not required), groupId.
 -BODY: 
 -HEADERS: 'Authorization' - 'Bearer ' + jwt token.
 ```
-**CHANNELS**
+### CHANNELS
 * GET /channels
 ```
 -ACTION: Returns all user channels.
