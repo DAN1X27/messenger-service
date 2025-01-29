@@ -6,7 +6,7 @@ This is messenger on Java Spring Boot, to test this project use postman.
 # LAUNCH
 
 ```
-Downlod and launch 'Docker Desktop' and use commands: 'docker network create messenger-service-net', 
+Download and launch 'Docker Desktop' and use commands: 'docker network create messenger-service-net', 
 'docker-compose up --build' to launch project, after that launch project 'messenger-service-email-sender'.
 Use command 'docker-compose down' to turn off project.
 The database is available at 'jdbc:postgresql://localhost:5433/messenger_service_db'.
