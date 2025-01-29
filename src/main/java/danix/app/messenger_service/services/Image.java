@@ -1,6 +1,6 @@
 package danix.app.messenger_service.services;
 
-import danix.app.messenger_service.dto.ResponseImageDTO;
+import danix.app.messenger_service.dto.ResponseFileDTO;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface Image {
@@ -8,5 +8,5 @@ public interface Image {
 
     void deleteImage(int id);
 
-    ResponseImageDTO getImage(int id);
+    ResponseFileDTO getImage(int id);
 }

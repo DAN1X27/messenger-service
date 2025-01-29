@@ -2,12 +2,10 @@ package danix.app.messenger_service.controllers;
 
 import danix.app.messenger_service.dto.*;
 import danix.app.messenger_service.models.User;
-import danix.app.messenger_service.repositories.UsersRepository;
 import danix.app.messenger_service.services.UserService;
 import danix.app.messenger_service.util.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -35,10 +33,10 @@ public class UsersController {
 
     @GetMapping("/image")
     public ResponseEntity<?> showUserImage() {
-        ResponseImageDTO image = userService.getImage(UserService.getCurrentUser().getId());
+        ResponseFileDTO image = userService.getImage(UserService.getCurrentUser().getId());
         return ResponseEntity.status(HttpStatus.OK)
                 .contentType(image.getType())
-                .body(image.getImageData());
+                .body(image.getFileData());
     }
 
     @PatchMapping("/status")
@@ -73,15 +71,21 @@ public class UsersController {
 
     @GetMapping("/image/{id}")
     public ResponseEntity<?> findUserImage(@PathVariable int id) {
-        ResponseImageDTO image = userService.getImage(id);
+        ResponseFileDTO image = userService.getImage(id);
         return ResponseEntity.status(HttpStatus.OK)
                 .contentType(image.getType())
-                .body(image.getImageData());
+                .body(image.getFileData());
+    }
+
+    @PatchMapping("/private")
+    public ResponseEntity<HttpStatus> updatePrivate(@RequestParam("status") boolean status) {
+        userService.setPrivateStatus(status);
+        return ResponseEntity.ok(HttpStatus.OK);
     }
 
     @GetMapping("/friends/requests")
     public List<ResponseUserDTO> showFriendsRequests() {
-        return userService.getAllFriendsRequests();
+        return userService.getAllFriendRequests();
     }
 
     @DeleteMapping("/unblock/{id}")
@@ -96,13 +100,19 @@ public class UsersController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @DeleteMapping("/friends/request/{id}")
+    @DeleteMapping("/friend/request/cancel/{id}")
     public ResponseEntity<HttpStatus> cancelFriendRequest(@PathVariable int id) {
         userService.cancelFriendRequest(id);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @PatchMapping("/friends/request/{id}")
+    @DeleteMapping("/friend/request/reject/{id}")
+    public ResponseEntity<HttpStatus> rejectFriendRequest(@PathVariable int id) {
+        userService.rejectFriendRequest(id);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PatchMapping("/friend/request/{id}")
     public ResponseEntity<HttpStatus> acceptFriendRequest(@PathVariable int id) {
         userService.acceptFriend(id);
         return new ResponseEntity<>(HttpStatus.OK);
@@ -141,19 +151,15 @@ public class UsersController {
         return userService.getAllUserFriends();
     }
 
-    @DeleteMapping("/friends")
-    public ResponseEntity<HttpStatus> deleteFriend(@RequestBody Map<String, String> userData) {
-        requestHelper(userData);
-        String username = userData.get("username");
-        userService.deleteFriend(username);
+    @DeleteMapping("/friend/{id}")
+    public ResponseEntity<HttpStatus> deleteFriend(@PathVariable int id) {
+        userService.deleteFriend(id);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @PostMapping("/friends")
-    public ResponseEntity<HttpStatus> addFriend(@RequestBody Map<String, String> userData) {
-        requestHelper(userData);
-        String username = userData.get("username");
-        userService.addFriend(username);
+    @PostMapping("/friend/{id}")
+    public ResponseEntity<HttpStatus> addFriend(@PathVariable int id) {
+        userService.addFriend(id);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 

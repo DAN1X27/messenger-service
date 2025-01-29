@@ -25,6 +25,11 @@ public class ChannelUser {
     @Column(name = "is_admin")
     private Boolean isAdmin;
 
+    public ChannelUser(User user, Channel channel) {
+        this.user = user;
+        this.channel = channel;
+    }
+
     public String getUsername() {
         return user.getUsername();
     }

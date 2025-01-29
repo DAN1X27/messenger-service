@@ -62,6 +62,9 @@ public class User {
     @OneToMany(mappedBy = "owner")
     private List<Group> groupsOwner;
 
+    @ManyToMany(mappedBy = "bannedUsers")
+    private List<Group> bannedGroups;
+
     @OneToMany(mappedBy = "user")
     private List<GroupUser> groups;
 
@@ -72,13 +75,10 @@ public class User {
     private List<ChannelUser> channels;
 
     @OneToMany(mappedBy = "user")
-    private List<GroupBannedUser> bannedGroups;
-
-    @OneToMany(mappedBy = "user")
     private List<AppMessage> appMessages;
 
-    @OneToMany(mappedBy = "user")
-    private List<BannedChannelUser> bannedChannels;
+    @ManyToMany(mappedBy = "bannedUsers")
+    private List<Channel> bannedChannels;
 
     @OneToMany(mappedBy = "user")
     private List<GroupInvite> groupInvites;
@@ -86,11 +86,11 @@ public class User {
     @OneToMany(mappedBy = "user")
     private List<ChannelInvite> channelInvites;
 
-    @OneToMany(mappedBy = "user")
-    private List<ChannelPostLike> channelsPostsLikes;
-
     @Column(name = "image")
     private String imageUUID;
+
+    @ManyToMany(mappedBy = "likes")
+    private List<ChannelPost> postsLikes;
 
     @Column(name = "is_banned")
     private boolean isBanned;

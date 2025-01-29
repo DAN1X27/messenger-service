@@ -19,7 +19,6 @@ import java.util.Map;
 @RequestMapping("/admin")
 public class AdminController {
     private final UserService userService;
-    private final KafkaTemplate<String, String> kafkaTemplate;
     private final ChannelsService channelsService;
 
     @PatchMapping("/user/ban/{id}")
@@ -28,17 +27,13 @@ public class AdminController {
         if (reason == null || reason.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        User user = userService.getById(id);
         userService.banUser(id, reason);
-        kafkaTemplate.send("ban_user-topic", user.getEmail(), reason);
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
     @PatchMapping("/user/unban/{id}")
     public ResponseEntity<HttpStatus> unBanUser(@PathVariable int id) {
-        User person = userService.getById(id);
-        userService.unBanUser(id);
-        kafkaTemplate.send("unban_user-topic", person.getEmail());
+        userService.unbanUser(id);
         return ResponseEntity.ok(HttpStatus.OK);
     }
 

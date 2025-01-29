@@ -1,7 +1,9 @@
 package danix.app.messenger_service.models;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
@@ -34,4 +36,9 @@ public class UserFriend {
     }
 
     public UserFriend() {}
+
+    public enum FriendsStatus {
+        WAITING,
+        ACCEPTED
+    }
 }

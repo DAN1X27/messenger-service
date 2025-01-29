@@ -5,10 +5,10 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ResponseChannelPostImageDTO {
+public class ResponseChannelPostFilesDTO {
     private long id;
 
-    public ResponseChannelPostImageDTO(long id) {
+    public ResponseChannelPostFilesDTO(long id) {
         this.id = id;
     }
 }

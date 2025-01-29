@@ -1,6 +1,7 @@
 package danix.app.messenger_service.controllers;
 
 import danix.app.messenger_service.dto.*;
+import danix.app.messenger_service.models.ContentType;
 import danix.app.messenger_service.services.ChannelsPostsService;
 import danix.app.messenger_service.services.ChannelsService;
 import danix.app.messenger_service.util.AbstractException;
@@ -12,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -30,6 +32,11 @@ public class ChannelsController {
     @GetMapping
     public List<ResponseChannelDTO> getUserChannels() {
         return channelsService.getAllUserChannels();
+    }
+
+    @GetMapping("/users/banned/{id}")
+    public List<ResponseUserDTO> getBannedUsers(@PathVariable int id) {
+        return channelsService.getBannedUsers(id);
     }
 
     @GetMapping("/invites")
@@ -55,7 +62,7 @@ public class ChannelsController {
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
-    @DeleteMapping("/leave/{id}")
+    @DeleteMapping("/{id}/leave")
     public ResponseEntity<HttpStatus> leaveFromChannel(@PathVariable int id) {
         channelsService.leaveChannel(id);
         return ResponseEntity.ok(HttpStatus.OK);
@@ -71,16 +78,16 @@ public class ChannelsController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ShowChannelDTO> showChannel(@PathVariable int id, @RequestParam("page") int page,
-                                                      @RequestParam("posts") int posts) {
-        return new ResponseEntity<>(channelsService.showChannel(id, page, posts), HttpStatus.OK);
+                                                      @RequestParam("count") int count) {
+        return new ResponseEntity<>(channelsService.showChannel(id, page, count), HttpStatus.OK);
     }
 
     @GetMapping("/{id}/image")
     public ResponseEntity<?> getChannelImage(@PathVariable int id) {
-        ResponseImageDTO image = channelsService.getImage(id);
+        ResponseFileDTO image = channelsService.getImage(id);
         return ResponseEntity.status(HttpStatus.OK)
                 .contentType(image.getType())
-                .body(image.getImageData());
+                .body(image.getFileData());
     }
 
     @PatchMapping("/{id}/image")
@@ -98,6 +105,11 @@ public class ChannelsController {
     @GetMapping("/{id}/logs")
     public ResponseEntity<List<ResponseChannelLogDTO>> showLogs(@PathVariable int id) {
         return new ResponseEntity<>(channelsService.showChannelLogs(id), HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}/options")
+    public ResponseEntity<ChannelsOptionsDTO> getChannelOptions(@PathVariable int id) {
+        return new ResponseEntity<>(channelsService.getChannelOptions(id), HttpStatus.OK);
     }
 
     @PostMapping
@@ -119,6 +131,12 @@ public class ChannelsController {
                                                     BindingResult bindingResult, @PathVariable int id) {
         ErrorHandler.handleException(bindingResult, CHANNEL_EXCEPTION);
         channelsService.updateChannel(updateChannelDTO, id);
+        return ResponseEntity.ok(HttpStatus.OK);
+    }
+
+    @PatchMapping("/{id}/options")
+    public ResponseEntity<HttpStatus> updateChannelOptions(@PathVariable int id, @RequestBody ChannelsOptionsDTO channelsOptionsDTO) {
+        channelsService.updateChannelOptions(id, channelsOptionsDTO);
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
@@ -153,24 +171,60 @@ public class ChannelsController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @PostMapping("/{channelId}/post/image")
-    public ResponseEntity<HttpStatus> createPost(@PathVariable int channelId, @RequestParam MultipartFile image) {
-        channelsPostsService.createPost(image, channelId);
+    @PostMapping("/{id}/post/image")
+    public ResponseEntity<HttpStatus> createPost(@PathVariable int id, @RequestParam MultipartFile image) {
+        channelsPostsService.createPost(image, id, ContentType.IMAGE);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @PostMapping("/{id}/post/video")
+    public ResponseEntity<HttpStatus> createPostWithVideo(@PathVariable int id, @RequestParam MultipartFile video) {
+        channelsPostsService.createPost(video, id, ContentType.VIDEO);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @PostMapping("/{id}/post/audio/ogg")
+    public ResponseEntity<HttpStatus> createPostWithAudioOgg(@PathVariable int id, @RequestParam MultipartFile audio) {
+        channelsPostsService.createPost(audio, id, ContentType.AUDIO_OGG);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @PostMapping("/{id}/post/audio/mp3")
+    public ResponseEntity<HttpStatus> createPostWithAudioMP3(@PathVariable int id, @RequestParam MultipartFile audio) {
+        channelsPostsService.createPost(audio, id, ContentType.AUDIO_MP3);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @PostMapping("/post/{id}/video")
+    public ResponseEntity<HttpStatus> addPostVideo(@PathVariable long id, @RequestParam("video") MultipartFile video) {
+        channelsPostsService.addFile(id, video, ContentType.VIDEO);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
     @PostMapping("/post/{id}/image")
     public ResponseEntity<HttpStatus> addPostImage(@PathVariable long id, @RequestParam("image") MultipartFile image) {
-        channelsPostsService.addImage(id, image);
+        channelsPostsService.addFile(id, image, ContentType.IMAGE);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @GetMapping("/post/image/{imageId}")
-    public ResponseEntity<?> getPostImage(@PathVariable long imageId) {
-        ResponseImageDTO image = channelsPostsService.getPostImage(imageId);
+    @PostMapping("/post/{id}/audio/ogg")
+    public ResponseEntity<HttpStatus> addPostAudioOgg(@PathVariable long id, @RequestParam("audio") MultipartFile audio) {
+        channelsPostsService.addFile(id, audio, ContentType.AUDIO_OGG);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @PostMapping("/post/{id}/audio/mp3")
+    public ResponseEntity<HttpStatus> addPostAudioMP3(@PathVariable long id, @RequestParam("audio") MultipartFile audio) {
+        channelsPostsService.addFile(id, audio, ContentType.AUDIO_MP3);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @GetMapping("/post/file/{id}")
+    public ResponseEntity<?> getPostFile(@PathVariable long id) {
+        ResponseFileDTO file = channelsPostsService.getPostFile(id);
         return ResponseEntity.status(HttpStatus.OK)
-                .contentType(image.getType())
-                .body(image.getImageData());
+                .contentType(file.getType())
+                .body(file.getFileData());
     }
 
     @PatchMapping("/post")
@@ -187,7 +241,7 @@ public class ChannelsController {
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
-    @PostMapping("/post/like/{id}")
+    @PostMapping("/post/{id}/like")
     public ResponseEntity<HttpStatus> likePost(@PathVariable long id) {
         channelsPostsService.addPostLike(id);
         return new ResponseEntity<>(HttpStatus.CREATED);
@@ -208,17 +262,39 @@ public class ChannelsController {
     }
 
     @PostMapping("/post/{id}/comment/image")
-    public ResponseEntity<HttpStatus> createComment(@PathVariable long id, @RequestParam("image") MultipartFile image) {
-        channelsPostsService.createComment(id, image);
+    public ResponseEntity<HttpStatus> createImageComment(@PathVariable long id, @RequestParam("image") MultipartFile image) {
+        channelsPostsService.createComment(id, image, ContentType.IMAGE);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @GetMapping("/post/comment/{id}/image")
+    @PostMapping("/post/{id}/comment/video")
+    public ResponseEntity<HttpStatus> createVideoComment(@PathVariable long id, @RequestParam("video") MultipartFile video) {
+        channelsPostsService.createComment(id, video, ContentType.VIDEO);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @PostMapping("/post/{id}/comment/audio/ogg")
+    public ResponseEntity<HttpStatus> createAudioOggComment(@PathVariable long id, @RequestParam("audio") MultipartFile audio) {
+        channelsPostsService.createComment(id, audio, ContentType.AUDIO_OGG);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @PostMapping("/post/{id}/comment/audio/mp3")
+    public ResponseEntity<HttpStatus> createAudioMP3Comment(@PathVariable long id, @RequestParam("audio") MultipartFile audio) {
+        try {
+            channelsPostsService.createComment(id, audio, ContentType.AUDIO_MP3);
+        } catch (MultipartException e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @GetMapping("/post/comment/{id}/file")
     public ResponseEntity<?> getCommentImage(@PathVariable long id) {
-        ResponseImageDTO image = channelsPostsService.getCommentImage(id);
+        ResponseFileDTO file = channelsPostsService.getCommentFile(id);
         return ResponseEntity.status(HttpStatus.OK)
-                .contentType(image.getType())
-                .body(image.getImageData());
+                .contentType(file.getType())
+                .body(file.getFileData());
     }
 
     @DeleteMapping("/post/comment/{id}")
@@ -236,8 +312,9 @@ public class ChannelsController {
     }
 
     @GetMapping("/post/{id}/comments")
-    public ResponseEntity<List<ResponseChannelPostCommentDTO>> showComments(@PathVariable long id) {
-        return ResponseEntity.ok(channelsPostsService.getPostComments(id));
+    public ResponseEntity<List<ResponseChannelPostCommentDTO>> showComments(@PathVariable long id, @RequestParam int page,
+                                                                            @RequestParam int count) {
+        return ResponseEntity.ok(channelsPostsService.getPostComments(id, page, count));
     }
 
     @ExceptionHandler

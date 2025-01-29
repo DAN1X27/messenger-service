@@ -37,10 +37,13 @@ public class ChannelPost {
     private ContentType contentType;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE)
-    private List<ChannelPostImage> images;
+    private List<ChannelPostFile> files;
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE)
-    private List<ChannelPostLike> likes;
+    @ManyToMany
+    @JoinTable(name = "channels_posts_likes",
+            joinColumns = @JoinColumn(name = "post_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id"))
+    private List<User> likes;
 
     public ChannelPost() {
         createdAt = LocalDateTime.now();

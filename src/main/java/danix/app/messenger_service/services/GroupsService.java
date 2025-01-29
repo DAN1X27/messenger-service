@@ -4,13 +4,14 @@ import danix.app.messenger_service.dto.*;
 import danix.app.messenger_service.models.*;
 import danix.app.messenger_service.repositories.*;
 import danix.app.messenger_service.util.GroupException;
-import danix.app.messenger_service.util.ImageException;
-import danix.app.messenger_service.util.ImageUtils;
+import danix.app.messenger_service.util.FileException;
+import danix.app.messenger_service.util.FileUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,14 +37,20 @@ public class GroupsService implements Image {
     private final GroupsInvitesRepository groupsInvitesRepository;
     private final AppMessagesRepository appMessagesRepository;
     private final GroupsActionsMessagesRepository groupsActionsMessagesRepository;
-    private final GroupsBannedUsersRepository groupsBannedUsersRepository;
     private final GroupsMessagesRepository messagesRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final JdbcTemplate jdbcTemplate;
 
     @Value("${default_groups_image_uuid}")
     private String DEFAULT_IMAGE_UUID;
     @Value("${groups_avatars_path}")
-    private String DEFAULT_IMAGES_PATH;
+    private String AVATARS_PATH;
+    @Value("${groups_messages_images_path}")
+    private String MESSAGES_IMAGES_PATH;
+    @Value("${groups_messages_videos_path}")
+    private String MESSAGES_VIDEOS_PATH;
+    @Value("${groups_messages_audio_path}")
+    private String MESSAGES_AUDIO_PATH;
 
     public List<ResponseGroupDTO> getAllUserGroups() {
         return groupsUsersRepository.findAllByUser(getCurrentUser()).stream()
@@ -128,10 +135,15 @@ public class GroupsService implements Image {
     @Transactional
     public void updateGroup(UpdateGroupDTO updateGroupDTO) {
         Group group = getById(updateGroupDTO.getGroupId());
-        if (group.getOwner().getUsername().equals(getCurrentUser().getUsername())) {
+        User currentUser = getCurrentUser();
+        if (group.getOwner().getId() == currentUser.getId()) {
             group.setName(updateGroupDTO.getName() != null ? updateGroupDTO.getName() : group.getName());
             group.setDescription(updateGroupDTO.getDescription() != null ? updateGroupDTO.getDescription() : group.getDescription());
-            messagingTemplate.convertAndSend("/topic/user/" + getCurrentUser().getId() + "/main",
+            for (GroupUser groupUser : group.getUsers()) {
+                messagingTemplate.convertAndSend("/topic/user/" + groupUser.getUser().getId() + "/main",
+                        new ResponseGroupUpdatingDTO(modelMapper.map(group, ResponseGroupDTO.class), false));
+            }
+            messagingTemplate.convertAndSend("/topic/group/" + group.getId(),
                     new ResponseGroupUpdatingDTO(modelMapper.map(group, ResponseGroupDTO.class), false));
         } else {
             throw new GroupException("User must be owner of group");
@@ -143,18 +155,20 @@ public class GroupsService implements Image {
     public void addImage(MultipartFile image, int id) {
         Group group = getById(id);
         if (group.getOwner().getId() != getCurrentUser().getId()) {
-            throw new ImageException("User must be owner of group");
+            throw new FileException("User must be owner of group");
         }
         String uuid = UUID.randomUUID().toString();
-        ImageUtils.upload(Path.of(DEFAULT_IMAGES_PATH), image, uuid);
+        FileUtils.upload(Path.of(AVATARS_PATH), image, uuid, ContentType.IMAGE);
         sendGroupActionMessage(id, getCurrentUser().getUsername() + " updated group image");
-        messagingTemplate.convertAndSend("/topic/user/" + getCurrentUser().getId() + "/main",
-                new ResponseGroupUpdatingDTO(modelMapper.map(group, ResponseGroupDTO.class), true));
+        for (GroupUser groupUser : group.getUsers()) {
+            messagingTemplate.convertAndSend("/topic/user/" + groupUser.getUser().getId() + "/main",
+                    new ResponseGroupUpdatingDTO(modelMapper.map(group, ResponseGroupDTO.class), true));
+        }
         if (group.getImage().equals(DEFAULT_IMAGE_UUID)) {
             group.setImage(uuid);
             return;
         }
-        ImageUtils.delete(Path.of(DEFAULT_IMAGES_PATH), group.getImage());
+        FileUtils.delete(Path.of(AVATARS_PATH), group.getImage());
         group.setImage(uuid);
     }
 
@@ -163,22 +177,24 @@ public class GroupsService implements Image {
     public void deleteImage(int id) {
         Group group = getById(id);
         if (group.getOwner().getId() != getCurrentUser().getId()) {
-            throw new ImageException("User must be owner of group");
+            throw new FileException("User must be owner of group");
         } else if (group.getImage().equals(DEFAULT_IMAGE_UUID)) {
-            throw new ImageException("Group already have default image");
+            throw new FileException("Group already have default image");
         }
-        ImageUtils.delete(Path.of(DEFAULT_IMAGES_PATH), group.getImage());
+        FileUtils.delete(Path.of(AVATARS_PATH), group.getImage());
         group.setImage(DEFAULT_IMAGE_UUID);
         sendGroupActionMessage(id, getCurrentUser().getUsername() + " deleted group image");
-        messagingTemplate.convertAndSend("/topic/user/" + getCurrentUser().getId() + "/main",
-                new ResponseGroupUpdatingDTO(modelMapper.map(group, ResponseGroupDTO.class), true));
+        for (GroupUser groupUser : group.getUsers()) {
+            messagingTemplate.convertAndSend("/topic/user/" + groupUser.getUser().getId() + "/main",
+                    new ResponseGroupUpdatingDTO(modelMapper.map(group, ResponseGroupDTO.class), true));
+        }
     }
 
     @Override
-    public ResponseImageDTO getImage(int id) {
+    public ResponseFileDTO getImage(int id) {
         Group group = getById(id);
         getGroupUser(group, getCurrentUser());
-        return ImageUtils.download(Path.of(DEFAULT_IMAGES_PATH), group.getImage());
+        return FileUtils.download(Path.of(AVATARS_PATH), group.getImage(), ContentType.IMAGE);
     }
 
     @Transactional
@@ -207,7 +223,7 @@ public class GroupsService implements Image {
         User currentUser = getCurrentUser();
         getGroupUser(group, currentUser);
         User user = userService.getById(userId);
-        if (!group.getOwner().getUsername().equals(currentUser.getUsername())) {
+        if (group.getOwner().getId() != currentUser.getId()) {
             throw new GroupException("Current user must be owner of group");
         }
         try {
@@ -221,17 +237,25 @@ public class GroupsService implements Image {
     public void inviteUser(int groupId, int userId) {
         User user = userService.getById(userId);
         User currentUser = getCurrentUser();
+        Group group = getById(groupId);
+        getGroupUser(group, currentUser);
         blockedUsersRepository.findByOwnerAndBlockedUser(user, currentUser).ifPresent(blockedUser -> {
             throw new GroupException("User has blocked you");
         });
-        Group group = getById(groupId);
-        getGroupUser(group, currentUser);
+        blockedUsersRepository.findByOwnerAndBlockedUser(currentUser, user).ifPresent(blockedUser -> {
+            throw new GroupException("User has blocked by current user");
+        });
+        if (user.getIsPrivate()) {
+            if (userService.findUserFriend(user, currentUser) == null) {
+                throw new GroupException("User has a private account");
+            }
+        }
         groupsUsersRepository.findByGroupAndUser(group, user).ifPresent(groupUser -> {
             throw new GroupException("User already exist in this group");
         });
-        groupsBannedUsersRepository.findByGroupAndUser(group, user).ifPresent(groupBannedUser -> {
-            throw new GroupException("User is banned in this group");
-        });
+        if (group.getBannedUsers().contains(user)) {
+            throw new GroupException("User has been banned in this group");
+        }
         groupsInvitesRepository.findByGroupAndUser(group, user).ifPresent(groupsInvitesUser -> {
             throw new GroupException("User already have invite");
         });
@@ -243,15 +267,15 @@ public class GroupsService implements Image {
 
     @Transactional
     public void acceptInviteToGroup(int groupId) {
-        User currentUser = getCurrentUser();
+        User currentUser = userService.getById(getCurrentUser().getId());
         Group group = getById(groupId);
         groupsInvitesRepository.findByGroupAndUser(group, currentUser).ifPresentOrElse(invite -> {
             groupsUsersRepository.findByGroupAndUser(group, currentUser).ifPresent(groupUser -> {
                 throw new GroupException("Current user already exist in this group");
             });
-            groupsBannedUsersRepository.findByGroupAndUser(group, currentUser).ifPresent(bannedUser -> {
-                throw new GroupException("Current user banned in this group");
-            });
+            if (group.getBannedUsers().contains(currentUser)) {
+                throw new GroupException("Current user has been banned in this group");
+            }
             GroupUser groupUser = new GroupUser();
             groupUser.setGroup(group);
             groupUser.setUser(currentUser);
@@ -268,11 +292,23 @@ public class GroupsService implements Image {
     public void deleteGroup(int groupId) {
         Group group = getById(groupId);
         if (group.getOwner().getId() == getCurrentUser().getId()) {
-            groupsRepository.delete(group);
             messagingTemplate.convertAndSend("/topic/group/" + groupId,
                     new ResponseDeletionGroupDTO(groupId));
-            messagingTemplate.convertAndSend("/topic/user/" + getCurrentUser().getId() + "/main",
-                    new ResponseDeletionGroupDTO(groupId));
+            for (GroupUser groupUser : group.getUsers()) {
+                messagingTemplate.convertAndSend("/topic/user/" + groupUser.getUser().getId() + "/main",
+                        new ResponseDeletionGroupDTO(groupId));
+            }
+            if (group.getImage() != null && !group.getImage().equals(DEFAULT_IMAGE_UUID)) {
+                FileUtils.delete(Path.of(AVATARS_PATH), group.getImage());
+            }
+            for (GroupMessage message : group.getMessages()) {
+                switch (message.getContentType()) {
+                    case IMAGE -> FileUtils.delete(Path.of(MESSAGES_IMAGES_PATH), message.getText());
+                    case VIDEO -> FileUtils.delete(Path.of(MESSAGES_VIDEOS_PATH), message.getText());
+                    case AUDIO_MP3, AUDIO_OGG -> FileUtils.delete(Path.of(MESSAGES_AUDIO_PATH), message.getText());
+                }
+            }
+            jdbcTemplate.update("DELETE FROM groups where id = ?", groupId);
         } else {
             throw new GroupException("You are not owner of this group");
         }
@@ -284,11 +320,13 @@ public class GroupsService implements Image {
         Group group = getById(groupId);
         GroupUser groupUser = getGroupUser(group, currentUser);
         if (group.getOwner().getId() == currentUser.getId()) {
-            groupsRepository.delete(group);
-            messagingTemplate.convertAndSend("/topic/user/" + currentUser.getId() + "/main",
-                    new ResponseDeletionGroupDTO(groupId));
+            for (GroupUser user : group.getUsers()) {
+                messagingTemplate.convertAndSend("/topic/user/" + user.getUser().getId() + "/main",
+                        new ResponseDeletionGroupDTO(groupId));
+            }
             messagingTemplate.convertAndSend("/topic/group/" + groupId,
                     new ResponseDeletionGroupDTO(groupId));
+            groupsRepository.delete(group);
         } else {
             groupsUsersRepository.delete(groupUser);
             sendGroupActionMessage(groupId, currentUser.getUsername() + " left group");
@@ -302,34 +340,27 @@ public class GroupsService implements Image {
         Group group = getById(groupId);
         GroupUser groupUser = getGroupUser(group, currentUser);
         if (groupUser.isAdmin()) {
-            groupsBannedUsersRepository.findByGroupAndUser(group, user).ifPresent(bannedUser -> {
-                throw new GroupException("User is already banned in this group");
-            });
-            groupsUsersRepository.findByGroupAndUser(group, user).ifPresent(user1 -> {
-                if (user1.isAdmin() && group.getOwner().getId() != currentUser.getId()) {
+            if (group.getBannedUsers().contains(user)) {
+                throw new GroupException("User already banned in this group");
+            }
+            groupsUsersRepository.findByGroupAndUser(group, user).ifPresent(foundUser -> {
+                if (foundUser.isAdmin() && group.getOwner().getId() != currentUser.getId()) {
                     throw new GroupException("Current user cant ban administrator or owner of group");
                 }
-                groupsUsersRepository.delete(user1);
+                groupsUsersRepository.delete(foundUser);
                 AppMessage appMessage = new AppMessage("You were banned from the group - " + group.getName(), user);
                 appMessagesRepository.save(appMessage);
-                messagingTemplate.convertAndSend("/topic/user/" + currentUser.getId() + "/main",
+                messagingTemplate.convertAndSend("/topic/user/" + user.getId() + "/main",
                         new ResponseAppMessageDTO(appMessage.getMessage(), appMessage.getSentTime()));
-                messagingTemplate.convertAndSend("/topic/user/" + currentUser.getId() + "/main",
+                messagingTemplate.convertAndSend("/topic/user/" + user.getId() + "/main",
                         new ResponseDeletionGroupDTO(groupId));
                 sendGroupActionMessage(groupId, currentUser.getUsername() + " banned " + user.getUsername());
                 messagingTemplate.convertAndSend("/topic/group/" + groupId,
                         new ResponseBannedUserDTO(user.getId()));
             });
-            GroupBannedUser groupBannedUser = new GroupBannedUser();
-            groupBannedUser.setGroup(group);
-            groupBannedUser.setUser(user);
-            BannedGroupUserKey bannedGroupUserKey = new BannedGroupUserKey();
-            bannedGroupUserKey.setUserId(user.getId());
-            bannedGroupUserKey.setGroupId(group.getId());
-            groupBannedUser.setId(bannedGroupUserKey);
-            groupsBannedUsersRepository.save(groupBannedUser);
+            group.getBannedUsers().add(user);
         } else {
-            throw new GroupException("Current user must be owner or admin");
+            throw new GroupException("Current must be admin of this group");
         }
     }
 
@@ -340,12 +371,42 @@ public class GroupsService implements Image {
         GroupUser groupUser = getGroupUser(group, currentUser);
         if (groupUser.isAdmin()) {
             User user = userService.getById(userId);
-            groupsBannedUsersRepository.findByGroupAndUser(group, user)
-                    .ifPresentOrElse(groupsBannedUsersRepository::delete, () -> {
-                        throw new GroupException("User is not banned");
-                    });
+            if (group.getBannedUsers().contains(user)) {
+                group.getBannedUsers().remove(user);
+            } else {
+                throw new GroupException("User is not banned in this group");
+            }
         } else {
-            throw new GroupException("User must be owner or admin");
+            throw new GroupException("Current must be admin of this group");
+        }
+    }
+
+    @Transactional
+    public void kickUser(int groupId, int userId) {
+        User currentUser = getCurrentUser();
+        Group group = getById(groupId);
+        GroupUser groupUser = getGroupUser(group, currentUser);
+        if (groupUser.isAdmin()) {
+            User user = userService.getById(userId);
+            GroupUser kickedUser;
+            try {
+                kickedUser = getGroupUser(group, user);
+            } catch (GroupException e) {
+                throw new GroupException("User not exists in this group");
+            }
+            if (kickedUser.isAdmin() && group.getOwner().getId() != currentUser.getId()) {
+                throw new GroupException("Current user cant kick administrator or owner of group");
+            }
+            groupsUsersRepository.delete(kickedUser);
+            sendGroupActionMessage(groupId, currentUser.getUsername() + " kicked " + user.getUsername());
+            messagingTemplate.convertAndSend("/topic/user/" + user.getId() + "/main",
+                    new ResponseDeletionGroupDTO(groupId));
+            AppMessage appMessage = new AppMessage("You were kicked from the group - " + group.getName(), user);
+            appMessagesRepository.save(appMessage);
+            messagingTemplate.convertAndSend("/topic/user/" + user.getId() + "/main",
+                    new ResponseAppMessageDTO(appMessage.getMessage(), appMessage.getSentTime()));
+        } else {
+            throw new GroupException("Current must be admin of this group");
         }
     }
 
@@ -357,12 +418,12 @@ public class GroupsService implements Image {
                 new ResponseGroupActionMessageDTO(message, LocalDateTime.now()));
     }
 
-    GroupUser getGroupUser(Group group, User user) {
+    public GroupUser getGroupUser(Group group, User user) {
         return groupsUsersRepository.findByGroupAndUser(group, user)
                 .orElseThrow(() -> new GroupException("Current user not exist in this group"));
     }
 
-    Group getById(int id) {
+    public Group getById(int id) {
         return groupsRepository.findById(id)
                 .orElseThrow(() -> new GroupException("Group not found"));
     }

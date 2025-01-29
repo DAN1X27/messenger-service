@@ -50,7 +50,7 @@ create table email_keys
 create table groups
 (
     id          integer generated always as identity primary key,
-    name        varchar not null,
+    username        varchar not null,
     owner_id    integer references person on delete cascade,
     created_at  date    not null,
     description varchar,
@@ -151,7 +151,7 @@ create table channels
             on delete cascade,
     created_at  date    not null,
     is_private  boolean not null,
-    name        varchar not null
+    username        varchar not null
         unique,
     is_banned   boolean not null,
     description varchar,

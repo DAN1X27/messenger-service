@@ -1,6 +1,7 @@
 package danix.app.messenger_service.controllers;
 
 import danix.app.messenger_service.dto.*;
+import danix.app.messenger_service.models.ContentType;
 import danix.app.messenger_service.services.GroupsMessagesService;
 import danix.app.messenger_service.services.GroupsService;
 import danix.app.messenger_service.util.*;
@@ -96,13 +97,19 @@ public class GroupsController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @DeleteMapping("/leave/{id}")
+    @DeleteMapping("/{groupId}/user/{userId}/kick")
+    public ResponseEntity<HttpStatus> kickUser(@PathVariable int groupId, @PathVariable int userId) {
+        groupsService.kickUser(groupId, userId);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}/leave")
     public ResponseEntity<HttpStatus> leaveFromGroup(@PathVariable("id") int group_id) {
         groupsService.leaveGroup(group_id);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @PostMapping("/message/{id}")
+    @PostMapping("/{id}/message")
     public ResponseEntity<HttpStatus> sendMessage(@PathVariable int id, @RequestBody Map<String, String> message) {
         if (!message.containsKey("message")) {
             throw new MessageException("Message must not be empty");
@@ -111,38 +118,56 @@ public class GroupsController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @PatchMapping("/image/{id}")
-    public ResponseEntity<HttpStatus> addGroupImage(@PathVariable int id, @RequestParam("image") MultipartFile file) {
-        groupsService.addImage(file, id);
+    @PostMapping("/{id}/message/image")
+    public ResponseEntity<HttpStatus> sendImage(@PathVariable int id, @RequestParam("image") MultipartFile file) {
+        groupsMessagesService.sendFile(file, id, ContentType.IMAGE);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @DeleteMapping("/image/{id}")
+    @PostMapping("/{id}/message/video")
+    public ResponseEntity<HttpStatus> sendVideo(@PathVariable int id, @RequestParam("video") MultipartFile file) {
+        groupsMessagesService.sendFile(file, id, ContentType.VIDEO);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @PostMapping("/{id}/message/audio/ogg")
+    public ResponseEntity<HttpStatus> sendAudioOgg(@PathVariable int id, @RequestParam("audio") MultipartFile file) {
+        groupsMessagesService.sendFile(file, id, ContentType.AUDIO_OGG);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @PostMapping("/{id}/message/audio/mp3")
+    public ResponseEntity<HttpStatus> sendAudioMP3(@PathVariable int id, @RequestParam("audio") MultipartFile file) {
+        groupsMessagesService.sendFile(file, id, ContentType.AUDIO_MP3);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @PatchMapping("/{id}/image")
+    public ResponseEntity<HttpStatus> updateGroupImage(@PathVariable int id, @RequestParam("image") MultipartFile file) {
+        groupsService.addImage(file, id);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}/image")
     public ResponseEntity<HttpStatus> deleteGroupImage(@PathVariable int id) {
         groupsService.deleteImage(id);
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
-    @GetMapping("/image/{id}")
+    @GetMapping("/{id}/image")
     public ResponseEntity<?> getGroupImage(@PathVariable int id) {
-        ResponseImageDTO image = groupsService.getImage(id);
+        ResponseFileDTO image = groupsService.getImage(id);
         return ResponseEntity.status(HttpStatus.OK)
                 .contentType(image.getType())
-                .body(image.getImageData());
+                .body(image.getFileData());
     }
 
-    @PostMapping("/message/image/{id}")
-    public ResponseEntity<HttpStatus> sendImage(@PathVariable int id, @RequestParam("image") MultipartFile file) {
-        groupsMessagesService.sendImage(file, id);
-        return new ResponseEntity<>(HttpStatus.CREATED);
-    }
-
-    @GetMapping("/message/image/{id}")
-    public ResponseEntity<?> getImage(@PathVariable long id) {
-        ResponseImageDTO image = groupsMessagesService.getImage(id);
+    @GetMapping("/message/{id}/file")
+    public ResponseEntity<?> getMessageFile(@PathVariable long id) {
+        ResponseFileDTO image = groupsMessagesService.getFile(id);
         return ResponseEntity.status(HttpStatus.OK)
                 .contentType(image.getType())
-                .body(image.getImageData());
+                .body(image.getFileData());
     }
 
     @DeleteMapping("/message/{id}")

@@ -11,12 +11,11 @@ import java.util.List;
 public class ShowChannelDTO {
     private int id;
     private String name;
+    private String description;
     private List<ResponseChannelUserDTO> users;
     private List<ResponseChannelPostDTO> posts;
     private Date createdAt;
     private ResponseUserDTO owner;
-    private String description;
-    private Boolean isPrivate;
 
     public static Builder builder() {
         return new Builder();
@@ -30,7 +29,6 @@ public class ShowChannelDTO {
         this.createdAt = builder.createdAt;
         this.owner = builder.owner;
         this.description = builder.description;
-        this.isPrivate = builder.isPrivate;
     }
 
     public static class Builder {
@@ -41,7 +39,6 @@ public class ShowChannelDTO {
         private Date createdAt;
         private ResponseUserDTO owner;
         private String description;
-        private boolean isPrivate;
 
         public Builder name(String name) {
             this.name = name;
@@ -75,11 +72,6 @@ public class ShowChannelDTO {
 
         public Builder description(String description) {
             this.description = description;
-            return this;
-        }
-
-        public Builder isPrivate(Boolean isPrivate) {
-            this.isPrivate = isPrivate;
             return this;
         }
 

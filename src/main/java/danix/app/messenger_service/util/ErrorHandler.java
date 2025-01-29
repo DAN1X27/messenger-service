@@ -3,9 +3,11 @@ package danix.app.messenger_service.util;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 
-import java.util.List;
+public final class ErrorHandler {
 
-public class ErrorHandler {
+    private ErrorHandler() {
+    }
+
     public static void handleException(BindingResult bindingResult, ExceptionType exceptionType) {
         if (bindingResult.hasErrors()) {
             StringBuilder message = new StringBuilder();

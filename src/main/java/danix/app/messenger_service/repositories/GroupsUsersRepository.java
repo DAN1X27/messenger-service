@@ -14,4 +14,6 @@ public interface GroupsUsersRepository extends JpaRepository<GroupUser, Integer>
     List<GroupUser> findAllByUser(User user);
 
     Optional<GroupUser> findByGroupAndUser(Group group, User user);
+
+    List<GroupUser> findAllByGroup(Group group);
 }

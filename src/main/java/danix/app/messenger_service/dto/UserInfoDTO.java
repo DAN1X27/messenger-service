@@ -16,4 +16,5 @@ public class UserInfoDTO {
     private String email;
     private LocalDateTime createdAt;
     private User.OnlineStatus onlineStatus;
+    private boolean isPrivate;
 }

@@ -32,8 +32,11 @@ public class Group {
     @OneToMany(mappedBy = "group")
     private List<GroupMessage> messages;
 
-    @OneToMany(mappedBy = "group")
-    private List<GroupBannedUser> bannedUsers;
+    @ManyToMany
+    @JoinTable(name = "groups_banned_users",
+    joinColumns = @JoinColumn(name = "group_id"),
+    inverseJoinColumns = @JoinColumn(name = "user_id"))
+    private List<User> bannedUsers;
 
     @OneToMany(mappedBy = "group")
     private List<GroupActionMessage> actionMessages;

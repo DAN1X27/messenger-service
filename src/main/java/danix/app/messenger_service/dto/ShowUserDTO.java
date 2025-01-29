@@ -12,4 +12,5 @@ public class ShowUserDTO {
     private String description;
     private User.OnlineStatus onlineStatus;
     private boolean isBanned;
+    private boolean isPrivate;
 }

@@ -1,5 +1,6 @@
 package danix.app.messenger_service.repositories;
 
+import danix.app.messenger_service.models.ContentType;
 import danix.app.messenger_service.models.Group;
 import danix.app.messenger_service.models.GroupMessage;
 import org.springframework.data.domain.Pageable;
@@ -11,5 +12,6 @@ import java.util.Optional;
 
 @Repository
 public interface GroupsMessagesRepository extends JpaRepository<GroupMessage, Long> {
+
     List<GroupMessage> findAllByGroup(Group group, Pageable pageable);
 }

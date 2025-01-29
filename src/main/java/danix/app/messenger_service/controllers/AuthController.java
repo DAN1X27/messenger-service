@@ -36,7 +36,6 @@ public class AuthController {
     private final TokensService tokensService;
     private final RegistrationUserValidator registrationUserValidator;
     private final BannedUsersRepository bannedUsersRepository;
-    private final KafkaTemplate<String, String> kafkaTemplate;
     private final PasswordEncoder passwordEncoder;
     private final EmailsKeysRepository emailsKeysRepository;
     private final EmailKeyValidator emailKeyValidator;
@@ -90,9 +89,7 @@ public class AuthController {
         ErrorHandler.handleException(bindingResult, ExceptionType.AUTHENTICATION_EXCEPTION);
         emailKeyValidator.validate(acceptEmailDTO, bindingResult);
         ErrorHandler.handleException(bindingResult, ExceptionType.AUTHENTICATION_EXCEPTION);
-        User user = userService.getByEmail(acceptEmailDTO.getEmail());
         userService.registerUser(acceptEmailDTO.getEmail());
-        kafkaTemplate.send("registration-topic", acceptEmailDTO.getEmail(), user.getUsername());
         String jwtToken = jwtUtil.generateToken(acceptEmailDTO.getEmail());
         tokensService.create(jwtToken, userService.getByEmail(acceptEmailDTO.getEmail()));
         return new ResponseEntity<>(Map.of("jwt-token", jwtToken), HttpStatus.CREATED);

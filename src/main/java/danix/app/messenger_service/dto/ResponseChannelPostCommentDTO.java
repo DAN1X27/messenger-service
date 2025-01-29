@@ -4,6 +4,8 @@ import danix.app.messenger_service.models.ContentType;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 public class ResponseChannelPostCommentDTO {
@@ -11,4 +13,5 @@ public class ResponseChannelPostCommentDTO {
     private Long id;
     private ContentType contentType;
     private ResponseUserDTO owner;
+    private LocalDateTime createdAt;
 }

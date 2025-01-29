@@ -39,8 +39,9 @@ public class JwtFilter extends OncePerRequestFilter {
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
                     return;
                 }
-            } catch (IllegalStateException e) {
+            } catch (IllegalStateException | JWTVerificationException e) {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
             }
             try {
                 String email = jwtUtil.validateTokenAndRetrieveClaim(token);

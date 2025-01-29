@@ -1,0 +1,56 @@
+services:
+  app:
+    image: "messenger-service"
+    container_name: messenger-service
+    build:
+      context: .
+    depends_on:
+      - db
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/messenger_service_db
+      - SPRING_DATASOURCE_USERNAME=username
+      - SPRING_DATASOURCE_PASSWORD=password
+      - GROUPS_AVATARS_PATH=/app/templates/groups_avatars
+      - USERS_IMAGES_PATH=/app/templates/users_images
+      - CHATS_IMAGES_PATH=/app/templates/chats_images
+      - CHATS_VIDEOS_PATH=/app/templates/chats_videos
+      - CHATS_AUDIO_PATH=/app/templates/chats_audio
+      - GROUPS_MESSAGES_IMAGES_PATH=/app/templates/groups_messages_images
+      - GROUPS_MESSAGES_AUDIO_PATH=/app/templates/groups_messages_audio
+      - CHANNELS_AVATARS_ATH=/app/templates/channels_avatars
+      - CHANNELS_POSTS_COMMENTS_IMAGES_PATH=/app/templates/channels_posts_comments_images
+      - CHANNELS_POSTS_VIDEOS_PATH=/app/templates/channels_posts_videos
+      - CHANNELS_POSTS_COMMENTS_VIDEOS_PATH=/app/templates/channels_posts_comments_videos
+      - GROUPS_MESSAGES_VIDEOS_PATH=/app/templates/groups_messages_videos
+      - CHANNELS_POSTS_AUDIO_PATH=/app/templates/channels_posts_audio
+      - CHANNELS_POSTS_COMMENTS_AUDIO_PATH=/app/templates/channels_posts_comments_audio
+      - CHANNELS_POSTS_IMAGES_PATH=/app/templates/channels_posts_images
+      - SPRING_KAFKA_CONSUMER_BOOTSTRAP-SERVERS=kafka:9092
+      - SPRING_KAFKA_BOOTSTRAP-SERVERS=kafka:9092
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./templates:/app/templates
+    networks:
+      - messenger-service-net
+  db:
+    image: 'postgres:17-alpine'
+    container_name: messenger-service-db
+    environment:
+      - POSTGRES_USER=username
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - ./postgres/db_data:/var/lib/postgresql/data
+      - ./postgres/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    ports:
+      - "5433:5432"
+    networks:
+      - messenger-service-net
+
+volumes:
+  db_data:
+
+networks:
+  messenger-service-net:
+    driver: bridge
+    external: true

@@ -12,5 +12,4 @@ public class UpdateChannelDTO {
     private String name;
     @Size(max = 200, message = "Channel description can't be more than 200 characters")
     private String description;
-    private Boolean isPrivate;
 }

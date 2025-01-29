@@ -33,5 +33,6 @@ public class GroupActionMessage {
     public GroupActionMessage(String text, Group group) {
         this.text = text;
         this.group = group;
+        this.sentTime = LocalDateTime.now();
     }
 }

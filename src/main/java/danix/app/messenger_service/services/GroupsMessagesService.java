@@ -3,13 +3,15 @@ package danix.app.messenger_service.services;
 import danix.app.messenger_service.dto.*;
 import danix.app.messenger_service.models.*;
 import danix.app.messenger_service.repositories.GroupsMessagesRepository;
-import danix.app.messenger_service.util.ImageException;
-import danix.app.messenger_service.util.ImageUtils;
+import danix.app.messenger_service.util.FileException;
+import danix.app.messenger_service.util.FileUtils;
+import danix.app.messenger_service.util.GroupException;
 import danix.app.messenger_service.util.MessageException;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,15 +30,32 @@ public class GroupsMessagesService {
     private final SimpMessagingTemplate messagingTemplate;
     private final ModelMapper modelMapper;
 
-    @Value("${groups_images_path}")
-    private String GROUPS_IMAGES_PATH;
+    @Value("${groups_messages_images_path}")
+    private String GROUPS_MESSAGES_IMAGES_PATH;
+    @Value("${groups_messages_videos_path}")
+    private String GROUPS_MESSAGES_VIDEOS_PATH;
+    @Value("${groups_messages_audio_path}")
+    private String GROUPS_MESSAGES_AUDIO_PATH;
 
     @Transactional
-    public void sendImage(MultipartFile image, int groupId) {
+    public void sendFile(MultipartFile image, int groupId, ContentType contentType) {
+        if (contentType != ContentType.IMAGE && contentType != ContentType.VIDEO &&
+            contentType != ContentType.AUDIO_MP3 && contentType != ContentType.AUDIO_OGG) {
+            throw new MessageException("Unsupported content type");
+        }
         String uuid = UUID.randomUUID().toString();
-        sendMessage(uuid, groupId, ContentType.IMAGE);
-        Path path = Path.of(GROUPS_IMAGES_PATH);
-        ImageUtils.upload(path, image, uuid);
+        switch (contentType) {
+            case IMAGE -> FileUtils.upload(Path.of(GROUPS_MESSAGES_IMAGES_PATH), image, uuid, contentType);
+            case VIDEO -> FileUtils.upload(Path.of(GROUPS_MESSAGES_VIDEOS_PATH), image, uuid, contentType);
+            case AUDIO_MP3, AUDIO_OGG -> FileUtils.upload(Path.of(GROUPS_MESSAGES_AUDIO_PATH), image, uuid, contentType);
+        }
+        try {
+            sendMessage(uuid, groupId, contentType);
+        } catch (GroupException e) {
+            FileUtils.delete(Path.of(GROUPS_MESSAGES_IMAGES_PATH), uuid);
+            FileUtils.delete(Path.of(GROUPS_MESSAGES_VIDEOS_PATH), uuid);
+            throw e;
+        }
     }
 
     @Transactional
@@ -44,12 +63,23 @@ public class GroupsMessagesService {
         sendMessage(message, groupId, ContentType.TEXT);
     }
 
-    public ResponseImageDTO getImage(long messageId) {
+    public ResponseFileDTO getFile(long messageId) {
         GroupMessage groupMessage = groupsMessagesRepository.findById(messageId)
-                .orElseThrow(() -> new ImageException("Image not found"));
+                .orElseThrow(() -> new FileException("Image not found"));
         Group group = groupMessage.getGroup();
         groupsService.getGroupUser(group, getCurrentUser());
-        return ImageUtils.download(Path.of(GROUPS_IMAGES_PATH), groupMessage.getText());
+        switch (groupMessage.getContentType()) {
+            case IMAGE -> {
+                return FileUtils.download(Path.of(GROUPS_MESSAGES_IMAGES_PATH), groupMessage.getText(), groupMessage.getContentType());
+            }
+            case VIDEO -> {
+                return FileUtils.download(Path.of(GROUPS_MESSAGES_VIDEOS_PATH), groupMessage.getText(), groupMessage.getContentType());
+            }
+            case AUDIO_OGG, AUDIO_MP3 -> {
+                return FileUtils.download(Path.of(GROUPS_MESSAGES_AUDIO_PATH), groupMessage.getText(), groupMessage.getContentType());
+            }
+            default -> throw new MessageException("Message is not file");
+        }
     }
 
     private void sendMessage(String message, int groupId, ContentType contentType) {
@@ -79,9 +109,11 @@ public class GroupsMessagesService {
                 .orElseThrow(() -> new MessageException("Message not found"));
         Group group = message.getGroup();
         GroupUser groupUser = groupsService.getGroupUser(group, currentUser);
-        if (message.getMessageOwner().getUsername().equals(currentUser.getUsername()) || groupUser.isAdmin()) {
-            if (message.getContentType() == ContentType.IMAGE) {
-                ImageUtils.delete(Path.of(GROUPS_IMAGES_PATH), message.getText());
+        if (message.getMessageOwner().getId() == currentUser.getId() || groupUser.isAdmin()) {
+            switch (message.getContentType()) {
+                case IMAGE -> FileUtils.delete(Path.of(GROUPS_MESSAGES_IMAGES_PATH), message.getText());
+                case VIDEO -> FileUtils.delete(Path.of(GROUPS_MESSAGES_VIDEOS_PATH), message.getText());
+                case AUDIO_MP3, AUDIO_OGG -> FileUtils.delete(Path.of(GROUPS_MESSAGES_AUDIO_PATH), message.getText());
             }
             groupsMessagesRepository.delete(message);
             messagingTemplate.convertAndSend("/topic/group/" + group.getId(),
@@ -96,12 +128,12 @@ public class GroupsMessagesService {
         User currentUser = getCurrentUser();
         GroupMessage message = groupsMessagesRepository.findById(messageId)
                 .orElseThrow(() -> new MessageException("Message not found"));
-        if (message.getContentType() == ContentType.IMAGE) {
-            throw new MessageException("The image cannot be changed");
-        }
         Group group = message.getGroup();
         groupsService.getGroupUser(group, currentUser);
-        if (message.getMessageOwner().getUsername().equals(currentUser.getUsername())) {
+        if (message.getMessageOwner().getId() == currentUser.getId()) {
+            if (message.getContentType() != ContentType.TEXT) {
+                throw new MessageException("The file cannot be changed");
+            }
             message.setText(text);
             messagingTemplate.convertAndSend("/topic/group/" + group.getId(),
                     new ResponseMessageUpdatingDTO(messageId, text));

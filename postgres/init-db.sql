@@ -1,0 +1,1 @@
+CREATE DATABASE messenger_service_db;

@@ -1,14 +1,11 @@
 package danix.app.messenger_service.repositories;
 
-import danix.app.messenger_service.models.User;
 import danix.app.messenger_service.models.Token;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
 
 @Repository
 public interface TokensRepository extends JpaRepository<Token, String> {

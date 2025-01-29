@@ -16,7 +16,7 @@ public class Token {
     private String id;
 
     @Enumerated(EnumType.STRING)
-    private TokenStatus status;
+    private Status status;
 
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
@@ -24,4 +24,9 @@ public class Token {
 
     @Column(name = "expired_date")
     private Date expiredDate;
+
+    public enum Status {
+        ISSUED,
+        REVOKED
+    }
 }

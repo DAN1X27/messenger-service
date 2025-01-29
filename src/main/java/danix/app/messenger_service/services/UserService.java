@@ -4,10 +4,11 @@ import danix.app.messenger_service.dto.*;
 import danix.app.messenger_service.models.*;
 import danix.app.messenger_service.repositories.*;
 import danix.app.messenger_service.security.UserDetailsImpl;
-import danix.app.messenger_service.util.ImageException;
-import danix.app.messenger_service.util.ImageUtils;
+import danix.app.messenger_service.util.FileException;
+import danix.app.messenger_service.util.FileUtils;
 import danix.app.messenger_service.util.UserException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -55,46 +56,38 @@ public class UserService implements Image {
         return modelMapper.map(user, ShowUserDTO.class);
     }
 
-    public User getById(int id) {
-        return usersRepository.findById(id)
-                .orElseThrow(() -> new UserException("User not found"));
-    }
-
     public UserInfoDTO getUserInfo() {
         return modelMapper.map(getCurrentUser(), UserInfoDTO.class);
     }
 
     @Override
-    public ResponseImageDTO getImage(int id) {
-        User user = usersRepository.findById(id)
-                .orElseThrow(() -> new UserException("User not found"));
-        return ImageUtils.download(Path.of(USERS_IMAGES_PATH), user.getImageUUID());
+    public ResponseFileDTO getImage(int id) {
+        User user = getById(id);
+        return FileUtils.download(Path.of(USERS_IMAGES_PATH), user.getImageUUID(), ContentType.IMAGE);
     }
 
     @Override
     @Transactional
     public void addImage(MultipartFile imageFile, int id) {
-        User currentUser = usersRepository.findById(id)
-                .orElseThrow(() -> new UserException("User not found"));
+        User currentUser = getById(id);
         String uuid = UUID.randomUUID().toString();
-        ImageUtils.upload(Path.of(USERS_IMAGES_PATH), imageFile, uuid);
+        FileUtils.upload(Path.of(USERS_IMAGES_PATH), imageFile, uuid, ContentType.IMAGE);
         if (currentUser.getImageUUID().equals(DEFAULT_IMAGE_UUID)) {
             currentUser.setImageUUID(uuid);
             return;
         }
-        ImageUtils.delete(Path.of(USERS_IMAGES_PATH), currentUser.getImageUUID());
+        FileUtils.delete(Path.of(USERS_IMAGES_PATH), currentUser.getImageUUID());
         currentUser.setImageUUID(uuid);
     }
 
     @Override
     @Transactional
     public void deleteImage(int id) {
-        User currentUser = usersRepository.findById(id)
-                .orElseThrow(() -> new UserException("User not found"));
+        User currentUser = getById(id);
         if (currentUser.getImageUUID().equals(DEFAULT_IMAGE_UUID)) {
-            throw new ImageException("User already have default image");
+            throw new FileException("User already have default image");
         }
-        ImageUtils.delete(Path.of(USERS_IMAGES_PATH), currentUser.getImageUUID());
+        FileUtils.delete(Path.of(USERS_IMAGES_PATH), currentUser.getImageUUID());
         currentUser.setImageUUID(DEFAULT_IMAGE_UUID);
     }
 
@@ -115,17 +108,29 @@ public class UserService implements Image {
                 .collect(Collectors.toList());
     }
 
-    public List<ResponseUserDTO> getAllFriendsRequests() {
+    public List<ResponseUserDTO> getAllFriendRequests() {
         return usersFriendsRepository.findByFriend(getCurrentUser()).stream()
-                .filter(userFriend -> userFriend.getStatus() == FriendsStatus.WAITING)
-                .map(userFriend -> modelMapper.map(userFriend, ResponseUserDTO.class))
+                .filter(userFriend -> userFriend.getStatus() == UserFriend.FriendsStatus.WAITING)
+                .map(userFriend -> {
+                    ResponseUserDTO userDTO = new ResponseUserDTO();
+                    userDTO.setId(userFriend.getOwner().getId());
+                    userDTO.setUsername(userFriend.getOwner().getUsername());
+                    userDTO.setOnlineStatus(userFriend.getOwner().getOnlineStatus());
+                    userDTO.setOnlineStatus(userFriend.getOwner().getOnlineStatus());
+                    return userDTO;
+                })
                 .collect(Collectors.toList());
     }
 
     public List<ShowUserDTO> getAllUserFriends() {
-        return usersFriendsRepository.findByOwnerOrFriend(getCurrentUser(), getCurrentUser()).stream()
-                .filter(user -> user.getStatus() == FriendsStatus.ACCEPTED)
-                .map(user -> modelMapper.map(user.getFriend(), ShowUserDTO.class))
+        User currentUser = getCurrentUser();
+        return usersFriendsRepository.findByOwnerOrFriend(currentUser, currentUser).stream()
+                .filter(user -> user.getStatus() == UserFriend.FriendsStatus.ACCEPTED)
+                .map(user -> {
+                    User friend = user.getFriend().getId() != currentUser.getId() ? user.getFriend()
+                            : user.getOwner();
+                    return modelMapper.map(friend, ShowUserDTO.class);
+                })
                 .collect(Collectors.toList());
     }
 
@@ -146,20 +151,31 @@ public class UserService implements Image {
     @Transactional
     public void cancelFriendRequest(int userId) {
         User user = getById(userId);
-        usersFriendsRepository.findByOwnerAndFriend(getCurrentUser(), user).ifPresentOrElse(userFriend -> {
-            if (userFriend.getStatus() != FriendsStatus.WAITING) {
+        deleteFriendRequest(getCurrentUser(), user);
+    }
+
+    @Transactional
+    public void rejectFriendRequest(int userId) {
+        User user = getById(userId);
+        deleteFriendRequest(user, getCurrentUser());
+    }
+
+    private void deleteFriendRequest(User owner, User friend) {
+        usersFriendsRepository.findByOwnerAndFriend(owner, friend).ifPresentOrElse(request -> {
+            if (request.getStatus() == UserFriend.FriendsStatus.ACCEPTED) {
                 throw new UserException("User is already in your friend list");
             }
-            usersFriendsRepository.delete(userFriend);
+            usersFriendsRepository.delete(request);
         }, () -> {
             throw new UserException("Request not found");
         });
     }
 
     @Transactional
-    public void deleteFriend(String username) {
-        User friend = getByUsername(username);
-        usersFriendsRepository.findByOwnerAndFriend(getCurrentUser(), friend)
+    public void deleteFriend(int id) {
+        User friend = getById(id);
+        User currentUser = getCurrentUser();
+        usersFriendsRepository.findByOwnerAndFriend(currentUser, friend)
                 .ifPresentOrElse(usersFriendsRepository::delete, () -> usersFriendsRepository.findByOwnerAndFriend(friend, getCurrentUser())
                         .ifPresentOrElse(usersFriendsRepository::delete, () -> {
                             throw new UserException("User is not exist in your friends");
@@ -169,15 +185,15 @@ public class UserService implements Image {
     @Transactional
     public void blockUser(int id) {
         User user = getById(id);
-        blockedUsersRepository.findByOwnerAndBlockedUser(getCurrentUser(), user)
-                .ifPresentOrElse(blockedUser -> {
-                    throw new UserException("User is already blocked");
-                }, () -> {
-                    blockedUsersRepository.save(new BlockedUser(getCurrentUser(), user));
-                    usersFriendsRepository.findByOwnerAndFriend(getCurrentUser(), user)
-                            .ifPresentOrElse(usersFriendsRepository::delete, () -> usersFriendsRepository.findByOwnerAndFriend(user, getCurrentUser())
-                                    .ifPresent(usersFriendsRepository::delete));
-                });
+        blockedUsersRepository.findByOwnerAndBlockedUser(getCurrentUser(), user).ifPresentOrElse(blockedUser -> {
+            throw new UserException("User is already blocked");
+        }, () -> {
+            User currentUser = getCurrentUser();
+            blockedUsersRepository.save(new BlockedUser(currentUser, user));
+            usersFriendsRepository.findByOwnerAndFriend(currentUser, user)
+                    .ifPresentOrElse(usersFriendsRepository::delete, () -> usersFriendsRepository.findByOwnerAndFriend(user, currentUser)
+                            .ifPresent(usersFriendsRepository::delete));
+        });
     }
 
     @Transactional
@@ -192,34 +208,32 @@ public class UserService implements Image {
     @Transactional
     public void acceptFriend(int id) {
         User user = getById(id);
-        usersFriendsRepository.findByOwnerAndFriend(user, getCurrentUser())
-                .ifPresentOrElse(friendRequest -> {
-                    if (friendRequest.getStatus() == FriendsStatus.ACCEPTED) {
-                        throw new UserException("Request is already accepted");
-                    }
-                    friendRequest.setStatus(FriendsStatus.ACCEPTED);
-                }, () -> {
-                    throw new UserException("Request not found");
-                });
+        User currentUser = getCurrentUser();
+        usersFriendsRepository.findByOwnerAndFriend(user, currentUser).ifPresentOrElse(friendRequest -> {
+            if (friendRequest.getStatus() == UserFriend.FriendsStatus.ACCEPTED) {
+                throw new UserException("Request is already accepted");
+            }
+            friendRequest.setStatus(UserFriend.FriendsStatus.ACCEPTED);
+        }, () -> {
+            throw new UserException("Request not found");
+        });
     }
 
     @Transactional
-    public void addFriend(String username) {
-        User user = getByUsername(username);
+    public void addFriend(int id) {
+        User user = getById(id);
         User currentUser = getCurrentUser();
-        blockedUsersRepository.findByOwnerAndBlockedUser(user, currentUser)
-                .ifPresentOrElse(blockedUser -> {
-                    throw new UserException("The user has blocked you");
-                }, () -> blockedUsersRepository.findByOwnerAndBlockedUser(currentUser, user)
-                        .ifPresent(blockedUsersRepository::delete));
+        blockedUsersRepository.findByOwnerAndBlockedUser(user, currentUser).ifPresentOrElse(blockedUser -> {
+            throw new UserException("The user has blocked you");
+        }, () -> blockedUsersRepository.findByOwnerAndBlockedUser(currentUser, user).ifPresent(blockedUsersRepository::delete));
         UserFriend userFriend = findUserFriend(user, currentUser);
         if (userFriend != null) {
-            if (userFriend.getStatus() == FriendsStatus.WAITING) {
+            if (userFriend.getStatus() == UserFriend.FriendsStatus.WAITING) {
                 throw new UserException("A request has already been sent to this user");
             }
             throw new UserException("Friend already exists");
         }
-        usersFriendsRepository.save(new UserFriend(getCurrentUser(), user, FriendsStatus.WAITING));
+        usersFriendsRepository.save(new UserFriend(getCurrentUser(), user, UserFriend.FriendsStatus.WAITING));
     }
 
     @Transactional
@@ -232,16 +246,18 @@ public class UserService implements Image {
         user.setBanned(true);
         tokensService.banUserTokens(id);
         bannedUsersRepository.save(new BannedUser(reason, user));
+        kafkaTemplate.send("ban_user-topic", user.getEmail(), reason);
     }
 
     @Transactional
-    public void unBanUser(int id) {
+    public void unbanUser(int id) {
         User user = getById(id);
         BannedUser bannedUser = bannedUsersRepository.findByUser(user)
                 .orElseThrow(() -> new UserException("User is not banned"));
         user.setUserStatus(User.Status.REGISTERED);
         user.setBanned(false);
         bannedUsersRepository.delete(bannedUser);
+        kafkaTemplate.send("unban_user-topic", user.getEmail());
     }
 
     @Transactional
@@ -252,6 +268,7 @@ public class UserService implements Image {
             throw new UserException("User is already registered");
         }
         user.setUserStatus(User.Status.REGISTERED);
+        kafkaTemplate.send("registration-topic", email, user.getUsername());
     }
 
     @Transactional
@@ -318,13 +335,24 @@ public class UserService implements Image {
         user.getGroups().forEach(groupUser -> messagingTemplate.convertAndSend("/topic/group/" + groupUser.getGroup().getId(), respUser));
     }
 
-    private UserFriend findUserFriend(User user1, User user2) {
+    @Transactional
+    public void setPrivateStatus(boolean privateStatus) {
+        User currentUser = getById(getCurrentUser().getId());
+        currentUser.setIsPrivate(privateStatus);
+    }
+
+    public UserFriend findUserFriend(User user1, User user2) {
         Optional<UserFriend> userFriend = usersFriendsRepository.findByOwnerAndFriend(user1, user2);
         if (userFriend.isPresent()) {
             return userFriend.get();
         }
         Optional<UserFriend> userFriend2 = usersFriendsRepository.findByOwnerAndFriend(user2, user1);
         return userFriend2.orElse(null);
+    }
+
+    public User getById(int id) {
+        return usersRepository.findById(id)
+                .orElseThrow(() -> new UserException("User not found"));
     }
 
     public static User getCurrentUser() {

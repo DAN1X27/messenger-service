@@ -1,6 +1,7 @@
 package danix.app.messenger_service.controllers;
 
 import danix.app.messenger_service.dto.*;
+import danix.app.messenger_service.models.ContentType;
 import danix.app.messenger_service.services.ChatsService;
 import danix.app.messenger_service.services.ChatsMessagesService;
 import danix.app.messenger_service.util.*;
@@ -37,17 +38,35 @@ public class ChatsController {
         return new ResponseEntity<>(chatsService.showChat(id, page, count), HttpStatus.OK);
     }
 
-    @GetMapping("/message/{id}/image")
-    public ResponseEntity<?> getMessageImage(@PathVariable long id) {
-        ResponseImageDTO image = chatsMessagesService.getMessageImage(id);
+    @GetMapping("/message/{id}/file")
+    public ResponseEntity<?> getMessageFile(@PathVariable long id) {
+        ResponseFileDTO image = chatsMessagesService.getMessageFile(id);
         return ResponseEntity.status(HttpStatus.OK)
                 .contentType(image.getType())
-                .body(image.getImageData());
+                .body(image.getFileData());
     }
 
     @PostMapping("/{id}/message/image")
     public ResponseEntity<HttpStatus> sendImage(@RequestParam("image") MultipartFile image, @PathVariable int id) {
-        chatsMessagesService.sendImage(image, id);
+        chatsMessagesService.sendFile(image, id, ContentType.IMAGE);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @PostMapping("/{id}/message/video")
+    public ResponseEntity<HttpStatus> sendVideo(@RequestParam("video") MultipartFile video, @PathVariable int id) {
+        chatsMessagesService.sendFile(video, id, ContentType.VIDEO);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @PostMapping("/{id}/message/audio/mp3")
+    public ResponseEntity<HttpStatus> sendAudioMP3(@RequestParam("audio") MultipartFile audio, @PathVariable int id) {
+        chatsMessagesService.sendFile(audio, id, ContentType.AUDIO_MP3);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @PostMapping("/{id}/message/audio/ogg")
+    public ResponseEntity<HttpStatus> sendAudioOgg(@RequestParam("audio") MultipartFile audio, @PathVariable int id) {
+        chatsMessagesService.sendFile(audio, id, ContentType.AUDIO_OGG);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 

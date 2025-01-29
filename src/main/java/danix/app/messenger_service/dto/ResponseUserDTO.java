@@ -15,5 +15,4 @@ public class ResponseUserDTO {
     private String username;
     private User.OnlineStatus onlineStatus;
     private boolean isBanned;
-    private boolean isPrivate;
 }

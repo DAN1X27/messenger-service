@@ -6,8 +6,7 @@ import danix.app.messenger_service.repositories.BlockedUsersRepository;
 import danix.app.messenger_service.repositories.ChatsMessagesRepository;
 import danix.app.messenger_service.repositories.ChatsRepository;
 import danix.app.messenger_service.util.ChatException;
-import danix.app.messenger_service.util.ImageException;
-import danix.app.messenger_service.util.ImageUtils;
+import danix.app.messenger_service.util.FileUtils;
 import danix.app.messenger_service.util.MessageException;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -34,6 +33,10 @@ public class ChatsMessagesService {
 
     @Value("${chats_images_path}")
     private String CHATS_IMAGES_PATH;
+    @Value("${chats_videos_path}")
+    private String CHATS_VIDEOS_PATH;
+    @Value("${chats_audio_path}")
+    private String CHATS_AUDIO_PATH;
 
     @Transactional
     public void sendTextMessage(String message, int chatId) {
@@ -41,10 +44,21 @@ public class ChatsMessagesService {
     }
 
     @Transactional
-    public void sendImage(MultipartFile image, int chatId) {
+    public void sendFile(MultipartFile file, int chatId, ContentType contentType) {
         String uuid = UUID.randomUUID().toString();
-        sendMessage(uuid, ContentType.IMAGE, chatId);
-        ImageUtils.upload(Path.of(CHATS_IMAGES_PATH), image, uuid);
+        switch (contentType) {
+            case IMAGE -> FileUtils.upload(Path.of(CHATS_IMAGES_PATH), file, uuid, contentType);
+            case VIDEO -> FileUtils.upload(Path.of(CHATS_VIDEOS_PATH), file, uuid, contentType);
+            case AUDIO_OGG, AUDIO_MP3 -> FileUtils.upload(Path.of(CHATS_AUDIO_PATH), file, uuid, contentType);
+            default -> throw new MessageException("Unsupported content type");
+        }
+        try {
+            sendMessage(uuid, contentType, chatId);
+        } catch (MessageException e) {
+            FileUtils.delete(Path.of(CHATS_IMAGES_PATH), uuid);
+            FileUtils.delete(Path.of(CHATS_VIDEOS_PATH), uuid);
+            throw e;
+        }
     }
 
     private void sendMessage(String message, ContentType contentType, int chatId) {
@@ -52,15 +66,13 @@ public class ChatsMessagesService {
         Chat chat = chatsUsersRepository.findById(chatId)
                 .orElseThrow(() -> new ChatException("Chat not found"));
         User user = chat.getUser1().getId() == currentUser.getId() ? chat.getUser2() : chat.getUser1();
-        if (user.getUsername().equals(currentUser.getUsername())) {
-            throw new MessageException("The user cannot send a message to himself");
-        }
         blockedUsersRepository.findByOwnerAndBlockedUser(user, currentUser).ifPresentOrElse(person -> {
-            throw new MessageException("This user blocked current user");
+            throw new MessageException("Current user blocked by this user");
         }, () -> blockedUsersRepository.findByOwnerAndBlockedUser(currentUser, user).ifPresent(person -> {
             throw new MessageException("Current user has blocked this user");
         }));
         ChatMessage chatMessage = new ChatMessage();
+        chatMessage.setChat(chat);
         chatMessage.setText(message);
         chatMessage.setContentType(contentType);
         chatMessage.setOwner(currentUser);
@@ -80,9 +92,10 @@ public class ChatsMessagesService {
     @Transactional
     public void deleteMessage(long messageId) {
         ChatMessage message = checkMessage(messageId);
-        if (message.getContentType() == ContentType.IMAGE) {
-            Path path = Path.of(CHATS_IMAGES_PATH);
-            ImageUtils.delete(path, message.getText());
+        switch (message.getContentType()) {
+            case IMAGE -> FileUtils.delete(Path.of(CHATS_IMAGES_PATH), message.getText());
+            case VIDEO -> FileUtils.delete(Path.of(CHATS_VIDEOS_PATH), message.getText());
+            case AUDIO_MP3, AUDIO_OGG -> FileUtils.delete(Path.of(CHATS_AUDIO_PATH), message.getText());
         }
         messagesRepository.delete(message);
         messagingTemplate.convertAndSend("/topic/chat/" + message.getChat().getId(),
@@ -100,36 +113,39 @@ public class ChatsMessagesService {
                 new ResponseMessageUpdatingDTO(messageId, text));
     }
 
-    public ResponseImageDTO getMessageImage(long messageId) {
+    public ResponseFileDTO getMessageFile(long messageId) {
         ChatMessage chatMessage = messagesRepository.findById(messageId)
                 .orElseThrow(() -> new MessageException("Message not found"));
         Chat chat = chatMessage.getChat();
         User currentUser = getCurrentUser();
-        if (!chat.getUser1().getUsername().equals(currentUser.getUsername()) &&
-                !chat.getUser2().getUsername().equals(currentUser.getUsername())) {
+        if (chat.getUser1().getId() != currentUser.getId() && chat.getUser2().getId() != currentUser.getId()) {
             throw new ChatException("Current user not exist in this chat");
         }
-        if (chatMessage.getContentType() != ContentType.IMAGE) {
-            throw new ImageException("Image not found");
+        switch (chatMessage.getContentType()) {
+            case IMAGE -> {
+                return FileUtils.download(Path.of(CHATS_IMAGES_PATH), chatMessage.getText(), ContentType.IMAGE);
+            }
+            case VIDEO -> {
+                return FileUtils.download(Path.of(CHATS_VIDEOS_PATH), chatMessage.getText(), ContentType.VIDEO);
+            }
+            case AUDIO_MP3, AUDIO_OGG -> {
+                return FileUtils.download(Path.of(CHATS_AUDIO_PATH), chatMessage.getText(), chatMessage.getContentType());
+            }
+            default -> throw new MessageException("Message is not file");
         }
-        return ImageUtils.download(Path.of(CHATS_IMAGES_PATH), chatMessage.getText());
     }
 
     private ChatMessage checkMessage(long messageId) {
+        User currentUser = getCurrentUser();
         ChatMessage message = messagesRepository.findById(messageId)
                 .orElseThrow(() -> new MessageException("Message not found"));
         Chat chat = message.getChat();
-        if (chat.getUser2().getUsername().equals(getCurrentUser().getUsername()) ||
-                chat.getUser1().getUsername().equals(getCurrentUser().getUsername())) {
-            if (message.getChat().getId() == chat.getId()) {
-                if (message.getOwner().getId() != getCurrentUser().getId()) {
-                    throw new MessageException("User not own this message.");
-                }
-            } else {
-                throw new MessageException("Message not exist in this chat.");
+        if (chat.getUser1().getId() == currentUser.getId() || chat.getUser2().getId() == currentUser.getId()) {
+            if (message.getOwner().getId() != currentUser.getId()) {
+                throw new MessageException("Current user not own this message.");
             }
         } else {
-            throw new MessageException("User not exist in this chat.");
+            throw new MessageException("Curren user not exist in this chat.");
         }
         return message;
     }

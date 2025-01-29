@@ -31,7 +31,7 @@ public class Channel {
     private Date createdAt;
 
     @Column(name = "is_private")
-    private Boolean isPrivate;
+    private boolean isPrivate;
 
     @OneToMany(mappedBy = "channel")
     private List<ChannelUser> users;
@@ -42,11 +42,26 @@ public class Channel {
     @Column(name = "is_banned")
     private boolean isBaned;
 
-    @OneToMany(mappedBy = "channel")
-    private List<BannedChannelUser> bannedUsers;
+    @Column(name = "is_posts_comments_allowed")
+    private boolean isPostsCommentsAllowed;
+
+    @Column(name = "is_files_allowed")
+    private boolean isFilesAllowed;
+
+    @Column(name = "is_invites_allowed")
+    private boolean isInvitesAllowed;
+
+    @ManyToMany
+    @JoinTable(name = "banned_channels_users",
+    joinColumns = @JoinColumn(name = "channel_id"),
+    inverseJoinColumns = @JoinColumn(name = "user_id"))
+    private List<User> bannedUsers;
 
     @OneToMany(mappedBy = "channel")
     private List<ChannelLog> logs;
+
+    @OneToMany(mappedBy = "channel")
+    private List<ChannelInvite> invites;
 
     public static Builder builder() {
         return new Builder();
@@ -57,16 +72,17 @@ public class Channel {
         this.description = builder.description;
         this.isPrivate = builder.isPrivate;
         this.createdAt = builder.createdAt;
-        this.isBaned = builder.isBanned;
         this.owner = builder.owner;
         this.image = builder.image;
+        this.isPostsCommentsAllowed = true;
+        this.isFilesAllowed = true;
+        this.isInvitesAllowed = true;
     }
 
     public static class Builder {
         private User owner;
         private Date createdAt;
         private Boolean isPrivate;
-        private boolean isBanned;
         private String name;
         private String description;
         private String image;
@@ -83,11 +99,6 @@ public class Channel {
 
         public Builder isPrivate(Boolean isPrivate) {
             this.isPrivate = isPrivate;
-            return this;
-        }
-
-        public Builder isBanned(Boolean isBanned) {
-            this.isBanned = isBanned;
             return this;
         }
 
