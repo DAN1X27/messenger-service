@@ -267,13 +267,11 @@ public class ChannelsPostsService {
             throw new ChannelException("Comments are not allowed in this channel");
         }
         boolean isFile = false;
-        switch (contentType) {
-            case IMAGE, VIDEO, AUDIO_MP3, AUDIO_OGG -> {
-                if (!channel.isFilesAllowed()) {
-                    throw new ChannelException("Files are not allowed in this channel");
-                }
-                isFile = true;
+        if (contentType != ContentType.TEXT) {
+            if (!channel.isFilesAllowed()) {
+                throw new ChannelException("Files are not allowed in this channel");
             }
+            isFile = true;
         }
 
         ChannelPostComment comment = new ChannelPostComment();
