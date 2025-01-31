@@ -67,12 +67,12 @@ public class ChannelsPostsService {
             case VIDEO -> FileUtils.upload(Path.of(POSTS_VIDEOS_PATH), file, uuid, contentType);
             case AUDIO_MP3, AUDIO_OGG -> FileUtils.upload(Path.of(POSTS_AUDIO_PATH), file, uuid, contentType);
         }
-        FileUtils.upload(Path.of(POSTS_IMAGES_PATH), file, uuid, contentType);
         ChannelPost post = savePost(null, id, ContentType.IMAGE);
-        ChannelPostFile postImage = new ChannelPostFile();
-        postImage.setPost(post);
-        postImage.setFileUUID(uuid);
-        filesRepository.save(postImage);
+        ChannelPostFile postFile = new ChannelPostFile();
+        postFile.setPost(post);
+        postFile.setFileUUID(uuid);
+        postFile.setContentType(contentType);
+        filesRepository.save(postFile);
     }
 
     private ChannelPost savePost(String text, int groupId, ContentType contentType) {
