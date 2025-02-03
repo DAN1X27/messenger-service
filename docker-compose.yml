@@ -33,6 +33,7 @@ services:
       - ./templates:/app/templates
     networks:
       - messenger-service-net
+    restart: unless-stopped
   db:
     image: 'postgres:17-alpine'
     container_name: messenger-service-db
