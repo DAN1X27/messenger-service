@@ -1,6 +1,7 @@
 package danix.app.messenger_service;
 
 import danix.app.messenger_service.dto.ResponseChatCreatedDTO;
+import danix.app.messenger_service.dto.ResponseChatMessageDTO;
 import danix.app.messenger_service.dto.ResponseUserDTO;
 import danix.app.messenger_service.dto.ShowChatDTO;
 import danix.app.messenger_service.models.BlockedUser;
@@ -31,6 +32,7 @@ import util.TestUtils;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -44,7 +46,7 @@ public class ChatsServiceTest {
 
     private final User testUser = TestUtils.getTestUser();
 
-    private final Chat testChat = new Chat(currentUser, testUser);
+    private final Chat testChat = new Chat(currentUser, testUser, UUID.randomUUID().toString());
 
     @Mock
     private ModelMapper modelMapper;
@@ -90,7 +92,7 @@ public class ChatsServiceTest {
         chatsService.createChat(testUser.getId());
         verify(chatsRepository, times(1)).save(any(Chat.class));
         verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" +
-                testUser.getId() + "/main"), any(ResponseChatCreatedDTO.class));
+                testUser.getWebSocketUUID() + "/main"), any(ResponseChatCreatedDTO.class));
     }
 
     @Test
@@ -145,20 +147,22 @@ public class ChatsServiceTest {
         when(chatsRepository.findById(testChat.getId())).thenReturn(Optional.of(testChat));
         when(chatsMessagesRepository.findAllByChat(testChat, PageRequest.of(1, 1)))
                 .thenReturn(List.of(testMessage1, testMessage2, testMessage3));
-        ResponseUserDTO responseUserDTO = new ResponseUserDTO();
-        responseUserDTO.setId(testUser.getId());
-        when(modelMapper.map(testUser, ResponseUserDTO.class)).thenReturn(responseUserDTO);
-        when(modelMapper.map(currentUser, ResponseUserDTO.class)).thenReturn(new ResponseUserDTO());
+        ResponseUserDTO respUser1 = new ResponseUserDTO();
+        respUser1.setId(testUser.getId());
+        when(modelMapper.map(testUser, ResponseUserDTO.class)).thenReturn(respUser1);
+        ResponseUserDTO respUser2 = new ResponseUserDTO();
+        respUser2.setId(currentUser.getId());
+        when(modelMapper.map(currentUser, ResponseUserDTO.class)).thenReturn(respUser2);
         ShowChatDTO showChatDTO = chatsService.showChat(testChat.getId(), 1, 1);
         assertNotNull(showChatDTO);
         assertEquals(testChat.getId(), showChatDTO.getId());
         assertEquals(testUser.getId(), showChatDTO.getUser().getId());
-        Map<Long, ChatMessage> chatMessageMap = testChat.getMessages().stream()
-                .collect(Collectors.toMap(ChatMessage::getId, Function.identity()));
+        Map<Long, ResponseChatMessageDTO> responseMessages = showChatDTO.getMessages().stream()
+                .collect(Collectors.toMap(ResponseChatMessageDTO::getMessageId, Function.identity()));
         for (ChatMessage message : testChat.getMessages()) {
-            ChatMessage chatMessage = chatMessageMap.get(message.getId());
+            ResponseChatMessageDTO chatMessage = responseMessages.get(message.getId());
             assertNotNull(chatMessage);
-            assertEquals(message.getOwner().getId(), chatMessage.getOwner().getId());
+            assertEquals(message.getOwner().getId(), chatMessage.getSender().getId());
             if (message.getOwner().getId() == currentUser.getId()) {
                 assertFalse(message.isRead());
             } else if (message.getOwner().getId() == testUser.getId()) {

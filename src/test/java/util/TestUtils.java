@@ -6,8 +6,9 @@ import danix.app.messenger_service.models.User;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
+import java.util.List;
+import java.util.UUID;
 
 public final class TestUtils {
 
@@ -25,6 +26,7 @@ public final class TestUtils {
                 .password("test_password")
                 .description("test_description")
                 .isPrivate(false)
+                .webSocketUUID(webSocketUUID())
                 .build();
         user.setId(1);
         return user;
@@ -41,6 +43,7 @@ public final class TestUtils {
                 .password("test_password")
                 .description("test_description")
                 .isPrivate(false)
+                .webSocketUUID(webSocketUUID())
                 .build();
         user.setId(2);
         return user;
@@ -51,6 +54,7 @@ public final class TestUtils {
                 .name("test_name")
                 .description("test_description")
                 .createdAt(new Date())
+                .webSocketUUID(webSocketUUID())
                 .build();
     }
 
@@ -60,6 +64,11 @@ public final class TestUtils {
                 .description("Test description")
                 .isPrivate(false)
                 .createdAt(new Date())
+                .webSocketUUID(webSocketUUID())
                 .build();
+    }
+
+    public static String webSocketUUID() {
+        return UUID.randomUUID().toString();
     }
 }

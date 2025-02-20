@@ -25,12 +25,16 @@ public class Chat {
     @JoinColumn(name = "user2", referencedColumnName = "id")
     private User user2;
 
+    @Column(name = "web_socket_uuid")
+    private String webSocketUUID;
+
     @OneToMany(mappedBy = "chat")
     private List<ChatMessage> messages;
 
-    public Chat(User user1, User user2) {
+    public Chat(User user1, User user2, String webSocketUUID) {
         this.user1 = user1;
         this.user2 = user2;
+        this.webSocketUUID = webSocketUUID;
     }
 
     public Chat() {}

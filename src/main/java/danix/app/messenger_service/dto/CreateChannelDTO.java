@@ -1,5 +1,6 @@
 package danix.app.messenger_service.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -16,5 +17,6 @@ public class CreateChannelDTO {
     @Size(max = 200, message = "Channel description can't be more than 200 characters")
     private String description;
 
+    @JsonProperty("private")
     private Boolean isPrivate;
 }

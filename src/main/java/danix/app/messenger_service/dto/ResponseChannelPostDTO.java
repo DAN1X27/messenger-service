@@ -1,5 +1,6 @@
 package danix.app.messenger_service.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import danix.app.messenger_service.models.ContentType;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,12 +13,17 @@ import java.util.List;
 public class ResponseChannelPostDTO {
     private String text;
     private ResponseUserDTO owner;
+    @JsonProperty("comments_count")
     private int commentsCount;
     private int likes;
+    @JsonProperty("liked")
     private boolean isLiked;
+    @JsonProperty("post_id")
     private long postId;
+    @JsonProperty("content_type")
     private ContentType contentType;
     private List<ResponseChannelPostFilesDTO> files;
+    @JsonProperty("created_at")
     private LocalDateTime createdAt;
 
     public static Builder builder() {

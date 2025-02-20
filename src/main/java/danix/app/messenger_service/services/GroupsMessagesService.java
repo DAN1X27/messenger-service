@@ -11,13 +11,13 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.UUID;
 
 import static danix.app.messenger_service.services.UserService.getCurrentUser;
@@ -99,7 +99,7 @@ public class GroupsMessagesService {
         messageDTO.setSentTime(groupMessage.getSentTime());
         messageDTO.setSender(modelMapper.map(groupMessage.getMessageOwner(), ResponseUserDTO.class));
         messageDTO.setContentType(contentType);
-        messagingTemplate.convertAndSend("/topic/group/" + groupId, messageDTO);
+        messagingTemplate.convertAndSend("/topic/group/" + group.getWebSocketUUID(), messageDTO);
     }
 
     @Transactional
@@ -116,8 +116,8 @@ public class GroupsMessagesService {
                 case AUDIO_MP3, AUDIO_OGG -> FileUtils.delete(Path.of(GROUPS_MESSAGES_AUDIO_PATH), message.getText());
             }
             groupsMessagesRepository.delete(message);
-            messagingTemplate.convertAndSend("/topic/group/" + group.getId(),
-                    new ResponseMessageDeletionDTO(messageId));
+            messagingTemplate.convertAndSend("/topic/group/" + group.getWebSocketUUID(),
+                    Map.of("deleted_message_id", messageId));
         } else {
             throw new MessageException("User must be owner of this message or admin");
         }
@@ -135,7 +135,7 @@ public class GroupsMessagesService {
                 throw new MessageException("The file cannot be changed");
             }
             message.setText(text);
-            messagingTemplate.convertAndSend("/topic/group/" + group.getId(),
+            messagingTemplate.convertAndSend("/topic/group/" + group.getWebSocketUUID(),
                     new ResponseMessageUpdatingDTO(messageId, text));
         } else {
             throw new MessageException("User must be owner of this message");

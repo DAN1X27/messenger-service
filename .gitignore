@@ -31,3 +31,4 @@ build/
 ### VS Code ###
 .vscode/
 /postgres/db_data
+/src/main/resources/web_socket_test

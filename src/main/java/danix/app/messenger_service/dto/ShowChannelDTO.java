@@ -1,5 +1,6 @@
 package danix.app.messenger_service.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,8 +15,11 @@ public class ShowChannelDTO {
     private String description;
     private List<ResponseChannelUserDTO> users;
     private List<ResponseChannelPostDTO> posts;
+    @JsonProperty("created_at")
     private Date createdAt;
     private ResponseUserDTO owner;
+    @JsonProperty("web_socket")
+    private String webSocketUUID;
 
     public static Builder builder() {
         return new Builder();
@@ -29,6 +33,7 @@ public class ShowChannelDTO {
         this.createdAt = builder.createdAt;
         this.owner = builder.owner;
         this.description = builder.description;
+        this.webSocketUUID = builder.webSocketUUID;
     }
 
     public static class Builder {
@@ -39,6 +44,12 @@ public class ShowChannelDTO {
         private Date createdAt;
         private ResponseUserDTO owner;
         private String description;
+        private String webSocketUUID;
+
+        public Builder webSocketUUID(String webSocketUUID) {
+            this.webSocketUUID = webSocketUUID;
+            return this;
+        }
 
         public Builder name(String name) {
             this.name = name;

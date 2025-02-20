@@ -11,7 +11,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -19,8 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.Path;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -109,6 +106,7 @@ public class ChannelsService implements Image {
                     .owner(getCurrentUser())
                     .image(DEFAULT_IMAGE_UUID)
                     .isPrivate(createChannelDTO.getIsPrivate() != null && createChannelDTO.getIsPrivate())
+                    .webSocketUUID(UUID.randomUUID().toString())
                     .build();
 
             ChannelUser channelUser = new ChannelUser();
@@ -136,7 +134,7 @@ public class ChannelsService implements Image {
         FileUtils.delete(Path.of(AVATARS_PATH), channel.getImage());
         channel.setImage(uuid);
         for (ChannelUser channelUser : channel.getUsers()) {
-            messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getId() + "/main",
+            messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main",
                     new ResponseChannelUpdatingDTO(modelMapper.map(channel, ResponseChannelDTO.class), true));
         }
     }
@@ -161,7 +159,7 @@ public class ChannelsService implements Image {
         FileUtils.delete(Path.of(AVATARS_PATH), channel.getImage());
         channel.setImage(DEFAULT_IMAGE_UUID);
         for (ChannelUser channelUser : channel.getUsers()) {
-            messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getId() + "/main",
+            messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main",
                     new ResponseChannelUpdatingDTO(modelMapper.map(channel, ResponseChannelDTO.class), true));
         }
     }
@@ -212,10 +210,10 @@ public class ChannelsService implements Image {
         channelsUsersRepository.delete(channelUser);
         if (channel.getOwner().getId() == currentUser.getId()) {
             for (ChannelUser channelUser1 : channel.getUsers()) {
-                messagingTemplate.convertAndSend("/topic/user/" + channelUser1.getUser().getId() + "/main",
+                messagingTemplate.convertAndSend("/topic/user/" + channelUser1.getUser().getWebSocketUUID() + "/main",
                         new ResponseChannelDeletionDTO(id));
             }
-            messagingTemplate.convertAndSend("/topic/channel/" + id,
+            messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(),
                     new ResponseChannelDeletionDTO(id));
 
             channelsRepository.delete(channel);
@@ -234,13 +232,13 @@ public class ChannelsService implements Image {
                 channel.getOwner()
         );
         appMessagesRepository.save(appMessage);
-        messagingTemplate.convertAndSend("/topic/user/" + channel.getOwner().getId() + "/main",
+        messagingTemplate.convertAndSend("/topic/user/" + channel.getOwner().getWebSocketUUID() + "/main",
                 new ResponseAppMessageDTO(appMessage.getMessage(), appMessage.getSentTime()));
         for (ChannelUser channelUser : channel.getUsers()) {
-            messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getId() + "/main",
+            messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main",
                     new ResponseChannelDeletionDTO(channel.getId()));
         }
-        messagingTemplate.convertAndSend("/topic/channel/" + channel.getId(),
+        messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(),
                 new ResponseChannelDeletionDTO(channel.getId()));
     }
 
@@ -256,7 +254,7 @@ public class ChannelsService implements Image {
                 channel.getOwner()
         );
         appMessagesRepository.save(appMessage);
-        messagingTemplate.convertAndSend("/topic/user/" + channel.getOwner().getId() + "/main",
+        messagingTemplate.convertAndSend("/topic/user/" + channel.getOwner().getWebSocketUUID() + "/main",
                 new ResponseAppMessageDTO(appMessage.getMessage(), appMessage.getSentTime()));
     }
 
@@ -311,12 +309,12 @@ public class ChannelsService implements Image {
             channelsUsersRepository.delete(foundUser);
             AppMessage appMessage = new AppMessage("You were banned in channel - " + channel.getName(), user);
             appMessagesRepository.save(appMessage);
-            messagingTemplate.convertAndSend("/topic/user/" + user.getId(),
+            messagingTemplate.convertAndSend("/topic/user/" + user.getWebSocketUUID(),
                     new ResponseAppMessageDTO(appMessage.getMessage(), appMessage.getSentTime()));
-            messagingTemplate.convertAndSend("/topic/user/" + getCurrentUser().getId() + "/main",
+            messagingTemplate.convertAndSend("/topic/user/" + getCurrentUser().getWebSocketUUID() + "/main",
                     new ResponseChannelDeletionDTO(channelId));
-            messagingTemplate.convertAndSend("/topic/channel/" + channelId,
-                    new ResponseBannedUserDTO(userId));
+            messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(),
+                    Map.of("deleted_user_id", userId));
         });
         channel.getBannedUsers().add(user);
         ChannelLog channelLog = new ChannelLog();
@@ -392,7 +390,7 @@ public class ChannelsService implements Image {
             channel.setName(updateChannelDTO.getName() == null ? channel.getName() : updateChannelDTO.getName());
             channel.setDescription(updateChannelDTO.getDescription() == null ? channel.getDescription() : updateChannelDTO.getDescription());
             for (ChannelUser channelUser : channel.getUsers()) {
-                messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getId() + "/main",
+                messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main",
                         new ResponseChannelUpdatingDTO(modelMapper.map(channel, ResponseChannelDTO.class), false));
             }
         } else {
@@ -405,7 +403,7 @@ public class ChannelsService implements Image {
         Channel channel = getById(id);
         if (channel.getOwner().getId() == getCurrentUser().getId()) {
             channel.setPrivate(options.getIsPrivate() != null && options.getIsPrivate());
-            channel.setFilesAllowed(options.getIsImagesAllowed() != null ? options.getIsImagesAllowed()
+            channel.setFilesAllowed(options.getIsFilesAllowed() != null ? options.getIsFilesAllowed()
                     : channel.isFilesAllowed());
             channel.setPostsCommentsAllowed(options.getIsPostsCommentsAllowed() != null ? options.getIsPostsCommentsAllowed()
                     : channel.isPostsCommentsAllowed());
@@ -422,7 +420,7 @@ public class ChannelsService implements Image {
         User currentUser = getCurrentUser();
         if (channel.getOwner().getId() == currentUser.getId()) {
             for (ChannelUser channelUser : channel.getUsers()) {
-                messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getId() + "/main",
+                messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main",
                         new ResponseChannelDeletionDTO(id));
             }
             if (channel.getImage() != null && !channel.getImage().equals(DEFAULT_IMAGE_UUID)) {
@@ -445,7 +443,7 @@ public class ChannelsService implements Image {
                     case AUDIO_OGG, AUDIO_MP3 -> FileUtils.delete(Path.of(POSTS_AUDIO_PATH), file.getFileUUID());
                 }
             }
-            messagingTemplate.convertAndSend("/topic/channel/" + id,
+            messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(),
                     new ResponseChannelDeletionDTO(id));
             jdbcTemplate.update("DELETE FROM channels WHERE id = ?", id);
         } else {
@@ -469,6 +467,7 @@ public class ChannelsService implements Image {
                 .users(channel.getUsers().stream()
                         .map(this::convertToResponseChannelUserDTO)
                         .toList())
+                .webSocketUUID(channel.getWebSocketUUID())
                 .build();
     }
 
@@ -533,7 +532,7 @@ public class ChannelsService implements Image {
         Channel channel = getById(id);
         if (channel.getOwner().getId() == getCurrentUser().getId()) {
             ChannelsOptionsDTO options = new ChannelsOptionsDTO();
-            options.setIsImagesAllowed(channel.isFilesAllowed());
+            options.setIsFilesAllowed(channel.isFilesAllowed());
             options.setIsPrivate(channel.isPrivate());
             options.setIsPostsCommentsAllowed(channel.isPostsCommentsAllowed());
             options.setIsInvitesAllowed(channel.isInvitesAllowed());

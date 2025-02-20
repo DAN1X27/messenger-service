@@ -39,6 +39,11 @@ public class UsersController {
                 .body(image.getFileData());
     }
 
+    @GetMapping("/web-socket-uuid")
+    public ResponseEntity<Map<String, String>> getWebSocketUUID() {
+        return new ResponseEntity<>(Map.of("UUID", getCurrentUser().getWebSocketUUID()), HttpStatus.OK);
+    }
+
     @PatchMapping("/status")
     public ResponseEntity<HttpStatus> updateOnlineStatus() {
         userService.updateOnlineStatus();
@@ -63,9 +68,8 @@ public class UsersController {
     }
 
     @GetMapping("/find")
-    public ResponseEntity<ShowUserDTO> findUser(@RequestBody Map<String, String> userData) {
-        requestHelper(userData);
-        ShowUserDTO user = userService.findUser(userData.get("username"));
+    public ResponseEntity<ShowUserDTO> findUser(@RequestParam String username) {
+        ShowUserDTO user = userService.findUser(username);
         return ResponseEntity.ok(user);
     }
 

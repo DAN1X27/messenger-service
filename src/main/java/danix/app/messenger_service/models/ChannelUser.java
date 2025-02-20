@@ -33,4 +33,8 @@ public class ChannelUser {
     public String getUsername() {
         return user.getUsername();
     }
+
+    public User.OnlineStatus getOnlineStatus() {
+        return user.getOnlineStatus();
+    }
 }

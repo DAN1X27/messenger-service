@@ -1,5 +1,6 @@
 package danix.app.messenger_service.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,30 +10,37 @@ import java.util.List;
 @Getter
 @Setter
 public class ShowGroupDTO {
-    private int groupId;
-    private String groupName;
+    private int id;
+    private String name;
     private ResponseUserDTO owner;
     private List<ResponseGroupMessageDTO> messages;
     private List<ResponseGroupUserDTO> users;
-    private List<ResponseGroupActionMessageDTO> groupActionMessages;
+    @JsonProperty("action_messages")
+    private List<ResponseGroupActionMessageDTO> actionMessages;
+    @JsonProperty("created_at")
     private Date createdAt;
+    @JsonProperty("users_count")
     private int usersCount;
+    @JsonProperty("description")
     private String description;
+    @JsonProperty("web_socket")
+    private String webSocketUUID;
 
     public static Builder builder() {
         return new Builder();
     }
 
     public ShowGroupDTO(Builder builder) {
-        this.groupId = builder.groupId;
-        this.groupName = builder.groupName;
+        this.id = builder.groupId;
+        this.name = builder.groupName;
         this.owner = builder.owner;
         this.messages = builder.messages;
         this.users = builder.users;
-        this.groupActionMessages = builder.groupActionMessages;
+        this.actionMessages = builder.groupActionMessages;
         this.createdAt = builder.createdAt;
         this.usersCount = builder.usersCount;
         this.description = builder.description;
+        this.webSocketUUID = builder.webSocketUUID;
     }
 
     public static class Builder {
@@ -45,6 +53,12 @@ public class ShowGroupDTO {
         private Date createdAt;
         private int usersCount;
         private String description;
+        private String webSocketUUID;
+
+        public Builder webSocketUUID(String webSocketUUID) {
+            this.webSocketUUID = webSocketUUID;
+            return this;
+        }
 
         public Builder name(String name) {
             this.groupName = name;

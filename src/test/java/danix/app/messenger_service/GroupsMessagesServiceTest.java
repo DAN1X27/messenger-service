@@ -1,7 +1,6 @@
 package danix.app.messenger_service;
 
 import danix.app.messenger_service.dto.ResponseGroupMessageDTO;
-import danix.app.messenger_service.dto.ResponseMessageDeletionDTO;
 import danix.app.messenger_service.dto.ResponseMessageUpdatingDTO;
 import danix.app.messenger_service.models.*;
 import danix.app.messenger_service.repositories.GroupsMessagesRepository;
@@ -22,6 +21,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import util.TestUtils;
 
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -70,7 +70,7 @@ public class GroupsMessagesServiceTest {
         when(groupsService.getGroupUser(testGroup, currentUser)).thenReturn(new GroupUser());
         groupsMessagesService.sendTextMessage("test message", testGroup.getId());
         verify(messagesRepository, times(1)).save(any(GroupMessage.class));
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/0"),
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/" + testGroup.getWebSocketUUID()),
                 any(ResponseGroupMessageDTO.class));
     }
 
@@ -81,8 +81,8 @@ public class GroupsMessagesServiceTest {
         when(groupsService.getGroupUser(testGroup, currentUser)).thenReturn(new GroupUser());
         groupsMessagesService.deleteMessage(testMessage.getId());
         verify(messagesRepository, times(1)).delete(testMessage);
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/0"),
-                any(ResponseMessageDeletionDTO.class));
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/" + testGroup.getWebSocketUUID()),
+                any(Map.class));
     }
 
     @Test
@@ -95,8 +95,8 @@ public class GroupsMessagesServiceTest {
         when(groupsService.getGroupUser(testGroup, currentUser)).thenReturn(testGroupUser);
         groupsMessagesService.deleteMessage(testMessage.getId());
         verify(messagesRepository, times(1)).delete(testMessage);
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/0"),
-                any(ResponseMessageDeletionDTO.class));
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/" + testGroup.getWebSocketUUID()),
+                any(Map.class));
     }
 
     @Test
@@ -122,7 +122,7 @@ public class GroupsMessagesServiceTest {
         groupsMessagesService.updateMessage(testMessage.getId(), "new message");
         assertNotNull(testMessage.getText());
         assertEquals("new message", testMessage.getText());
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/0"),
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/" + testGroup.getWebSocketUUID()),
                 any(ResponseMessageUpdatingDTO.class));
     }
 

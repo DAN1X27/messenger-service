@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static danix.app.messenger_service.services.UserService.getCurrentUser;
@@ -70,12 +71,12 @@ public class ChatsService {
                 throw new ChatException("User has a private account");
             }
         }
-        Chat chat = new Chat(currentUser, user);
+        Chat chat = new Chat(currentUser, user, UUID.randomUUID().toString());
         chatsRepository.save(chat);
         ResponseChatCreatedDTO responseChatDTO = new ResponseChatCreatedDTO();
         responseChatDTO.setCreatedChatId(chat.getId());
         responseChatDTO.setUser(modelMapper.map(currentUser, ResponseUserDTO.class));
-        messagingTemplate.convertAndSend("/topic/user/" + userId + "/main", responseChatDTO);
+        messagingTemplate.convertAndSend("/topic/user/" + user.getWebSocketUUID() + "/main", responseChatDTO);
     }
 
     public List<ResponseChatDTO> getAllUserChats() {
@@ -93,6 +94,7 @@ public class ChatsService {
         User user = chat.getUser1().getId() == getCurrentUser().getId() ? chat.getUser2() : chat.getUser1();
         showChatDTO.setUser(modelMapper.map(user, ResponseUserDTO.class));
         showChatDTO.setId(chat.getId());
+        showChatDTO.setWebSocketUUID(chat.getWebSocketUUID());
         return showChatDTO;
     }
 

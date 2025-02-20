@@ -23,13 +23,11 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import util.TestUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static util.TestUtils.webSocketUUID;
 
 @ExtendWith(MockitoExtension.class)
 public class GroupServiceTest {
@@ -42,9 +40,6 @@ public class GroupServiceTest {
 
     @Mock
     private SimpMessagingTemplate messagingTemplate;
-
-    @Mock
-    private GroupsMessagesRepository groupsMessagesRepository;
 
     @Mock
     private JdbcTemplate jdbcTemplate;
@@ -238,7 +233,7 @@ public class GroupServiceTest {
         verify(groupsUsersRepository, times(1)).save(any(GroupUser.class));
         verify(groupsInvitesRepository, times(1)).delete(any(GroupInvite.class));
         verify(groupsActionsMessagesRepository, times(1)).save(any(GroupActionMessage.class));
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/0"),
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/" + testGroup.getWebSocketUUID()),
                 any(ResponseGroupActionMessageDTO.class));
     }
 
@@ -379,19 +374,16 @@ public class GroupServiceTest {
         groupsService.leaveGroup(testGroup.getId());
         verify(groupsUsersRepository, times(1)).delete(any(GroupUser.class));
         verify(groupsActionsMessagesRepository, times(1)).save(any(GroupActionMessage.class));
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/0"),
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/" + testGroup.getWebSocketUUID()),
                 any(ResponseGroupActionMessageDTO.class));
     }
 
     @Test
     public void leaveGroupWhenUserIsOwner() {
         testGroup.setOwner(currentUser);
-        User testUser1 = new User();
-        testUser1.setId(1);
-        User testUser2 = new User();
-        testUser2.setId(2);
-        User testUser3 = new User();
-        testUser3.setId(3);
+        User testUser1 = User.builder().webSocketUUID(webSocketUUID()).build();
+        User testUser2 = User.builder().webSocketUUID(webSocketUUID()).build();
+        User testUser3 = User.builder().webSocketUUID(webSocketUUID()).build();
         testGroup.setUsers(List.of(
                 new GroupUser(testUser1, testGroup, false),
                 new GroupUser(testUser2, testGroup, false),
@@ -405,9 +397,9 @@ public class GroupServiceTest {
         groupsService.leaveGroup(testGroup.getId());
         for (GroupUser groupUser : testGroup.getUsers()) {
             verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" +
-                    groupUser.getUser().getId() + "/main"), any(ResponseDeletionGroupDTO.class));
+                    groupUser.getUser().getWebSocketUUID() + "/main"), any(ResponseDeletionGroupDTO.class));
         }
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/0"),
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/" + testGroup.getWebSocketUUID()),
                 any(ResponseDeletionGroupDTO.class));
         verify(groupsRepository, times(1)).delete(testGroup);
     }
@@ -441,12 +433,12 @@ public class GroupServiceTest {
         groupsService.banUser(testGroup.getId(), testUser.getId());
         verify(groupsUsersRepository, times(1)).delete(any(GroupUser.class));
         verify(appMessagesRepository, times(1)).save(any(AppMessage.class));
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/2/main"),
-                any(ResponseAppMessageDTO.class));
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/2/main"),
-                any(ResponseDeletionGroupDTO.class));
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/0"),
-                any(ResponseBannedUserDTO.class));
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/"
+              + testUser.getWebSocketUUID() + "/main"), any(ResponseAppMessageDTO.class));
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/"
+                + testUser.getWebSocketUUID() + "/main"), any(ResponseDeletionGroupDTO.class));
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/" + testGroup.getWebSocketUUID()),
+                any(Map.class));
         assertTrue(testGroup.getBannedUsers().contains(testUser));
     }
 
@@ -539,12 +531,9 @@ public class GroupServiceTest {
     @Test
     public void deleteGroup() {
         testGroup.setOwner(currentUser);
-        User testUser1 = new User();
-        testUser1.setId(1);
-        User testUser2 = new User();
-        testUser2.setId(2);
-        User testUser3 = new User();
-        testUser3.setId(3);
+        User testUser1 = User.builder().webSocketUUID(webSocketUUID()).build();
+        User testUser2 = User.builder().webSocketUUID(webSocketUUID()).build();
+        User testUser3 = User.builder().webSocketUUID(webSocketUUID()).build();
         testGroup.setUsers(List.of(
                 new GroupUser(testUser1, testGroup, false),
                 new GroupUser(testUser2, testGroup, false),
@@ -557,11 +546,11 @@ public class GroupServiceTest {
         when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currentUser));
         groupsService.deleteGroup(testGroup.getId());
         verify(jdbcTemplate, times(1)).update(eq("DELETE FROM groups where id = ?"), eq(testGroup.getId()));
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/0"),
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/" + testGroup.getWebSocketUUID()),
                 any(ResponseDeletionGroupDTO.class));
         for (GroupUser groupUser : testGroup.getUsers()) {
             verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" +
-                    groupUser.getUser().getId() + "/main"), any(ResponseDeletionGroupDTO.class));
+                    groupUser.getUser().getWebSocketUUID() + "/main"), any(ResponseDeletionGroupDTO.class));
         }
     }
 
@@ -583,12 +572,9 @@ public class GroupServiceTest {
         updateGroupDTO.setName("New name");
         updateGroupDTO.setGroupId(testGroup.getId());
         testGroup.setOwner(currentUser);
-        User testUser1 = new User();
-        testUser1.setId(1);
-        User testUser2 = new User();
-        testUser2.setId(2);
-        User testUser3 = new User();
-        testUser3.setId(3);
+        User testUser1 = User.builder().webSocketUUID(webSocketUUID()).build();
+        User testUser2 = User.builder().webSocketUUID(webSocketUUID()).build();
+        User testUser3 = User.builder().webSocketUUID(webSocketUUID()).build();
         testGroup.setUsers(List.of(
                 new GroupUser(testUser2, testGroup, false),
                 new GroupUser(testUser1, testGroup, false),
@@ -603,9 +589,9 @@ public class GroupServiceTest {
         assertNotNull(testGroup.getDescription());
         for (GroupUser groupUser : testGroup.getUsers()) {
             verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" +
-                    groupUser.getUser().getId() + "/main"), any(ResponseGroupUpdatingDTO.class));
+                    groupUser.getUser().getWebSocketUUID() + "/main"), any(ResponseGroupUpdatingDTO.class));
         }
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/0"),
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/" + testGroup.getWebSocketUUID()),
                 any(ResponseGroupUpdatingDTO.class));
     }
 

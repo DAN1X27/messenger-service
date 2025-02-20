@@ -6,7 +6,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Locale;
 
 @Entity
 @Table(name = "Person")
@@ -89,6 +88,9 @@ public class User {
     @Column(name = "image")
     private String imageUUID;
 
+    @Column(name = "web_socket_uuid")
+    private String webSocketUUID;
+
     @ManyToMany(mappedBy = "likes")
     private List<ChannelPost> postsLikes;
 
@@ -110,6 +112,7 @@ public class User {
         this.userStatus = builder.userStatus;
         this.imageUUID = builder.imageUUID;
         this.onlineStatus = OnlineStatus.ONLINE;
+        this.webSocketUUID = builder.webSocketUUID;
         this.isBanned = false;
     }
 
@@ -123,6 +126,12 @@ public class User {
         private Roles role;
         private Status userStatus;
         private String imageUUID;
+        private String webSocketUUID;
+
+        public Builder webSocketUUID(String webSocketUUID) {
+            this.webSocketUUID = webSocketUUID;
+            return this;
+        }
 
         public Builder imageUUID(String imageUUID) {
             this.imageUUID = imageUUID;

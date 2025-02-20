@@ -12,7 +12,6 @@ import danix.app.messenger_service.services.TokensService;
 import danix.app.messenger_service.services.UserService;
 import danix.app.messenger_service.util.UserException;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -29,9 +28,11 @@ import util.TestUtils;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static util.TestUtils.webSocketUUID;
 
 @ExtendWith(MockitoExtension.class)
 public class UsersServiceTest {
@@ -66,6 +67,9 @@ public class UsersServiceTest {
 
     @Mock
     private UsersRepository usersRepository;
+
+    @Mock
+    private ChatsRepository chatsRepository;
 
     @Mock
     private KafkaTemplate<String, String> kafkaTemplate;
@@ -426,12 +430,12 @@ public class UsersServiceTest {
     @Test
     public void updateOnlineStatusToOffline() {
         currentUser.setChannels(Collections.emptyList());
-        currentUser.setChats(Collections.emptyList());
         currentUser.setGroups(Collections.emptyList());
         SecurityContextHolder.setContext(securityContext);
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currentUser));
         when(usersRepository.findById(currentUser.getId())).thenReturn(Optional.of(currentUser));
+        when(chatsRepository.findByUser1OrUser2(currentUser, currentUser)).thenReturn(Collections.emptyList());
         userService.updateOnlineStatus();
         assertEquals(User.OnlineStatus.OFFLINE, currentUser.getOnlineStatus());
     }
@@ -439,31 +443,20 @@ public class UsersServiceTest {
     @Test
     public void updateOnlineStatusToOnlineAndSendMessagesToTopics() {
         User testChatUser1 = new User();
-        testChatUser1.setId(100);
+        testChatUser1.setWebSocketUUID(webSocketUUID());
         User testChatUser2 = new User();
-        testChatUser2.setId(200);
-        currentUser.setChats(List.of(
-                new Chat(testChatUser1, currentUser),
-                new Chat(testChatUser2, currentUser),
-                new Chat(currentUser, user)
-        ));
-        Channel testChannel1 = new Channel();
-        testChannel1.setId(1);
-        Channel testChannel2 = new Channel();
-        testChannel2.setId(2);
-        Channel testChannel3 = new Channel();
-        testChannel3.setId(3);
+        testChatUser2.setWebSocketUUID(webSocketUUID());
+        Channel testChannel1 = Channel.builder().webSocketUUID(webSocketUUID()).build();
+        Channel testChannel2 = Channel.builder().webSocketUUID(webSocketUUID()).build();
+        Channel testChannel3 = Channel.builder().webSocketUUID(webSocketUUID()).build();
         currentUser.setChannels(List.of(
                 new ChannelUser(currentUser, testChannel1),
                 new ChannelUser(currentUser, testChannel2),
                 new ChannelUser(currentUser, testChannel3)
         ));
-        Group testGroup1 = new Group();
-        testGroup1.setId(1);
-        Group testGroup2 = new Group();
-        testGroup2.setId(2);
-        Group testGroup3 = new Group();
-        testGroup3.setId(3);
+        Group testGroup1 = Group.builder().webSocketUUID(webSocketUUID()).build();
+        Group testGroup2 = Group.builder().webSocketUUID(webSocketUUID()).build();
+        Group testGroup3 = Group.builder().webSocketUUID(webSocketUUID()).build();
         currentUser.setGroups(List.of(
                 new GroupUser(currentUser, testGroup1, false),
                 new GroupUser(currentUser, testGroup2, false),
@@ -474,24 +467,26 @@ public class UsersServiceTest {
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currentUser));
         when(usersRepository.findById(currentUser.getId())).thenReturn(Optional.of(currentUser));
+        List<Chat> chats = List.of(
+                new Chat(testChatUser1, currentUser, UUID.randomUUID().toString()),
+                new Chat(testChatUser2, currentUser, UUID.randomUUID().toString()),
+                new Chat(currentUser, user, UUID.randomUUID().toString())
+        );
+        when(chatsRepository.findByUser1OrUser2(currentUser, currentUser)).thenReturn(chats);
         userService.updateOnlineStatus();
         assertEquals(User.OnlineStatus.ONLINE, currentUser.getOnlineStatus());
-        verify(messagingTemplate, times(3)).convertAndSend(eq("/topic/chat/0"),
+        chats.forEach(chat -> verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/chat/" + chat.getWebSocketUUID()),
+                any(ResponseUpdateUserOnlineStatusDTO.class)));
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" + testChatUser1.getWebSocketUUID() + "/main"),
                 any(ResponseUpdateUserOnlineStatusDTO.class));
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" + testChatUser1.getId() + "/main"),
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" + testChatUser2.getWebSocketUUID() + "/main"),
                 any(ResponseUpdateUserOnlineStatusDTO.class));
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" + testChatUser2.getId() + "/main"),
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" + user.getWebSocketUUID() + "/main"),
                 any(ResponseUpdateUserOnlineStatusDTO.class));
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" + user.getId() + "/main"),
-                any(ResponseUpdateUserOnlineStatusDTO.class));
-        for (ChannelUser channelUser : currentUser.getChannels()) {
-            verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/" + channelUser.getChannel().getId()),
-                    any(ResponseUpdateUserOnlineStatusDTO.class));
-        }
-        for (GroupUser groupUser : currentUser.getGroups()) {
-            verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/" + groupUser.getGroup().getId()),
-                    any(ResponseUpdateUserOnlineStatusDTO.class));
-        }
+        currentUser.getChannels().forEach(channelUser -> verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/" +
+                    channelUser.getChannel().getWebSocketUUID()), any(ResponseUpdateUserOnlineStatusDTO.class)));
+        currentUser.getGroups().forEach(groupUser -> verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/" +
+                    groupUser.getGroup().getWebSocketUUID()), any(ResponseUpdateUserOnlineStatusDTO.class)));
     }
 
     @Test

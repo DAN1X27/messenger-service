@@ -42,6 +42,7 @@ public class UserService implements Image {
     private final EmailsKeysRepository emailsKeysRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final SimpMessagingTemplate messagingTemplate;
+    private final ChatsRepository chatsRepository;
 
     @Value("${default_user_image_uuid}")
     private String DEFAULT_IMAGE_UUID;
@@ -290,6 +291,7 @@ public class UserService implements Image {
                         .isPrivate(personDTO.getIsPrivate() != null && personDTO.getIsPrivate())
                         .imageUUID(DEFAULT_IMAGE_UUID)
                         .userStatus(User.Status.TEMPORALLY_REGISTERED)
+                        .webSocketUUID(UUID.randomUUID().toString())
                         .build()
         );
     }
@@ -319,20 +321,17 @@ public class UserService implements Image {
     public void updateOnlineStatus() {
         User user = getById(getCurrentUser().getId());
         switch (user.getOnlineStatus()) {
-            case ONLINE:
-                user.setOnlineStatus(User.OnlineStatus.OFFLINE);
-                break;
-            case OFFLINE:
-                user.setOnlineStatus(User.OnlineStatus.ONLINE);
+            case ONLINE -> user.setOnlineStatus(User.OnlineStatus.OFFLINE);
+            case OFFLINE -> user.setOnlineStatus(User.OnlineStatus.ONLINE);
         }
         ResponseUpdateUserOnlineStatusDTO respUser = new ResponseUpdateUserOnlineStatusDTO(user.getId(), user.getOnlineStatus());
-        user.getChats().forEach(chat -> {
-            messagingTemplate.convertAndSend("/topic/chat/" + chat.getId(), respUser);
-            int userId = chat.getUser1().getId() != user.getId() ? chat.getUser1().getId() : chat.getUser2().getId();
-            messagingTemplate.convertAndSend("/topic/user/" + userId + "/main", respUser);
+        chatsRepository.findByUser1OrUser2(user, user).forEach(chat -> {
+            messagingTemplate.convertAndSend("/topic/chat/" + chat.getWebSocketUUID(), respUser);
+            User recipient = chat.getUser1().getId() != user.getId() ? chat.getUser1() : chat.getUser2();
+            messagingTemplate.convertAndSend("/topic/user/" + recipient.getWebSocketUUID() + "/main", respUser);
         });
-        user.getChannels().forEach(channelUser -> messagingTemplate.convertAndSend("/topic/channel/" + channelUser.getChannel().getId(), respUser));
-        user.getGroups().forEach(groupUser -> messagingTemplate.convertAndSend("/topic/group/" + groupUser.getGroup().getId(), respUser));
+        user.getChannels().forEach(channelUser -> messagingTemplate.convertAndSend("/topic/channel/" + channelUser.getChannel().getWebSocketUUID(), respUser));
+        user.getGroups().forEach(groupUser -> messagingTemplate.convertAndSend("/topic/group/" + groupUser.getGroup().getWebSocketUUID(), respUser));
     }
 
     @Transactional

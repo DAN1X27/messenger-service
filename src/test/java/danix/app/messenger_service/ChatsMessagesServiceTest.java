@@ -24,7 +24,9 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import util.TestUtils;
 
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -37,7 +39,7 @@ public class ChatsMessagesServiceTest {
 
     private final User testUser = TestUtils.getTestUser();
 
-    private final Chat testChat = new Chat(currentUser, testUser);
+    private final Chat testChat = new Chat(currentUser, testUser, UUID.randomUUID().toString());
 
     @Mock
     private SecurityContext securityContext;
@@ -78,7 +80,7 @@ public class ChatsMessagesServiceTest {
         when(modelMapper.map(currentUser, ResponseUserDTO.class)).thenReturn(new ResponseUserDTO());
         chatsMessagesService.sendTextMessage("Test message", testChat.getId());
         verify(chatsMessagesRepository, times(1)).save(any(ChatMessage.class));
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/chat/0"),
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/chat/" + testChat.getWebSocketUUID()),
                 any(ResponseChatMessageDTO.class));
     }
 
@@ -103,8 +105,8 @@ public class ChatsMessagesServiceTest {
         when(chatsMessagesRepository.findById(1L)).thenReturn(Optional.of(chatMessage));
         chatsMessagesService.deleteMessage(1L);
         verify(chatsMessagesRepository, times(1)).delete(chatMessage);
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/chat/0"),
-                any(ResponseMessageDeletionDTO.class));
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/chat/" + testChat.getWebSocketUUID()),
+                any(Map.class));
     }
 
     @Test
@@ -146,7 +148,7 @@ public class ChatsMessagesServiceTest {
         when(chatsMessagesRepository.findById(1L)).thenReturn(Optional.of(chatMessage));
         chatsMessagesService.updateMessage(1L, "New message");
         assertEquals("New message", chatMessage.getText());
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/chat/0"),
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/chat/" + testChat.getWebSocketUUID()),
                 any(ResponseMessageUpdatingDTO.class));
     }
 

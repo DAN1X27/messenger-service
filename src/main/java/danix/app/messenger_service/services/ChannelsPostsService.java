@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -91,7 +91,7 @@ public class ChannelsPostsService {
             channelsPostsRepository.save(post);
             channelsLogsRepository.save(channelLog);
             ResponseChannelPostDTO postDTO = channelsService.convertToResponseChannelPostsDTO(post);
-            messagingTemplate.convertAndSend("/topic/channel/" + channel.getId(), postDTO);
+            messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(), postDTO);
             return post;
         }
         throw new ChannelException("Current user is not admin in this channel");
@@ -125,7 +125,7 @@ public class ChannelsPostsService {
                 post.setContentType(ContentType.TEXT_FILE);
             }
             post.getFiles().add(postFile);
-            messagingTemplate.convertAndSend("/topic/channel/" + channel.getId(),
+            messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(),
                     new ResponsePostUpdatingDTO(channelsService.convertToResponseChannelPostsDTO(post)));
         } else {
             throw new ChannelException("Current user must be admin of channel or owner of post");
@@ -176,8 +176,8 @@ public class ChannelsPostsService {
             }
             channelsLogsRepository.save(channelLog);
             jdbcTemplate.update("DELETE FROM channels_posts where id = ?", postId);
-            messagingTemplate.convertAndSend("/topic/channel/" + channel.getId(),
-                    new ResponsePostDeletionDTO(postId));
+            messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(),
+                    Map.of("deleted_post_id", postId));
         } else {
             throw new ChannelException("Current user is not admin of this channel");
         }
@@ -186,14 +186,12 @@ public class ChannelsPostsService {
     @Transactional
     public void addPostLike(long postId) {
         User currentUser = userService.getById(getCurrentUser().getId());
-        ChannelPost channelPost = getById(postId);
-        channelsService.getChannelUser(currentUser, channelPost.getChannel());
-        if (channelPost.getLikes().contains(currentUser)) {
+        ChannelPost post = getById(postId);
+        channelsService.getChannelUser(currentUser, post.getChannel());
+        if (post.getLikes().contains(currentUser)) {
             throw new ChannelException("Post already liked");
         }
-        channelPost.getLikes().add(currentUser);
-        messagingTemplate.convertAndSend("/topic/channel/" + channelPost.getChannel().getId(),
-                new ResponsePostUpdatingDTO(channelsService.convertToResponseChannelPostsDTO(channelPost)));
+        post.getLikes().add(currentUser);
     }
 
     @Transactional
@@ -205,8 +203,6 @@ public class ChannelsPostsService {
             throw new ChannelException("Post is not liked");
         }
         post.getLikes().remove(currentUser);
-        messagingTemplate.convertAndSend("/topic/channel/" + post.getChannel().getId(),
-                new ResponsePostUpdatingDTO(channelsService.convertToResponseChannelPostsDTO(post)));
     }
 
     @Transactional
@@ -220,7 +216,7 @@ public class ChannelsPostsService {
                 channelPost.setContentType(ContentType.TEXT_FILE);
             }
             channelPost.setText(post.getText());
-            messagingTemplate.convertAndSend("/topic/channel/" + channel.getId(),
+            messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(),
                     new ResponsePostUpdatingDTO(channelsService.convertToResponseChannelPostsDTO(channelPost)));
         } else {
             throw new ChannelException("Current user must be admin of this channel and owner of post");
@@ -281,13 +277,11 @@ public class ChannelsPostsService {
         comment.setContentType(contentType);
         commentsRepository.save(comment);
         post.getComments().add(comment);
-        messagingTemplate.convertAndSend("/topic/channel/" + channel.getId(),
-                new ResponsePostUpdatingDTO(channelsService.convertToResponseChannelPostsDTO(post)));
         ResponseChannelPostCommentDTO commentDTO = modelMapper.map(comment, ResponseChannelPostCommentDTO.class);
         if (isFile) {
             commentDTO.setText(null);
         }
-        messagingTemplate.convertAndSend("/topic/channel/post/" + post.getId() + "/comments", commentDTO);
+        messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID() + "/post/" + post.getId() + "/comments", commentDTO);
     }
 
     public ResponseFileDTO getCommentFile(long commentId) {
@@ -325,10 +319,8 @@ public class ChannelsPostsService {
             }
             commentsRepository.delete(comment);
             post.getComments().remove(comment);
-            messagingTemplate.convertAndSend("/topic/channel/" + channel.getId(),
-                    new ResponsePostUpdatingDTO(channelsService.convertToResponseChannelPostsDTO(post)));
-            messagingTemplate.convertAndSend("/topic/channel/post/" + post.getId() + "/comments",
-                    new ResponsePostCommentDeletionDTO(commentId));
+            messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID() + "/post/" + post.getId() + "/comments",
+                    Map.of("deleted_comment_id", commentId));
         } else {
             throw new ChannelException("Current user must be owner of comment or admin");
         }
@@ -344,8 +336,8 @@ public class ChannelsPostsService {
         if (comment.getOwner().getId() == channelUser.getId()) {
             if (comment.getContentType() == ContentType.TEXT) {
                 comment.setText(commentDTO.getText());
-                messagingTemplate.convertAndSend("/topic/channel/post/" + comment.getPost().getId()
-                                                 + "/comments", new ResponseCommentUpdatingDTO(comment.getId(), commentDTO.getText()));
+                messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID() + "/post/" +
+                                  comment.getPost().getId() + "/comments", new ResponseCommentUpdatingDTO(comment.getId(), commentDTO.getText()));
             } else {
                 throw new ChannelException("File cannot be updated");
             }

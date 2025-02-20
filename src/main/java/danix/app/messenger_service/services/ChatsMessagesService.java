@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.UUID;
 
 import static danix.app.messenger_service.services.UserService.getCurrentUser;
@@ -86,7 +87,7 @@ public class ChatsMessagesService {
                 .type(contentType)
                 .sentTime(chatMessage.getSentTime())
                 .build();
-        messagingTemplate.convertAndSend("/topic/chat/" + chatId, responseChatMessageDTO);
+        messagingTemplate.convertAndSend("/topic/chat/" + chat.getWebSocketUUID(), responseChatMessageDTO);
     }
 
     @Transactional
@@ -98,8 +99,8 @@ public class ChatsMessagesService {
             case AUDIO_MP3, AUDIO_OGG -> FileUtils.delete(Path.of(CHATS_AUDIO_PATH), message.getText());
         }
         messagesRepository.delete(message);
-        messagingTemplate.convertAndSend("/topic/chat/" + message.getChat().getId(),
-                new ResponseMessageDeletionDTO(messageId));
+        messagingTemplate.convertAndSend("/topic/chat/" + message.getChat().getWebSocketUUID(),
+                Map.of("deleted_message_id", messageId));
     }
 
     @Transactional
@@ -109,7 +110,7 @@ public class ChatsMessagesService {
             throw new MessageException("The image cannot be changed");
         }
         message.setText(text);
-        messagingTemplate.convertAndSend("/topic/chat/" + message.getChat().getId(),
+        messagingTemplate.convertAndSend("/topic/chat/" + message.getChat().getWebSocketUUID(),
                 new ResponseMessageUpdatingDTO(messageId, text));
     }
 

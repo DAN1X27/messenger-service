@@ -1,5 +1,6 @@
 package danix.app.messenger_service.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
@@ -24,5 +25,6 @@ public class RegistrationUserDTO {
     @Size(max = 200, message = "Description must be up to 200 characters")
     private String description;
 
+    @JsonProperty("private")
     private Boolean isPrivate;
 }

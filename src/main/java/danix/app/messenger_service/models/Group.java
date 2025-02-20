@@ -44,6 +44,9 @@ public class Group {
     @Column(name = "image")
     private String image;
 
+    @Column(name = "web_socket_uuid")
+    private String webSocketUUID;
+
     private String description;
 
     public static Builder builder() {
@@ -56,6 +59,7 @@ public class Group {
         this.createdAt = builder.createdAt;
         this.description = builder.description;
         this.image = builder.image;
+        this.webSocketUUID = builder.webSocketUUID;
     }
 
     public static class Builder {
@@ -64,6 +68,12 @@ public class Group {
         private Date createdAt;
         private String description;
         private String image;
+        private String webSocketUUID;
+
+        public Builder webSocketUUID(String webSocketUUID) {
+            this.webSocketUUID = webSocketUUID;
+            return this;
+        }
 
         public Builder name(String name) {
             this.name = name;

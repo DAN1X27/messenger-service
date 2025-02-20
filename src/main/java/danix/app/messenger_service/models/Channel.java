@@ -33,6 +33,9 @@ public class Channel {
     @Column(name = "is_private")
     private boolean isPrivate;
 
+    @Column(name = "web_socket_uuid")
+    private String webSocketUUID;
+
     @OneToMany(mappedBy = "channel")
     private List<ChannelUser> users;
 
@@ -77,15 +80,22 @@ public class Channel {
         this.isPostsCommentsAllowed = true;
         this.isFilesAllowed = true;
         this.isInvitesAllowed = true;
+        this.webSocketUUID = builder.webSocketUUID;
     }
 
     public static class Builder {
         private User owner;
         private Date createdAt;
-        private Boolean isPrivate;
+        private boolean isPrivate;
         private String name;
         private String description;
         private String image;
+        private String webSocketUUID;
+
+        public Builder webSocketUUID(String webSocketUUID) {
+            this.webSocketUUID = webSocketUUID;
+            return this;
+        }
 
         public Builder owner(User owner) {
             this.owner = owner;
@@ -97,7 +107,7 @@ public class Channel {
             return this;
         }
 
-        public Builder isPrivate(Boolean isPrivate) {
+        public Builder isPrivate(boolean isPrivate) {
             this.isPrivate = isPrivate;
             return this;
         }
