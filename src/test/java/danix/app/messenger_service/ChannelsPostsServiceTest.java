@@ -24,6 +24,7 @@ import util.TestUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -95,7 +96,7 @@ public class ChannelsPostsServiceTest {
         postsService.createPost(createChannelPostDTO);
         verify(postsRepository, times(1)).save(any(ChannelPost.class));
         verify(logsRepository, times(1)).save(any(ChannelLog.class));
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/0"),
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/" + testChannel.getWebSocketUUID()),
                 any(ResponseChannelPostDTO.class));
     }
 
@@ -125,8 +126,8 @@ public class ChannelsPostsServiceTest {
         postsService.deletePost(1L);
         verify(logsRepository, times(1)).save(any(ChannelLog.class));
         verify(jdbcTemplate, times(1)).update(eq("DELETE FROM channels_posts where id = ?"), eq(1L));
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/0"),
-                any(ResponsePostDeletionDTO.class));
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/" + testChannel.getWebSocketUUID()),
+                any(Map.class));
     }
 
     @Test
@@ -165,7 +166,7 @@ public class ChannelsPostsServiceTest {
         updateChannelPostDTO.setText("new text");
         postsService.updatePost(updateChannelPostDTO);
         assertEquals(testPost.getText(), updateChannelPostDTO.getText());
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/0"),
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/" + testChannel.getWebSocketUUID()),
                 any(ResponsePostUpdatingDTO.class));
     }
 
@@ -207,12 +208,8 @@ public class ChannelsPostsServiceTest {
         when(userService.getById(currentUser.getId())).thenReturn(currentUser);
         when(postsRepository.findById(1L)).thenReturn(Optional.of(testPost));
         when(channelsService.getChannelUser(currentUser, testChannel)).thenReturn(new ChannelUser());
-        when(channelsService.convertToResponseChannelPostsDTO(any(ChannelPost.class)))
-                .thenReturn(ResponseChannelPostDTO.builder().build());
         postsService.addPostLike(1L);
         assertFalse(testPost.getLikes().isEmpty());
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/0"),
-                any(ResponsePostUpdatingDTO.class));
     }
 
     @Test
@@ -242,8 +239,6 @@ public class ChannelsPostsServiceTest {
         when(postsRepository.findById(1L)).thenReturn(Optional.of(testPost));
         postsService.deletePostLike(1L);
         assertTrue(testPost.getLikes().isEmpty());
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/0"),
-                any(ResponsePostUpdatingDTO.class));
     }
 
     @Test
@@ -279,9 +274,8 @@ public class ChannelsPostsServiceTest {
         verify(commentsRepository, times(1)).save(any(ChannelPostComment.class));
         assertEquals(1, testPost.getComments().size());
         assertNotNull(responseCommentDTO.getText());
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/0"),
-                any(ResponsePostUpdatingDTO.class));
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/post/0/comments"),
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/" +
+                        testChannel.getWebSocketUUID() + "/post/0/comments"),
                 any(ResponseChannelPostCommentDTO.class));
     }
 
@@ -314,9 +308,7 @@ public class ChannelsPostsServiceTest {
         postsService.deleteComment(1L);
         verify(commentsRepository, times(1)).delete(testComment);
         verify(messagingTemplate, times(1)).convertAndSend(
-                eq("/topic/channel/0"), any(ResponsePostUpdatingDTO.class));
-        verify(messagingTemplate, times(1)).convertAndSend(
-                eq("/topic/channel/post/0/comments"), any(ResponsePostCommentDeletionDTO.class));
+                eq("/topic/channel/" + testChannel.getWebSocketUUID() + "/post/0/comments"), any(Map.class));
         assertTrue(testPost.getComments().isEmpty());
     }
 
@@ -340,9 +332,7 @@ public class ChannelsPostsServiceTest {
         postsService.deleteComment(1L);
         verify(commentsRepository, times(1)).delete(testComment);
         verify(messagingTemplate, times(1)).convertAndSend(
-                eq("/topic/channel/0"), any(ResponsePostUpdatingDTO.class));
-        verify(messagingTemplate, times(1)).convertAndSend(
-                eq("/topic/channel/post/0/comments"), any(ResponsePostCommentDeletionDTO.class));
+                eq("/topic/channel/" + testChannel.getWebSocketUUID() + "/post/0/comments"), any(Map.class));
         assertTrue(testPost.getComments().isEmpty());
     }
 
@@ -370,7 +360,7 @@ public class ChannelsPostsServiceTest {
         postsService.updateComment(commentDTO, 1L);
         assertEquals(commentDTO.getText(), testComment.getText());
         verify(messagingTemplate, times(1)).convertAndSend(
-                eq("/topic/channel/post/0/comments"), any(ResponseCommentUpdatingDTO.class));
+                eq("/topic/channel/" + testChannel.getWebSocketUUID() + "/post/0/comments"), any(ResponseCommentUpdatingDTO.class));
     }
 
     @Test

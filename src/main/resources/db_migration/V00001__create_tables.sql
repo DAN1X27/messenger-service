@@ -13,7 +13,8 @@ create table person
     status        varchar default 'REGISTERED'::character varying                           not null,
     image         varchar default '3a2cd62f-121a-48b5-b0aa-e54454d4d996'::character varying not null,
     online_status varchar default 'OFFLINE'::character varying                              not null,
-    is_banned     boolean default false not null
+    is_banned     boolean default false not null,
+    web_socket_uuid varchar not null
 );
 
 create table tokens
@@ -70,7 +71,8 @@ create table users_chats
 (
     id    integer generated always as identity primary key,
     user1 integer references person on delete cascade,
-    user2 integer references person on delete cascade
+    user2 integer references person on delete cascade,
+    web_socket_uuid varchar not null
 );
 
 create table chats_messages
@@ -95,7 +97,8 @@ create table channels(
     image                     varchar default '6f03317c-1ab7-4f61-bc4e-932e36258526'::character varying not null,
     is_posts_comments_allowed boolean              not null,
     is_files_allowed          boolean default true not null,
-    is_invites_allowed        boolean default true not null
+    is_invites_allowed        boolean default true not null,
+    web_socket_uuid varchar not null
 );
 
 create table channels_invites(
@@ -166,7 +169,8 @@ create table groups(
     owner_id    integer references person on delete cascade,
     created_at  date not null,
     description varchar,
-    image       varchar default '393de5ef-bd11-4057-9863-77d49c47c806'::character varying not null
+    image       varchar default '393de5ef-bd11-4057-9863-77d49c47c806'::character varying not null,
+    web_socket_uuid varchar not null
 );
 
 create table group_users(

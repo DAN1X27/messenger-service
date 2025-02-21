@@ -1,7 +1,6 @@
 package danix.app.messenger_service;
 
 import danix.app.messenger_service.dto.ResponseChatMessageDTO;
-import danix.app.messenger_service.dto.ResponseMessageDeletionDTO;
 import danix.app.messenger_service.dto.ResponseMessageUpdatingDTO;
 import danix.app.messenger_service.dto.ResponseUserDTO;
 import danix.app.messenger_service.models.*;

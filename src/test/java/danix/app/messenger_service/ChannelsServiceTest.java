@@ -7,6 +7,7 @@ import danix.app.messenger_service.security.UserDetailsImpl;
 import danix.app.messenger_service.services.ChannelsService;
 import danix.app.messenger_service.services.UserService;
 import danix.app.messenger_service.util.ChannelException;
+import org.checkerframework.checker.units.qual.C;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +28,7 @@ import java.util.*;
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static util.TestUtils.webSocketUUID;
 
 @ExtendWith(MockitoExtension.class)
 public class ChannelsServiceTest {
@@ -486,7 +488,7 @@ public class ChannelsServiceTest {
         verify(appMessagesRepository, times(1)).save(any(AppMessage.class));
         verify(messagingTemplate, times(1)).convertAndSend(any(), any(ResponseAppMessageDTO.class));
         verify(messagingTemplate, times(1)).convertAndSend(any(), any(ResponseChannelDeletionDTO.class));
-        verify(messagingTemplate, times(1)).convertAndSend(any(), any(ResponseBannedUserDTO.class));
+        verify(messagingTemplate, times(1)).convertAndSend(any(), any(Map.class));
         assertTrue(testChannel.getBannedUsers().contains(user));
         verify(channelsLogsRepository, times(1)).save(any(ChannelLog.class));
     }
@@ -683,12 +685,9 @@ public class ChannelsServiceTest {
     @Test
     public void leaveChannelWhenCurrentUserOwner() {
         testChannel.setOwner(currenusUser);
-        User testUser1 = new User();
-        testUser1.setId(1);
-        User testUser2 = new User();
-        testUser2.setId(2);
-        User testUser3 = new User();
-        testUser3.setId(3);
+        User testUser1 = User.builder().webSocketUUID(webSocketUUID()).build();
+        User testUser2 = User.builder().webSocketUUID(webSocketUUID()).build();
+        User testUser3 = User.builder().webSocketUUID(webSocketUUID()).build();
         testChannel.setUsers(List.of(
                 new ChannelUser(testUser1, testChannel),
                 new ChannelUser(testUser2, testChannel),
@@ -705,30 +704,33 @@ public class ChannelsServiceTest {
         verify(channelsRepository).delete(testChannel);
         for (ChannelUser channelUser : testChannel.getUsers()) {
             verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" +
-                    channelUser.getUser().getId() + "/main"), any(ResponseChannelDeletionDTO.class));
+                    channelUser.getUser().getWebSocketUUID() + "/main"), any(ResponseChannelDeletionDTO.class));
         }
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/0"),
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/" + testChannel.getWebSocketUUID()),
                 any(ResponseChannelDeletionDTO.class));
     }
 
     @Test
     public void banChannelWhenChannelIsNotBanned() {
         testChannel.setOwner(currenusUser);
-        ChannelUser channelUser1 = new ChannelUser();
-        channelUser1.setUser(user);
-        ChannelUser channelUser2 = new ChannelUser();
-        channelUser2.setUser(user);
-        testChannel.setUsers(List.of(channelUser1, channelUser2));
+        User testUser1 = User.builder().webSocketUUID(webSocketUUID()).build();
+        User testUser2 = User.builder().webSocketUUID(webSocketUUID()).build();
+        User testUser3 = User.builder().webSocketUUID(webSocketUUID()).build();
+        testChannel.setUsers(List.of(
+                new ChannelUser(testUser1, testChannel),
+                new ChannelUser(testUser2, testChannel),
+                new ChannelUser(testUser3, testChannel)
+        ));
         when(channelsRepository.findById(testChannel.getId())).thenReturn(Optional.of(testChannel));
         channelsService.banChannel(testChannel.getId(), "Reason");
         assertTrue(testChannel.isBaned());
         verify(kafkaTemplate, times(1)).send(eq("ban_channel-topic"), any(), any());
         verify(appMessagesRepository, times(1)).save(any(AppMessage.class));
         verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" +
-                currenusUser.getId() + "/main"), any(ResponseAppMessageDTO.class));
-        verify(messagingTemplate, times(2)).convertAndSend(eq("/topic/user/2/main"),
-                any(ResponseChannelDeletionDTO.class));
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/" + testChannel.getId()),
+                currenusUser.getWebSocketUUID() + "/main"), any(ResponseAppMessageDTO.class));
+        testChannel.getUsers().forEach(channelUser -> verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main"),
+                any(ResponseChannelDeletionDTO.class)));
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/" + testChannel.getWebSocketUUID()),
                 any(ResponseChannelDeletionDTO.class));
     }
 
@@ -745,7 +747,7 @@ public class ChannelsServiceTest {
     @Test
     public void unbanChannelWhenChannelIsBanned() {
         currenusUser.setRole(User.Roles.ROLE_ADMIN);
-        testChannel.setOwner(currenusUser);
+        testChannel.setOwner(user);
         testChannel.setBaned(true);
         SecurityContextHolder.setContext(securityContext);
         when(securityContext.getAuthentication()).thenReturn(authentication);
@@ -755,7 +757,7 @@ public class ChannelsServiceTest {
         assertFalse(testChannel.isBaned());
         verify(kafkaTemplate, times(1)).send(eq("unban_channel-topic"), any(), any());
         verify(appMessagesRepository, times(1)).save(any(AppMessage.class));
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" + currenusUser.getId() + "/main"),
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" + user.getWebSocketUUID() + "/main"),
                 any(ResponseAppMessageDTO.class));
     }
 
@@ -768,12 +770,9 @@ public class ChannelsServiceTest {
     @Test
     public void deleteChannelWhenCurrentUserOwner() {
         testChannel.setOwner(currenusUser);
-        User testUser1 = new User();
-        testUser1.setId(1);
-        User testUser2 = new User();
-        testUser2.setId(2);
-        User testUser3 = new User();
-        testUser3.setId(3);
+        User testUser1 = User.builder().webSocketUUID(webSocketUUID()).build();
+        User testUser2 = User.builder().webSocketUUID(webSocketUUID()).build();
+        User testUser3 = User.builder().webSocketUUID(webSocketUUID()).build();
         testChannel.setUsers(List.of(
                 new ChannelUser(testUser1, testChannel),
                 new ChannelUser(testUser2, testChannel),
@@ -787,11 +786,9 @@ public class ChannelsServiceTest {
         when(postCommentsRepository.findAllByPostIn(testChannel.getPosts())).thenReturn(Collections.emptyList());
         channelsService.deleteChannel(testChannel.getId());
         verify(jdbcTemplate, times(1)).update(eq("DELETE FROM channels WHERE id = ?"), eq(testChannel.getId()));
-        for (ChannelUser channelUser : testChannel.getUsers()) {
-            verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" +
-                    channelUser.getUser().getId() + "/main"), any(ResponseChannelDeletionDTO.class));
-        }
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/0"),
+        testChannel.getUsers().forEach(channelUser -> verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" +
+                channelUser.getUser().getWebSocketUUID() + "/main"), any(ResponseChannelDeletionDTO.class)));
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/" + testChannel.getWebSocketUUID()),
                 any(ResponseChannelDeletionDTO.class));
     }
 
@@ -811,9 +808,14 @@ public class ChannelsServiceTest {
         updateChannelDTO.setName("updated_name");
         String oldDescription = testChannel.getDescription();
         testChannel.setOwner(currenusUser);
-        ChannelUser channelUser = new ChannelUser();
-        channelUser.setUser(user);
-        testChannel.setUsers(Collections.singletonList(channelUser));
+        User testUser1 = User.builder().webSocketUUID(webSocketUUID()).build();
+        User testUser2 = User.builder().webSocketUUID(webSocketUUID()).build();
+        User testUser3 = User.builder().webSocketUUID(webSocketUUID()).build();
+        testChannel.setUsers(List.of(
+                new ChannelUser(testUser1, testChannel),
+                new ChannelUser(testUser2, testChannel),
+                new ChannelUser(testUser3, testChannel)
+        ));
         when(channelsRepository.findById(testChannel.getId())).thenReturn(Optional.of(testChannel));
         SecurityContextHolder.setContext(securityContext);
         when(securityContext.getAuthentication()).thenReturn(authentication);
@@ -822,8 +824,9 @@ public class ChannelsServiceTest {
         channelsService.updateChannel(updateChannelDTO, testChannel.getId());
         assertEquals(testChannel.getDescription(), oldDescription);
         assertEquals(testChannel.getName(), updateChannelDTO.getName());
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/2/main"),
-                any(ResponseChannelUpdatingDTO.class));
+        testChannel.getUsers().forEach(channelUser -> verify(messagingTemplate, times(1))
+                .convertAndSend(eq("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main"),
+                        any(ResponseChannelUpdatingDTO.class)));
     }
 
     @Test
