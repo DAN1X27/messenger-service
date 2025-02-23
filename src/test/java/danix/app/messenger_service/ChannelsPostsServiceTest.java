@@ -88,7 +88,7 @@ public class ChannelsPostsServiceTest {
         channelUser.setIsAdmin(true);
         when(channelsService.getById(testChannel.getId())).thenReturn(testChannel);
         when(channelsService.getChannelUser(currentUser, testChannel)).thenReturn(channelUser);
-        when(channelsService.convertToResponseChannelPostsDTO(any(ChannelPost.class)))
+        when(channelsService.convertToResponseChannelPostDTO(any(ChannelPost.class)))
                 .thenReturn(ResponseChannelPostDTO.builder().build());
         CreateChannelPostDTO createChannelPostDTO = new CreateChannelPostDTO();
         createChannelPostDTO.setChannelId(testChannel.getId());
@@ -159,7 +159,7 @@ public class ChannelsPostsServiceTest {
         testPost.setContentType(ContentType.TEXT);
         when(postsRepository.findById(1L)).thenReturn(Optional.of(testPost));
         when(channelsService.getChannelUser(currentUser, testChannel)).thenReturn(channelUser);
-        when(channelsService.convertToResponseChannelPostsDTO(any(ChannelPost.class)))
+        when(channelsService.convertToResponseChannelPostDTO(any(ChannelPost.class)))
                 .thenReturn(ResponseChannelPostDTO.builder().build());
         UpdateChannelPostDTO updateChannelPostDTO = new UpdateChannelPostDTO();
         updateChannelPostDTO.setId(1L);

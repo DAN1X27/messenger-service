@@ -132,10 +132,10 @@ public class ChannelsService {
         }
         FileUtils.delete(Path.of(AVATARS_PATH), channel.getImage());
         channel.setImage(uuid);
-        for (ChannelUser channelUser : channel.getUsers()) {
-            messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main",
-                    new ResponseChannelUpdatingDTO(modelMapper.map(channel, ResponseChannelDTO.class), true));
-        }
+        channel.getUsers().forEach(channelUser ->
+                messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main",
+                        new ResponseChannelUpdatingDTO(modelMapper.map(channel, ResponseChannelDTO.class), true))
+        );
     }
 
     public ResponseFileDTO getImage(int channelId) {
@@ -155,10 +155,10 @@ public class ChannelsService {
         }
         FileUtils.delete(Path.of(AVATARS_PATH), channel.getImage());
         channel.setImage(DEFAULT_IMAGE_UUID);
-        for (ChannelUser channelUser : channel.getUsers()) {
-            messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main",
-                    new ResponseChannelUpdatingDTO(modelMapper.map(channel, ResponseChannelDTO.class), true));
-        }
+        channel.getUsers().forEach(channelUser ->
+                messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main",
+                        new ResponseChannelUpdatingDTO(modelMapper.map(channel, ResponseChannelDTO.class), true))
+        );
     }
 
     @Transactional
@@ -202,17 +202,16 @@ public class ChannelsService {
     public void leaveChannel(int id) {
         Channel channel = getById(id);
         User currentUser = getCurrentUser();
-        ChannelUser channelUser = channelsUsersRepository.findByUserAndChannel(currentUser, channel)
+        ChannelUser currentChannelUser = channelsUsersRepository.findByUserAndChannel(currentUser, channel)
                 .orElseThrow(() -> new ChannelException("Current user not exist in this channel"));
-        channelsUsersRepository.delete(channelUser);
+        channelsUsersRepository.delete(currentChannelUser);
         if (channel.getOwner().getId() == currentUser.getId()) {
-            for (ChannelUser channelUser1 : channel.getUsers()) {
-                messagingTemplate.convertAndSend("/topic/user/" + channelUser1.getUser().getWebSocketUUID() + "/main",
-                        new ResponseChannelDeletionDTO(id));
-            }
+            channel.getUsers().forEach(channelUser ->
+                    messagingTemplate.convertAndSend("/topic/user/" +
+                                                     channelUser.getUser().getWebSocketUUID() + "/main", new ResponseChannelDeletionDTO(id))
+            );
             messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(),
                     new ResponseChannelDeletionDTO(id));
-
             channelsRepository.delete(channel);
         }
     }
@@ -231,10 +230,10 @@ public class ChannelsService {
         appMessagesRepository.save(appMessage);
         messagingTemplate.convertAndSend("/topic/user/" + channel.getOwner().getWebSocketUUID() + "/main",
                 new ResponseAppMessageDTO(appMessage.getMessage(), appMessage.getSentTime()));
-        for (ChannelUser channelUser : channel.getUsers()) {
-            messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main",
-                    new ResponseChannelDeletionDTO(channel.getId()));
-        }
+        channel.getUsers().forEach(channelUser ->
+                messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main",
+                        new ResponseChannelDeletionDTO(channel.getId()))
+        );
         messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(),
                 new ResponseChannelDeletionDTO(channel.getId()));
     }
@@ -259,7 +258,7 @@ public class ChannelsService {
     public void acceptInviteToChannel(int id) {
         Channel channel = getById(id);
         User currentUser = userService.getById(getCurrentUser().getId());
-        ChannelInvite invite = channelsInvitesRepository.findByUserAndChannel(getCurrentUser(), channel)
+        ChannelInvite invite = channelsInvitesRepository.findByUserAndChannel(currentUser, channel)
                 .orElseThrow(() -> new ChannelException("Invite not found"));
         channelsUsersRepository.findByUserAndChannel(getCurrentUser(), channel).ifPresent(user -> {
             throw new ChannelException("Current user already exist in this channel");
@@ -269,7 +268,7 @@ public class ChannelsService {
         }
         ChannelUser channelUser = new ChannelUser();
         channelUser.setChannel(channel);
-        channelUser.setUser(getCurrentUser());
+        channelUser.setUser(currentUser);
         channelUser.setIsAdmin(false);
         channelsUsersRepository.save(channelUser);
         channelsInvitesRepository.delete(invite);
@@ -284,7 +283,7 @@ public class ChannelsService {
         }
         return channel.getBannedUsers().stream()
                 .map(bannedUser -> modelMapper.map(bannedUser, ResponseUserDTO.class))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional
@@ -386,10 +385,10 @@ public class ChannelsService {
         if (channel.getOwner().getId() == getCurrentUser().getId()) {
             channel.setName(updateChannelDTO.getName() == null ? channel.getName() : updateChannelDTO.getName());
             channel.setDescription(updateChannelDTO.getDescription() == null ? channel.getDescription() : updateChannelDTO.getDescription());
-            for (ChannelUser channelUser : channel.getUsers()) {
-                messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main",
-                        new ResponseChannelUpdatingDTO(modelMapper.map(channel, ResponseChannelDTO.class), false));
-            }
+            channel.getUsers().forEach(channelUser ->
+                    messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main",
+                            new ResponseChannelUpdatingDTO(modelMapper.map(channel, ResponseChannelDTO.class), false))
+            );
         } else {
             throw new ChannelException("Current user is not owner of this channel");
         }
@@ -416,30 +415,30 @@ public class ChannelsService {
         Channel channel = getById(id);
         User currentUser = getCurrentUser();
         if (channel.getOwner().getId() == currentUser.getId()) {
-            for (ChannelUser channelUser : channel.getUsers()) {
-                messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main",
-                        new ResponseChannelDeletionDTO(id));
-            }
+            channel.getUsers().forEach(channelUser ->
+                    messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main",
+                            new ResponseChannelDeletionDTO(id))
+            );
             if (channel.getImage() != null && !channel.getImage().equals(DEFAULT_IMAGE_UUID)) {
                 FileUtils.delete(Path.of(AVATARS_PATH), channel.getImage());
             }
-            List<ChannelPost> channelPosts = channel.getPosts();
-            List<ChannelPostComment> postComments = postsCommentsRepository.findAllByPostIn(channelPosts);
-            for (ChannelPostComment postComment : postComments) {
-                switch (postComment.getContentType()) {
-                    case IMAGE -> FileUtils.delete(Path.of(POSTS_COMMENTS_IMAGES_PATH), postComment.getText());
-                    case VIDEO -> FileUtils.delete(Path.of(POSTS_COMMENTS_VIDEOS_PATH), postComment.getText());
-                    case AUDIO_MP3, AUDIO_OGG -> FileUtils.delete(Path.of(POSTS_COMMENTS_AUDIO_PATH), postComment.getText());
+            List<ChannelPostComment> postComments = postsCommentsRepository.findAllByPostIn(channel.getPosts());
+            postComments.forEach(comment -> {
+                switch (comment.getContentType()) {
+                    case IMAGE -> FileUtils.delete(Path.of(POSTS_COMMENTS_IMAGES_PATH), comment.getText());
+                    case VIDEO -> FileUtils.delete(Path.of(POSTS_COMMENTS_VIDEOS_PATH), comment.getText());
+                    case AUDIO_MP3, AUDIO_OGG ->
+                            FileUtils.delete(Path.of(POSTS_COMMENTS_AUDIO_PATH), comment.getText());
                 }
-            }
-            List<ChannelPostFile> files = postFilesRepository.findAllByPostIn(channelPosts);
-            for (ChannelPostFile file : files) {
+            });
+            List<ChannelPostFile> files = postFilesRepository.findAllByPostIn(channel.getPosts());
+            files.forEach(file -> {
                 switch (file.getContentType()) {
                     case IMAGE -> FileUtils.delete(Path.of(POSTS_IMAGES_PATH), file.getFileUUID());
                     case VIDEO -> FileUtils.delete(Path.of(POSTS_VIDEOS_PATH), file.getFileUUID());
                     case AUDIO_OGG, AUDIO_MP3 -> FileUtils.delete(Path.of(POSTS_AUDIO_PATH), file.getFileUUID());
                 }
-            }
+            });
             messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(),
                     new ResponseChannelDeletionDTO(id));
             jdbcTemplate.update("DELETE FROM channels WHERE id = ?", id);
@@ -459,35 +458,32 @@ public class ChannelsService {
                 .description(channel.getDescription())
                 .createdAt(channel.getCreatedAt())
                 .posts(channelsPostsRepository.findAllByChannel(channel, PageRequest.of(postsPage, postsCount)).stream()
-                        .map(this::convertToResponseChannelPostsDTO)
+                        .map(this::convertToResponseChannelPostDTO)
                         .toList())
                 .users(channel.getUsers().stream()
-                        .map(this::convertToResponseChannelUserDTO)
-                        .toList())
+                        .map(channelUser -> {
+                            ResponseChannelUserDTO respUser = new ResponseChannelUserDTO();
+                            respUser.setId(channelUser.getUser().getId());
+                            respUser.setUsername(channelUser.getUser().getUsername());
+                            respUser.setIsAdmin(channelUser.getIsAdmin());
+                            return respUser;
+                        }).toList())
                 .webSocketUUID(channel.getWebSocketUUID())
                 .build();
-    }
-
-    private ResponseChannelUserDTO convertToResponseChannelUserDTO(ChannelUser channelUser) {
-        ResponseChannelUserDTO user = new ResponseChannelUserDTO();
-        user.setId(channelUser.getUser().getId());
-        user.setUsername(channelUser.getUser().getUsername());
-        user.setIsAdmin(channelUser.getIsAdmin());
-        return user;
     }
 
     public List<ResponseChannelLogDTO> showChannelLogs(int id) {
         User currentUser = getCurrentUser();
         Channel channel = getById(id);
-        if (!channel.getOwner().getUsername().equals(currentUser.getUsername())) {
+        if (channel.getOwner().getId() != currentUser.getId()) {
             throw new ChannelException("Current user is not owner of this channel");
         }
         return channel.getLogs().stream()
                 .map(log -> modelMapper.map(log, ResponseChannelLogDTO.class))
-                .collect(Collectors.toList());
+                .toList();
     }
 
-    public ResponseChannelPostDTO convertToResponseChannelPostsDTO(ChannelPost channelPost) {
+    public ResponseChannelPostDTO convertToResponseChannelPostDTO(ChannelPost channelPost) {
         User currentUser = userService.getById(getCurrentUser().getId());
         return ResponseChannelPostDTO.builder()
                 .text(channelPost.getText())

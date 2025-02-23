@@ -90,7 +90,7 @@ public class ChannelsPostsService {
             channelLog.setChannel(channel);
             channelsPostsRepository.save(post);
             channelsLogsRepository.save(channelLog);
-            ResponseChannelPostDTO postDTO = channelsService.convertToResponseChannelPostsDTO(post);
+            ResponseChannelPostDTO postDTO = channelsService.convertToResponseChannelPostDTO(post);
             messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(), postDTO);
             return post;
         }
@@ -126,7 +126,7 @@ public class ChannelsPostsService {
             }
             post.getFiles().add(postFile);
             messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(),
-                    new ResponsePostUpdatingDTO(channelsService.convertToResponseChannelPostsDTO(post)));
+                    new ResponsePostUpdatingDTO(channelsService.convertToResponseChannelPostDTO(post)));
         } else {
             throw new ChannelException("Current user must be admin of channel or owner of post");
         }
@@ -160,20 +160,20 @@ public class ChannelsPostsService {
             ChannelLog channelLog = new ChannelLog();
             channelLog.setMessage(channelUser.getUsername() + " deleted post");
             channelLog.setChannel(channel);
-            for (ChannelPostFile postFile : post.getFiles()) {
-                switch (postFile.getContentType()) {
-                    case IMAGE -> FileUtils.delete(Path.of(POSTS_IMAGES_PATH), postFile.getFileUUID());
-                    case VIDEO -> FileUtils.delete(Path.of(POSTS_VIDEOS_PATH), postFile.getFileUUID());
-                    case AUDIO_MP3, AUDIO_OGG -> FileUtils.delete(Path.of(POSTS_AUDIO_PATH), postFile.getFileUUID());
+            post.getFiles().forEach(file -> {
+                switch (file.getContentType()) {
+                    case IMAGE -> FileUtils.delete(Path.of(POSTS_IMAGES_PATH), file.getFileUUID());
+                    case VIDEO -> FileUtils.delete(Path.of(POSTS_VIDEOS_PATH), file.getFileUUID());
+                    case AUDIO_MP3, AUDIO_OGG -> FileUtils.delete(Path.of(POSTS_AUDIO_PATH), file.getFileUUID());
                 }
-            }
-            for (ChannelPostComment comment : post.getComments()) {
+            });
+            post.getComments().forEach(comment -> {
                 switch (comment.getContentType()) {
                     case IMAGE -> FileUtils.delete(Path.of(COMMENTS_IMAGES_PATH), comment.getText());
                     case VIDEO -> FileUtils.delete(Path.of(COMMENTS_VIDEOS_PATH), comment.getText());
                     case AUDIO_OGG, AUDIO_MP3 -> FileUtils.delete(Path.of(COMMENTS_AUDIO_PATH), comment.getText());
                 }
-            }
+            });
             channelsLogsRepository.save(channelLog);
             jdbcTemplate.update("DELETE FROM channels_posts where id = ?", postId);
             messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(),
@@ -217,7 +217,7 @@ public class ChannelsPostsService {
             }
             channelPost.setText(post.getText());
             messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(),
-                    new ResponsePostUpdatingDTO(channelsService.convertToResponseChannelPostsDTO(channelPost)));
+                    new ResponsePostUpdatingDTO(channelsService.convertToResponseChannelPostDTO(channelPost)));
         } else {
             throw new ChannelException("Current user must be admin of this channel and owner of post");
         }
@@ -362,7 +362,7 @@ public class ChannelsPostsService {
                         commentDTO.setText(null);
                     }
                     return commentDTO;
-                }).collect(Collectors.toList());
+                }).toList();
     }
 
     private ChannelPost getById(long id) {

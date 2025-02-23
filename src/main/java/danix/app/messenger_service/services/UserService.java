@@ -116,8 +116,7 @@ public class UserService {
                     userDTO.setOnlineStatus(userFriend.getOwner().getOnlineStatus());
                     userDTO.setOnlineStatus(userFriend.getOwner().getOnlineStatus());
                     return userDTO;
-                })
-                .collect(Collectors.toList());
+                }).collect(Collectors.toList());
     }
 
     public List<ShowUserDTO> getAllUserFriends() {
@@ -174,7 +173,7 @@ public class UserService {
         User friend = getById(id);
         User currentUser = getCurrentUser();
         usersFriendsRepository.findByOwnerAndFriend(currentUser, friend)
-                .ifPresentOrElse(usersFriendsRepository::delete, () -> usersFriendsRepository.findByOwnerAndFriend(friend, getCurrentUser())
+                .ifPresentOrElse(usersFriendsRepository::delete, () -> usersFriendsRepository.findByOwnerAndFriend(friend, currentUser)
                         .ifPresentOrElse(usersFriendsRepository::delete, () -> {
                             throw new UserException("User is not exist in your friends");
                         }));
@@ -327,8 +326,10 @@ public class UserService {
             User recipient = chat.getUser1().getId() != user.getId() ? chat.getUser1() : chat.getUser2();
             messagingTemplate.convertAndSend("/topic/user/" + recipient.getWebSocketUUID() + "/main", respUser);
         });
-        user.getChannels().forEach(channelUser -> messagingTemplate.convertAndSend("/topic/channel/" + channelUser.getChannel().getWebSocketUUID(), respUser));
-        user.getGroups().forEach(groupUser -> messagingTemplate.convertAndSend("/topic/group/" + groupUser.getGroup().getWebSocketUUID(), respUser));
+        user.getChannels().forEach(channelUser ->
+                messagingTemplate.convertAndSend("/topic/channel/" + channelUser.getChannel().getWebSocketUUID(), respUser));
+        user.getGroups().forEach(groupUser ->
+                messagingTemplate.convertAndSend("/topic/group/" + groupUser.getGroup().getWebSocketUUID(), respUser));
     }
 
     @Transactional

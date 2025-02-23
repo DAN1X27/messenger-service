@@ -69,11 +69,8 @@ public class ChannelsController {
     }
 
     @GetMapping("/find")
-    public ResponseEntity<ResponseChannelDTO> findChannel(@RequestBody Map<String, String> channelData) {
-        if (!channelData.containsKey("name")) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-        return new ResponseEntity<>(channelsService.findChannel(channelData.get("name")), HttpStatus.OK);
+    public ResponseEntity<ResponseChannelDTO> findChannel(@RequestParam String name) {
+        return new ResponseEntity<>(channelsService.findChannel(name), HttpStatus.OK);
     }
 
     @GetMapping("/{id}")

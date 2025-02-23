@@ -142,10 +142,10 @@ public class GroupsService {
         if (group.getOwner().getId() == currentUser.getId()) {
             group.setName(updateGroupDTO.getName() != null ? updateGroupDTO.getName() : group.getName());
             group.setDescription(updateGroupDTO.getDescription() != null ? updateGroupDTO.getDescription() : group.getDescription());
-            for (GroupUser groupUser : group.getUsers()) {
-                messagingTemplate.convertAndSend("/topic/user/" + groupUser.getUser().getWebSocketUUID() + "/main",
-                        new ResponseGroupUpdatingDTO(modelMapper.map(group, ResponseGroupDTO.class), false));
-            }
+            group.getUsers().forEach(groupUser ->
+                    messagingTemplate.convertAndSend("/topic/user/" + groupUser.getUser().getWebSocketUUID() + "/main",
+                            new ResponseGroupUpdatingDTO(modelMapper.map(group, ResponseGroupDTO.class), false))
+            );
             messagingTemplate.convertAndSend("/topic/group/" + group.getWebSocketUUID(),
                     new ResponseGroupUpdatingDTO(modelMapper.map(group, ResponseGroupDTO.class), false));
         } else {
@@ -162,10 +162,10 @@ public class GroupsService {
         String uuid = UUID.randomUUID().toString();
         FileUtils.upload(Path.of(AVATARS_PATH), image, uuid, ContentType.IMAGE);
         sendGroupActionMessage(id, getCurrentUser().getUsername() + " updated group image");
-        for (GroupUser groupUser : group.getUsers()) {
-            messagingTemplate.convertAndSend("/topic/user/" + groupUser.getUser().getWebSocketUUID() + "/main",
-                    new ResponseGroupUpdatingDTO(modelMapper.map(group, ResponseGroupDTO.class), true));
-        }
+        group.getUsers().forEach(groupUser ->
+                messagingTemplate.convertAndSend("/topic/user/" + groupUser.getUser().getWebSocketUUID() + "/main",
+                        new ResponseGroupUpdatingDTO(modelMapper.map(group, ResponseGroupDTO.class), true))
+        );
         if (group.getImage().equals(DEFAULT_IMAGE_UUID)) {
             group.setImage(uuid);
             return;
@@ -185,10 +185,10 @@ public class GroupsService {
         FileUtils.delete(Path.of(AVATARS_PATH), group.getImage());
         group.setImage(DEFAULT_IMAGE_UUID);
         sendGroupActionMessage(id, getCurrentUser().getUsername() + " deleted group image");
-        for (GroupUser groupUser : group.getUsers()) {
-            messagingTemplate.convertAndSend("/topic/user/" + groupUser.getUser().getWebSocketUUID() + "/main",
-                    new ResponseGroupUpdatingDTO(modelMapper.map(group, ResponseGroupDTO.class), true));
-        }
+        group.getUsers().forEach(groupUser ->
+                messagingTemplate.convertAndSend("/topic/user/" + groupUser.getUser().getWebSocketUUID() + "/main",
+                        new ResponseGroupUpdatingDTO(modelMapper.map(group, ResponseGroupDTO.class), true))
+        );
     }
 
     public ResponseFileDTO getImage(int id) {
@@ -294,20 +294,20 @@ public class GroupsService {
         if (group.getOwner().getId() == getCurrentUser().getId()) {
             messagingTemplate.convertAndSend("/topic/group/" + group.getWebSocketUUID(),
                     new ResponseDeletionGroupDTO(groupId));
-            for (GroupUser groupUser : group.getUsers()) {
-                messagingTemplate.convertAndSend("/topic/user/" + groupUser.getUser().getWebSocketUUID() + "/main",
-                        new ResponseDeletionGroupDTO(groupId));
-            }
+            group.getUsers().forEach(groupUser ->
+                    messagingTemplate.convertAndSend("/topic/user/" + groupUser.getUser().getWebSocketUUID() + "/main",
+                            new ResponseDeletionGroupDTO(groupId))
+            );
             if (group.getImage() != null && !group.getImage().equals(DEFAULT_IMAGE_UUID)) {
                 FileUtils.delete(Path.of(AVATARS_PATH), group.getImage());
             }
-            for (GroupMessage message : group.getMessages()) {
+            group.getMessages().forEach(message -> {
                 switch (message.getContentType()) {
                     case IMAGE -> FileUtils.delete(Path.of(MESSAGES_IMAGES_PATH), message.getText());
                     case VIDEO -> FileUtils.delete(Path.of(MESSAGES_VIDEOS_PATH), message.getText());
                     case AUDIO_MP3, AUDIO_OGG -> FileUtils.delete(Path.of(MESSAGES_AUDIO_PATH), message.getText());
                 }
-            }
+            });
             jdbcTemplate.update("DELETE FROM groups where id = ?", groupId);
         } else {
             throw new GroupException("You are not owner of this group");
@@ -320,10 +320,10 @@ public class GroupsService {
         Group group = getById(groupId);
         GroupUser groupUser = getGroupUser(group, currentUser);
         if (group.getOwner().getId() == currentUser.getId()) {
-            for (GroupUser user : group.getUsers()) {
-                messagingTemplate.convertAndSend("/topic/user/" + user.getUser().getWebSocketUUID() + "/main",
-                        new ResponseDeletionGroupDTO(groupId));
-            }
+            group.getUsers().forEach(user ->
+                    messagingTemplate.convertAndSend("/topic/user/" + user.getUser().getWebSocketUUID() + "/main",
+                            new ResponseDeletionGroupDTO(groupId))
+            );
             messagingTemplate.convertAndSend("/topic/group/" + group.getWebSocketUUID(),
                     new ResponseDeletionGroupDTO(groupId));
             groupsRepository.delete(group);

@@ -311,6 +311,7 @@ public class ChannelsServiceTest {
         when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currenusUser));
         when(channelsInvitesRepository.findByUserAndChannel(currenusUser, testChannel)).thenReturn(Optional.of(new ChannelInvite()));
         when(channelsUsersRepository.findByUserAndChannel(currenusUser, testChannel)).thenReturn(Optional.empty());
+        when(userService.getById(currenusUser.getId())).thenReturn(currenusUser);
         channelsService.acceptInviteToChannel(testChannel.getId());
         verify(channelsUsersRepository, times(1)).save(any(ChannelUser.class));
         verify(channelsInvitesRepository, times(1)).delete(any(ChannelInvite.class));
@@ -323,6 +324,7 @@ public class ChannelsServiceTest {
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currenusUser));
         when(channelsInvitesRepository.findByUserAndChannel(currenusUser, testChannel)).thenReturn(Optional.empty());
+        when(userService.getById(currenusUser.getId())).thenReturn(currenusUser);
         assertThrows(ChannelException.class, () -> channelsService.acceptInviteToChannel(testChannel.getId()));
     }
 
@@ -334,6 +336,7 @@ public class ChannelsServiceTest {
         when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currenusUser));
         when(channelsInvitesRepository.findByUserAndChannel(currenusUser, testChannel)).thenReturn(Optional.of(new ChannelInvite()));
         when(channelsUsersRepository.findByUserAndChannel(currenusUser, testChannel)).thenReturn(Optional.of(new ChannelUser()));
+        when(userService.getById(currenusUser.getId())).thenReturn(currenusUser);
         assertThrows(ChannelException.class, () -> channelsService.acceptInviteToChannel(testChannel.getId()));
     }
 
