@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
-public class UserService implements Image {
+public class UserService {
     private final UsersRepository usersRepository;
     private final ModelMapper modelMapper;
     private final PasswordEncoder passwordEncoder;
@@ -61,13 +61,11 @@ public class UserService implements Image {
         return modelMapper.map(getCurrentUser(), UserInfoDTO.class);
     }
 
-    @Override
     public ResponseFileDTO getImage(int id) {
         User user = getById(id);
         return FileUtils.download(Path.of(USERS_IMAGES_PATH), user.getImageUUID(), ContentType.IMAGE);
     }
 
-    @Override
     @Transactional
     public void addImage(MultipartFile imageFile, int id) {
         User currentUser = getById(id);
@@ -81,7 +79,6 @@ public class UserService implements Image {
         currentUser.setImageUUID(uuid);
     }
 
-    @Override
     @Transactional
     public void deleteImage(int id) {
         User currentUser = getById(id);

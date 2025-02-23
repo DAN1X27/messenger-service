@@ -27,7 +27,7 @@ import static danix.app.messenger_service.services.UserService.getCurrentUser;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class ChannelsService implements Image {
+public class ChannelsService {
     private final ChannelsRepository channelsRepository;
     private final ChannelsUsersRepository channelsUsersRepository;
     private final ChannelsInvitesRepository channelsInvitesRepository;
@@ -118,7 +118,6 @@ public class ChannelsService implements Image {
         });
     }
 
-    @Override
     @Transactional
     public void addImage(MultipartFile image, int channelId) {
         Channel channel = getById(channelId);
@@ -139,14 +138,12 @@ public class ChannelsService implements Image {
         }
     }
 
-    @Override
     public ResponseFileDTO getImage(int channelId) {
         Channel channel = getById(channelId);
         getChannelUser(getCurrentUser(), channel);
         return FileUtils.download(Path.of(AVATARS_PATH), channel.getImage(), ContentType.IMAGE);
     }
 
-    @Override
     @Transactional
     public void deleteImage(int channelId) {
         Channel channel = getById(channelId);

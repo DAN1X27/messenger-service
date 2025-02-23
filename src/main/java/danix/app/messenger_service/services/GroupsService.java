@@ -28,7 +28,7 @@ import static danix.app.messenger_service.services.UserService.getCurrentUser;
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
-public class GroupsService implements Image {
+public class GroupsService {
     private final GroupsRepository groupsRepository;
     private final GroupsUsersRepository groupsUsersRepository;
     private final ModelMapper modelMapper;
@@ -153,7 +153,6 @@ public class GroupsService implements Image {
         }
     }
 
-    @Override
     @Transactional
     public void addImage(MultipartFile image, int id) {
         Group group = getById(id);
@@ -175,7 +174,6 @@ public class GroupsService implements Image {
         group.setImage(uuid);
     }
 
-    @Override
     @Transactional
     public void deleteImage(int id) {
         Group group = getById(id);
@@ -193,7 +191,6 @@ public class GroupsService implements Image {
         }
     }
 
-    @Override
     public ResponseFileDTO getImage(int id) {
         Group group = getById(id);
         getGroupUser(group, getCurrentUser());
