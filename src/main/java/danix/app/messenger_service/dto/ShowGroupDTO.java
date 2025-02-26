@@ -14,7 +14,6 @@ public class ShowGroupDTO {
     private String name;
     private ResponseUserDTO owner;
     private List<ResponseGroupMessageDTO> messages;
-    private List<ResponseGroupUserDTO> users;
     @JsonProperty("action_messages")
     private List<ResponseGroupActionMessageDTO> actionMessages;
     @JsonProperty("created_at")
@@ -35,7 +34,6 @@ public class ShowGroupDTO {
         this.name = builder.groupName;
         this.owner = builder.owner;
         this.messages = builder.messages;
-        this.users = builder.users;
         this.actionMessages = builder.groupActionMessages;
         this.createdAt = builder.createdAt;
         this.usersCount = builder.usersCount;
@@ -48,7 +46,6 @@ public class ShowGroupDTO {
         private String groupName;
         private ResponseUserDTO owner;
         private List<ResponseGroupMessageDTO> messages;
-        private List<ResponseGroupUserDTO> users;
         private List<ResponseGroupActionMessageDTO> groupActionMessages;
         private Date createdAt;
         private int usersCount;
@@ -72,11 +69,6 @@ public class ShowGroupDTO {
 
         public Builder messages(List<ResponseGroupMessageDTO> messages) {
             this.messages = messages;
-            return this;
-        }
-
-        public Builder users(List<ResponseGroupUserDTO> users) {
-            this.users = users;
             return this;
         }
 

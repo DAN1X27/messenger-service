@@ -83,18 +83,6 @@ public class AuthController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @PatchMapping("/registration/accept")
-    public ResponseEntity<Map<String, String>> acceptRegistrationKey(@RequestBody @Valid AcceptRequestEmailKeyDTO acceptEmailDTO,
-                                                        BindingResult bindingResult) {
-        ErrorHandler.handleException(bindingResult, ExceptionType.AUTHENTICATION_EXCEPTION);
-        emailKeyValidator.validate(acceptEmailDTO, bindingResult);
-        ErrorHandler.handleException(bindingResult, ExceptionType.AUTHENTICATION_EXCEPTION);
-        userService.registerUser(acceptEmailDTO.getEmail());
-        String jwtToken = jwtUtil.generateToken(acceptEmailDTO.getEmail());
-        tokensService.create(jwtToken, userService.getByEmail(acceptEmailDTO.getEmail()));
-        return new ResponseEntity<>(Map.of("jwt-token", jwtToken), HttpStatus.CREATED);
-    }
-
     @PostMapping("/password")
     public ResponseEntity<HttpStatus> forgotPassword(@RequestBody Map<String, String> map) {
 
@@ -111,6 +99,18 @@ public class AuthController {
         });
         userService.sendRecoverPasswordKey(email);
         return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @PatchMapping("/registration/accept")
+    public ResponseEntity<Map<String, String>> acceptRegistrationKey(@RequestBody @Valid AcceptRequestEmailKeyDTO acceptEmailDTO,
+                                                        BindingResult bindingResult) {
+        ErrorHandler.handleException(bindingResult, ExceptionType.AUTHENTICATION_EXCEPTION);
+        emailKeyValidator.validate(acceptEmailDTO, bindingResult);
+        ErrorHandler.handleException(bindingResult, ExceptionType.AUTHENTICATION_EXCEPTION);
+        userService.registerUser(acceptEmailDTO.getEmail());
+        String jwtToken = jwtUtil.generateToken(acceptEmailDTO.getEmail());
+        tokensService.create(jwtToken, userService.getByEmail(acceptEmailDTO.getEmail()));
+        return new ResponseEntity<>(Map.of("jwt-token", jwtToken), HttpStatus.CREATED);
     }
 
     @PatchMapping("/password")

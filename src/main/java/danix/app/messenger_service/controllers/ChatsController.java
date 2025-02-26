@@ -26,12 +26,6 @@ public class ChatsController {
         return new ResponseEntity<>(chatsService.getAllUserChats(), HttpStatus.OK);
     }
 
-    @PostMapping("/{userId}")
-    public ResponseEntity<HttpStatus> createChat(@PathVariable int userId) {
-        chatsService.createChat(userId);
-        return new ResponseEntity<>(HttpStatus.CREATED);
-    }
-
     @GetMapping("/{id}")
     public ResponseEntity<ShowChatDTO> showChat(@PathVariable int id, @RequestParam("page") int page,
                                                 @RequestParam("count") int count) {
@@ -44,6 +38,12 @@ public class ChatsController {
         return ResponseEntity.status(HttpStatus.OK)
                 .contentType(image.getType())
                 .body(image.getFileData());
+    }
+
+    @PostMapping("/{userId}")
+    public ResponseEntity<HttpStatus> createChat(@PathVariable int userId) {
+        chatsService.createChat(userId);
+        return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
     @PostMapping("/{id}/message/image")
@@ -79,18 +79,18 @@ public class ChatsController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @DeleteMapping("/message/{id}")
-    public ResponseEntity<HttpStatus> deleteMessage(@PathVariable long id) {
-        chatsMessagesService.deleteMessage(id);
-        return ResponseEntity.ok(HttpStatus.OK);
-    }
-
     @PatchMapping("/message/{id}")
     public ResponseEntity<HttpStatus> updateMessage(@RequestBody Map<String, String> message, @PathVariable long id) {
         if (!message.containsKey("message")) {
             throw new MessageException("Message must not be empty");
         }
         chatsMessagesService.updateMessage(id, message.get("message"));
+        return ResponseEntity.ok(HttpStatus.OK);
+    }
+
+    @DeleteMapping("/message/{id}")
+    public ResponseEntity<HttpStatus> deleteMessage(@PathVariable long id) {
+        chatsMessagesService.deleteMessage(id);
         return ResponseEntity.ok(HttpStatus.OK);
     }
 

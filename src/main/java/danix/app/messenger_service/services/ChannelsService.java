@@ -447,6 +447,20 @@ public class ChannelsService {
         }
     }
 
+    public List<ResponseChannelUserDTO> getUsers(int channelId, int page, int count) {
+        Channel channel = getById(channelId);
+        getChannelUser(getCurrentUser(), channel);
+        return channelsUsersRepository.findByChannel(channel, PageRequest.of(page, count)).stream()
+                .map(channelUser -> {
+                    ResponseChannelUserDTO respUser = new ResponseChannelUserDTO();
+                    respUser.setId(channelUser.getUser().getId());
+                    respUser.setUsername(channelUser.getUser().getUsername());
+                    respUser.setIsAdmin(channelUser.getIsAdmin());
+                    return respUser;
+                })
+                .toList();
+    }
+
     public ShowChannelDTO showChannel(int id, int postsPage, int postsCount) {
         User currentUser = getCurrentUser();
         Channel channel = getById(id);
@@ -460,15 +474,8 @@ public class ChannelsService {
                 .posts(channelsPostsRepository.findAllByChannel(channel, PageRequest.of(postsPage, postsCount)).stream()
                         .map(this::convertToResponseChannelPostDTO)
                         .toList())
-                .users(channel.getUsers().stream()
-                        .map(channelUser -> {
-                            ResponseChannelUserDTO respUser = new ResponseChannelUserDTO();
-                            respUser.setId(channelUser.getUser().getId());
-                            respUser.setUsername(channelUser.getUser().getUsername());
-                            respUser.setIsAdmin(channelUser.getIsAdmin());
-                            return respUser;
-                        }).toList())
                 .webSocketUUID(channel.getWebSocketUUID())
+                .usersCount(channelsUsersRepository.countByChannel(channel))
                 .build();
     }
 

@@ -33,18 +33,20 @@ public class GroupsController {
         return groupsService.getAllUserGroupsInvites();
     }
 
-    @PatchMapping
-    public ResponseEntity<HttpStatus> updateGroup(@RequestBody @Valid UpdateGroupDTO updateGroupDTO,
-                                              BindingResult bindingResult) {
-        ErrorHandler.handleException(bindingResult, ExceptionType.GROUP_EXCEPTION);
-        groupsService.updateGroup(updateGroupDTO);
-        return ResponseEntity.ok(HttpStatus.OK);
+    @GetMapping("/{id}/image")
+    public ResponseEntity<?> getGroupImage(@PathVariable int id) {
+        ResponseFileDTO image = groupsService.getImage(id);
+        return ResponseEntity.status(HttpStatus.OK)
+                .contentType(image.getType())
+                .body(image.getFileData());
     }
 
-    @PostMapping("/invite/{id}")
-    public ResponseEntity<HttpStatus> acceptInvite(@PathVariable("id") int id) {
-        groupsService.acceptInviteToGroup(id);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    @GetMapping("/message/{id}/file")
+    public ResponseEntity<?> getMessageFile(@PathVariable long id) {
+        ResponseFileDTO image = groupsMessagesService.getFile(id);
+        return ResponseEntity.status(HttpStatus.OK)
+                .contentType(image.getType())
+                .body(image.getFileData());
     }
 
     @GetMapping("/{id}")
@@ -53,24 +55,23 @@ public class GroupsController {
         return ResponseEntity.ok(groupsService.showGroup(groupId, page, count));
     }
 
-    @PostMapping
-    public ResponseEntity<HttpStatus> createGroup(@RequestBody @Valid CreateGroupDTO createGroupDTO,
-                                              BindingResult bindingResult) {
-        ErrorHandler.handleException(bindingResult, ExceptionType.GROUP_EXCEPTION);
-        groupsService.createGroup(createGroupDTO);
+    @GetMapping("/{id}/users")
+    public List<ResponseGroupUserDTO> getUsers(@PathVariable int id, @RequestParam int page, @RequestParam int count) {
+        return groupsService.getGroupUsers(id, page, count);
+    }
+
+    @PostMapping("/invite/{id}")
+    public ResponseEntity<HttpStatus> acceptInvite(@PathVariable("id") int id) {
+        groupsService.acceptInviteToGroup(id);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @PatchMapping("/{groupId}/user/{userId}/admin/add")
-    public ResponseEntity<HttpStatus> addAdmin(@PathVariable int groupId, @PathVariable int userId) {
-        groupsService.addAdmin(groupId, userId);
-        return new ResponseEntity<>(HttpStatus.OK);
-    }
-
-    @PatchMapping("/{groupId}/user/{userId}/admin/delete")
-    public ResponseEntity<HttpStatus> deleteAdmin(@PathVariable int groupId, @PathVariable int userId) {
-        groupsService.deleteAdmin(groupId, userId);
-        return new ResponseEntity<>(HttpStatus.OK);
+    @PostMapping
+    public ResponseEntity<HttpStatus> createGroup(@RequestBody @Valid CreateGroupDTO createGroupDTO,
+                                                  BindingResult bindingResult) {
+        ErrorHandler.handleException(bindingResult, ExceptionType.GROUP_EXCEPTION);
+        groupsService.createGroup(createGroupDTO);
+        return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
     @PostMapping("/{groupId}/user/{userId}/invite")
@@ -79,34 +80,10 @@ public class GroupsController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<HttpStatus> deleteGroup(@PathVariable("id") int groupId) {
-        groupsService.deleteGroup(groupId);
-        return new ResponseEntity<>(HttpStatus.OK);
-    }
-
     @PostMapping("/{groupId}/user/{userId}/ban")
     public ResponseEntity<HttpStatus> banUser(@PathVariable int groupId, @PathVariable int userId) {
         groupsService.banUser(groupId, userId);
         return new ResponseEntity<>(HttpStatus.CREATED);
-    }
-
-    @DeleteMapping("/{groupId}/user/{userId}/unban")
-    public ResponseEntity<HttpStatus> unbanUser(@PathVariable int groupId, @PathVariable int userId) {
-        groupsService.unbanUser(groupId, userId);
-        return new ResponseEntity<>(HttpStatus.OK);
-    }
-
-    @DeleteMapping("/{groupId}/user/{userId}/kick")
-    public ResponseEntity<HttpStatus> kickUser(@PathVariable int groupId, @PathVariable int userId) {
-        groupsService.kickUser(groupId, userId);
-        return new ResponseEntity<>(HttpStatus.OK);
-    }
-
-    @DeleteMapping("/{id}/leave")
-    public ResponseEntity<HttpStatus> leaveFromGroup(@PathVariable("id") int group_id) {
-        groupsService.leaveGroup(group_id);
-        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @PostMapping("/{id}/message")
@@ -142,37 +119,29 @@ public class GroupsController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @PatchMapping("/{id}/image")
-    public ResponseEntity<HttpStatus> updateGroupImage(@PathVariable int id, @RequestParam("image") MultipartFile file) {
-        groupsService.addImage(file, id);
-        return new ResponseEntity<>(HttpStatus.OK);
-    }
-
-    @DeleteMapping("/{id}/image")
-    public ResponseEntity<HttpStatus> deleteGroupImage(@PathVariable int id) {
-        groupsService.deleteImage(id);
+    @PatchMapping
+    public ResponseEntity<HttpStatus> updateGroup(@RequestBody @Valid UpdateGroupDTO updateGroupDTO,
+                                              BindingResult bindingResult) {
+        ErrorHandler.handleException(bindingResult, ExceptionType.GROUP_EXCEPTION);
+        groupsService.updateGroup(updateGroupDTO);
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
-    @GetMapping("/{id}/image")
-    public ResponseEntity<?> getGroupImage(@PathVariable int id) {
-        ResponseFileDTO image = groupsService.getImage(id);
-        return ResponseEntity.status(HttpStatus.OK)
-                .contentType(image.getType())
-                .body(image.getFileData());
+    @PatchMapping("/{groupId}/user/{userId}/admin/add")
+    public ResponseEntity<HttpStatus> addAdmin(@PathVariable int groupId, @PathVariable int userId) {
+        groupsService.addAdmin(groupId, userId);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @GetMapping("/message/{id}/file")
-    public ResponseEntity<?> getMessageFile(@PathVariable long id) {
-        ResponseFileDTO image = groupsMessagesService.getFile(id);
-        return ResponseEntity.status(HttpStatus.OK)
-                .contentType(image.getType())
-                .body(image.getFileData());
+    @PatchMapping("/{groupId}/user/{userId}/admin/delete")
+    public ResponseEntity<HttpStatus> deleteAdmin(@PathVariable int groupId, @PathVariable int userId) {
+        groupsService.deleteAdmin(groupId, userId);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @DeleteMapping("/message/{id}")
-    public ResponseEntity<HttpStatus> deleteMessage(@PathVariable long id) {
-        groupsMessagesService.deleteMessage(id);
+    @PatchMapping("/{id}/image")
+    public ResponseEntity<HttpStatus> updateGroupImage(@PathVariable int id, @RequestParam("image") MultipartFile file) {
+        groupsService.addImage(file, id);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
@@ -182,6 +151,42 @@ public class GroupsController {
             throw new MessageException("Message must not be empty");
         }
         groupsMessagesService.updateMessage(message_id, message.get("message"));
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<HttpStatus> deleteGroup(@PathVariable("id") int groupId) {
+        groupsService.deleteGroup(groupId);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{groupId}/user/{userId}/unban")
+    public ResponseEntity<HttpStatus> unbanUser(@PathVariable int groupId, @PathVariable int userId) {
+        groupsService.unbanUser(groupId, userId);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{groupId}/user/{userId}/kick")
+    public ResponseEntity<HttpStatus> kickUser(@PathVariable int groupId, @PathVariable int userId) {
+        groupsService.kickUser(groupId, userId);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}/leave")
+    public ResponseEntity<HttpStatus> leaveFromGroup(@PathVariable("id") int group_id) {
+        groupsService.leaveGroup(group_id);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}/image")
+    public ResponseEntity<HttpStatus> deleteGroupImage(@PathVariable int id) {
+        groupsService.deleteImage(id);
+        return ResponseEntity.ok(HttpStatus.OK);
+    }
+
+    @DeleteMapping("/message/{id}")
+    public ResponseEntity<HttpStatus> deleteMessage(@PathVariable long id) {
+        groupsMessagesService.deleteMessage(id);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 

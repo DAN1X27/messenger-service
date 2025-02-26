@@ -13,8 +13,9 @@ public class ShowChannelDTO {
     private int id;
     private String name;
     private String description;
-    private List<ResponseChannelUserDTO> users;
     private List<ResponseChannelPostDTO> posts;
+    @JsonProperty("users_count")
+    private int usersCount;
     @JsonProperty("created_at")
     private Date createdAt;
     private ResponseUserDTO owner;
@@ -28,23 +29,28 @@ public class ShowChannelDTO {
     public ShowChannelDTO(Builder builder) {
         this.id = builder.id;
         this.name = builder.name;
-        this.users = builder.users;
         this.posts = builder.posts;
         this.createdAt = builder.createdAt;
         this.owner = builder.owner;
         this.description = builder.description;
         this.webSocketUUID = builder.webSocketUUID;
+        this.usersCount = builder.usersCount;
     }
 
     public static class Builder {
         private int id;
         private String name;
-        private List<ResponseChannelUserDTO> users;
         private List<ResponseChannelPostDTO> posts;
         private Date createdAt;
         private ResponseUserDTO owner;
         private String description;
         private String webSocketUUID;
+        private int usersCount;
+
+        public Builder usersCount(int usersCount) {
+            this.usersCount = usersCount;
+            return this;
+        }
 
         public Builder webSocketUUID(String webSocketUUID) {
             this.webSocketUUID = webSocketUUID;
@@ -58,11 +64,6 @@ public class ShowChannelDTO {
 
         public Builder id(int id) {
             this.id = id;
-            return this;
-        }
-
-        public Builder users(List<ResponseChannelUserDTO> users) {
-            this.users = users;
             return this;
         }
 

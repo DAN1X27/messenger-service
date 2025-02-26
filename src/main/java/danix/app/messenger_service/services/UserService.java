@@ -8,7 +8,6 @@ import danix.app.messenger_service.util.FileException;
 import danix.app.messenger_service.util.FileUtils;
 import danix.app.messenger_service.util.UserException;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 
 import org.springframework.beans.factory.annotation.Value;

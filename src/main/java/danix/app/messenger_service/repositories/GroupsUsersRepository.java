@@ -3,6 +3,7 @@ package danix.app.messenger_service.repositories;
 import danix.app.messenger_service.models.Group;
 import danix.app.messenger_service.models.GroupUser;
 import danix.app.messenger_service.models.User;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -15,5 +16,7 @@ public interface GroupsUsersRepository extends JpaRepository<GroupUser, Integer>
 
     Optional<GroupUser> findByGroupAndUser(Group group, User user);
 
-    List<GroupUser> findAllByGroup(Group group);
+    List<GroupUser> findAllByGroup(Group group, Pageable pageable);
+
+    int countByGroup(Group group);
 }

@@ -44,6 +44,62 @@ public class ChannelsController {
         return channelsService.getChannelsInvites();
     }
 
+    @GetMapping("/find")
+    public ResponseEntity<ResponseChannelDTO> findChannel(@RequestParam String name) {
+        return new ResponseEntity<>(channelsService.findChannel(name), HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ShowChannelDTO> showChannel(@PathVariable int id, @RequestParam("page") int page,
+                                                      @RequestParam("count") int count) {
+        return new ResponseEntity<>(channelsService.showChannel(id, page, count), HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}/users")
+    public List<ResponseChannelUserDTO> getUsers(@PathVariable int id, @RequestParam int page, @RequestParam int count) {
+        return channelsService.getUsers(id, page, count);
+    }
+
+    @GetMapping("/{id}/image")
+    public ResponseEntity<?> getChannelImage(@PathVariable int id) {
+        ResponseFileDTO image = channelsService.getImage(id);
+        return ResponseEntity.status(HttpStatus.OK)
+                .contentType(image.getType())
+                .body(image.getFileData());
+    }
+
+    @GetMapping("/{id}/logs")
+    public ResponseEntity<List<ResponseChannelLogDTO>> showLogs(@PathVariable int id) {
+        return new ResponseEntity<>(channelsService.showChannelLogs(id), HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}/options")
+    public ResponseEntity<ChannelsOptionsDTO> getChannelOptions(@PathVariable int id) {
+        return new ResponseEntity<>(channelsService.getChannelOptions(id), HttpStatus.OK);
+    }
+
+    @GetMapping("/post/file/{id}")
+    public ResponseEntity<?> getPostFile(@PathVariable long id) {
+        ResponseFileDTO file = channelsPostsService.getPostFile(id);
+        return ResponseEntity.status(HttpStatus.OK)
+                .contentType(file.getType())
+                .body(file.getFileData());
+    }
+
+    @GetMapping("/post/comment/{id}/file")
+    public ResponseEntity<?> getCommentImage(@PathVariable long id) {
+        ResponseFileDTO file = channelsPostsService.getCommentFile(id);
+        return ResponseEntity.status(HttpStatus.OK)
+                .contentType(file.getType())
+                .body(file.getFileData());
+    }
+
+    @GetMapping("/post/{id}/comments")
+    public ResponseEntity<List<ResponseChannelPostCommentDTO>> showComments(@PathVariable long id, @RequestParam int page,
+                                                                            @RequestParam int count) {
+        return ResponseEntity.ok(channelsPostsService.getPostComments(id, page, count));
+    }
+
     @PostMapping("/{id}/join")
     public ResponseEntity<HttpStatus> joinToChannel(@PathVariable int id) {
         channelsService.joinToChannel(id);
@@ -62,53 +118,6 @@ public class ChannelsController {
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
-    @DeleteMapping("/{id}/leave")
-    public ResponseEntity<HttpStatus> leaveFromChannel(@PathVariable int id) {
-        channelsService.leaveChannel(id);
-        return ResponseEntity.ok(HttpStatus.OK);
-    }
-
-    @GetMapping("/find")
-    public ResponseEntity<ResponseChannelDTO> findChannel(@RequestParam String name) {
-        return new ResponseEntity<>(channelsService.findChannel(name), HttpStatus.OK);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<ShowChannelDTO> showChannel(@PathVariable int id, @RequestParam("page") int page,
-                                                      @RequestParam("count") int count) {
-        return new ResponseEntity<>(channelsService.showChannel(id, page, count), HttpStatus.OK);
-    }
-
-    @GetMapping("/{id}/image")
-    public ResponseEntity<?> getChannelImage(@PathVariable int id) {
-        ResponseFileDTO image = channelsService.getImage(id);
-        return ResponseEntity.status(HttpStatus.OK)
-                .contentType(image.getType())
-                .body(image.getFileData());
-    }
-
-    @PatchMapping("/{id}/image")
-    public ResponseEntity<HttpStatus> updateChannelImage(@PathVariable int id, @RequestParam("image") MultipartFile image) {
-        channelsService.addImage(image, id);
-        return new ResponseEntity<>(HttpStatus.CREATED);
-    }
-
-    @DeleteMapping("/{id}/image")
-    public ResponseEntity<HttpStatus> deleteChannelImage(@PathVariable int id) {
-        channelsService.deleteImage(id);
-        return ResponseEntity.ok(HttpStatus.OK);
-    }
-
-    @GetMapping("/{id}/logs")
-    public ResponseEntity<List<ResponseChannelLogDTO>> showLogs(@PathVariable int id) {
-        return new ResponseEntity<>(channelsService.showChannelLogs(id), HttpStatus.OK);
-    }
-
-    @GetMapping("/{id}/options")
-    public ResponseEntity<ChannelsOptionsDTO> getChannelOptions(@PathVariable int id) {
-        return new ResponseEntity<>(channelsService.getChannelOptions(id), HttpStatus.OK);
-    }
-
     @PostMapping
     public ResponseEntity<HttpStatus> createChannel(@RequestBody @Valid CreateChannelDTO createChannelDTO,
                                                     BindingResult bindingResult) {
@@ -117,48 +126,10 @@ public class ChannelsController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<HttpStatus> deleteChannel(@PathVariable int id) {
-        channelsService.deleteChannel(id);
-        return ResponseEntity.ok(HttpStatus.OK);
-    }
-
-    @PatchMapping("/{id}")
-    public ResponseEntity<HttpStatus> updateChannel(@RequestBody @Valid UpdateChannelDTO updateChannelDTO,
-                                                    BindingResult bindingResult, @PathVariable int id) {
-        ErrorHandler.handleException(bindingResult, CHANNEL_EXCEPTION);
-        channelsService.updateChannel(updateChannelDTO, id);
-        return ResponseEntity.ok(HttpStatus.OK);
-    }
-
-    @PatchMapping("/{id}/options")
-    public ResponseEntity<HttpStatus> updateChannelOptions(@PathVariable int id, @RequestBody ChannelsOptionsDTO channelsOptionsDTO) {
-        channelsService.updateChannelOptions(id, channelsOptionsDTO);
-        return ResponseEntity.ok(HttpStatus.OK);
-    }
-
     @PostMapping("/{channelId}/user/{userId}/ban")
     public ResponseEntity<HttpStatus> banUser(@PathVariable int channelId, @PathVariable int userId) {
         channelsService.banUser(channelId, userId);
         return new ResponseEntity<>(HttpStatus.CREATED);
-    }
-
-    @DeleteMapping("/{channelId}/user/{userId}/unban")
-    public ResponseEntity<HttpStatus> unbanUser(@PathVariable int channelId, @PathVariable int userId) {
-        channelsService.unbanUser(channelId, userId);
-        return ResponseEntity.ok(HttpStatus.OK);
-    }
-
-    @PatchMapping("/{channelId}/user/{userId}/admin/add")
-    public ResponseEntity<HttpStatus> addAdmin(@PathVariable int channelId, @PathVariable int userId) {
-        channelsService.addAdmin(channelId, userId);
-        return ResponseEntity.ok(HttpStatus.OK);
-    }
-
-    @PatchMapping("/{channelId}/user/{userId}/admin/delete")
-    public ResponseEntity<HttpStatus> deleteAdmin(@PathVariable int channelId, @PathVariable int userId) {
-        channelsService.deleteAdmin(channelId, userId);
-        return ResponseEntity.ok(HttpStatus.OK);
     }
 
     @PostMapping("/post")
@@ -216,38 +187,10 @@ public class ChannelsController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @GetMapping("/post/file/{id}")
-    public ResponseEntity<?> getPostFile(@PathVariable long id) {
-        ResponseFileDTO file = channelsPostsService.getPostFile(id);
-        return ResponseEntity.status(HttpStatus.OK)
-                .contentType(file.getType())
-                .body(file.getFileData());
-    }
-
-    @PatchMapping("/post")
-    public ResponseEntity<HttpStatus> updatePost(@RequestBody @Valid UpdateChannelPostDTO post,
-                                                 BindingResult bindingResult) {
-        ErrorHandler.handleException(bindingResult, CHANNEL_EXCEPTION);
-        channelsPostsService.updatePost(post);
-        return ResponseEntity.ok(HttpStatus.OK);
-    }
-
-    @DeleteMapping("/post/{id}")
-    public ResponseEntity<HttpStatus> deletePost(@PathVariable long id) {
-        channelsPostsService.deletePost(id);
-        return ResponseEntity.ok(HttpStatus.OK);
-    }
-
     @PostMapping("/post/{id}/like")
     public ResponseEntity<HttpStatus> likePost(@PathVariable long id) {
         channelsPostsService.addPostLike(id);
         return new ResponseEntity<>(HttpStatus.CREATED);
-    }
-
-    @DeleteMapping("/post/{id}/like")
-    public ResponseEntity<HttpStatus> deletePostLike(@PathVariable long id) {
-        channelsPostsService.deletePostLike(id);
-        return ResponseEntity.ok(HttpStatus.OK);
     }
 
     @PostMapping("/post/comment")
@@ -286,20 +229,6 @@ public class ChannelsController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @GetMapping("/post/comment/{id}/file")
-    public ResponseEntity<?> getCommentImage(@PathVariable long id) {
-        ResponseFileDTO file = channelsPostsService.getCommentFile(id);
-        return ResponseEntity.status(HttpStatus.OK)
-                .contentType(file.getType())
-                .body(file.getFileData());
-    }
-
-    @DeleteMapping("/post/comment/{id}")
-    public ResponseEntity<HttpStatus> deleteComment(@PathVariable long id) {
-        channelsPostsService.deleteComment(id);
-        return ResponseEntity.ok(HttpStatus.OK);
-    }
-
     @PatchMapping("/post/comment/{id}")
     public ResponseEntity<HttpStatus> updateComment(@PathVariable long id, @RequestBody @Valid UpdateChannelPostCommentDTO comment,
                                                     BindingResult bindingResult) {
@@ -308,10 +237,86 @@ public class ChannelsController {
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
-    @GetMapping("/post/{id}/comments")
-    public ResponseEntity<List<ResponseChannelPostCommentDTO>> showComments(@PathVariable long id, @RequestParam int page,
-                                                                            @RequestParam int count) {
-        return ResponseEntity.ok(channelsPostsService.getPostComments(id, page, count));
+    @PatchMapping("/{id}/image")
+    public ResponseEntity<HttpStatus> updateChannelImage(@PathVariable int id, @RequestParam("image") MultipartFile image) {
+        channelsService.addImage(image, id);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @PatchMapping("/post")
+    public ResponseEntity<HttpStatus> updatePost(@RequestBody @Valid UpdateChannelPostDTO post,
+                                                 BindingResult bindingResult) {
+        ErrorHandler.handleException(bindingResult, CHANNEL_EXCEPTION);
+        channelsPostsService.updatePost(post);
+        return ResponseEntity.ok(HttpStatus.OK);
+    }
+
+    @PatchMapping("/{channelId}/user/{userId}/admin/add")
+    public ResponseEntity<HttpStatus> addAdmin(@PathVariable int channelId, @PathVariable int userId) {
+        channelsService.addAdmin(channelId, userId);
+        return ResponseEntity.ok(HttpStatus.OK);
+    }
+
+    @PatchMapping("/{channelId}/user/{userId}/admin/delete")
+    public ResponseEntity<HttpStatus> deleteAdmin(@PathVariable int channelId, @PathVariable int userId) {
+        channelsService.deleteAdmin(channelId, userId);
+        return ResponseEntity.ok(HttpStatus.OK);
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<HttpStatus> updateChannel(@RequestBody @Valid UpdateChannelDTO updateChannelDTO,
+                                                    BindingResult bindingResult, @PathVariable int id) {
+        ErrorHandler.handleException(bindingResult, CHANNEL_EXCEPTION);
+        channelsService.updateChannel(updateChannelDTO, id);
+        return ResponseEntity.ok(HttpStatus.OK);
+    }
+
+    @PatchMapping("/{id}/options")
+    public ResponseEntity<HttpStatus> updateChannelOptions(@PathVariable int id, @RequestBody ChannelsOptionsDTO channelsOptionsDTO) {
+        channelsService.updateChannelOptions(id, channelsOptionsDTO);
+        return ResponseEntity.ok(HttpStatus.OK);
+    }
+
+    @DeleteMapping("/post/comment/{id}")
+    public ResponseEntity<HttpStatus> deleteComment(@PathVariable long id) {
+        channelsPostsService.deleteComment(id);
+        return ResponseEntity.ok(HttpStatus.OK);
+    }
+
+    @DeleteMapping("/post/{id}/like")
+    public ResponseEntity<HttpStatus> deletePostLike(@PathVariable long id) {
+        channelsPostsService.deletePostLike(id);
+        return ResponseEntity.ok(HttpStatus.OK);
+    }
+
+    @DeleteMapping("/post/{id}")
+    public ResponseEntity<HttpStatus> deletePost(@PathVariable long id) {
+        channelsPostsService.deletePost(id);
+        return ResponseEntity.ok(HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<HttpStatus> deleteChannel(@PathVariable int id) {
+        channelsService.deleteChannel(id);
+        return ResponseEntity.ok(HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{channelId}/user/{userId}/unban")
+    public ResponseEntity<HttpStatus> unbanUser(@PathVariable int channelId, @PathVariable int userId) {
+        channelsService.unbanUser(channelId, userId);
+        return ResponseEntity.ok(HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}/leave")
+    public ResponseEntity<HttpStatus> leaveFromChannel(@PathVariable int id) {
+        channelsService.leaveChannel(id);
+        return ResponseEntity.ok(HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}/image")
+    public ResponseEntity<HttpStatus> deleteChannelImage(@PathVariable int id) {
+        channelsService.deleteImage(id);
+        return ResponseEntity.ok(HttpStatus.OK);
     }
 
     @ExceptionHandler

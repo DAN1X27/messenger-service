@@ -73,6 +73,14 @@ public class GroupsService {
         return responseGroupInviteDTO;
     }
 
+    public List<ResponseGroupUserDTO> getGroupUsers(int groupId, int page, int count) {
+        Group group = getById(groupId);
+        getGroupUser(group, getCurrentUser());
+        return groupsUsersRepository.findAllByGroup(group, PageRequest.of(page, count)).stream()
+                .map(this::convertToUserDTO)
+                .toList();
+    }
+
     public ShowGroupDTO showGroup(int groupId, int page, int count) {
         Group group = getById(groupId);
         getGroupUser(group, getCurrentUser());
@@ -84,15 +92,12 @@ public class GroupsService {
                 .messages(messagesRepository.findAllByGroup(group, PageRequest.of(page, count)).stream()
                         .map(this::convertToMessageDTO)
                         .toList())
-                .users(group.getUsers().stream()
-                        .map(this::convertToUserDTO)
-                        .toList())
                 .groupActionMessages(group.getActionMessages().stream()
                         .map(message -> modelMapper.map(message, ResponseGroupActionMessageDTO.class))
                         .toList())
-                .usersCount(group.getUsers().size())
                 .owner(modelMapper.map(group.getOwner(), ResponseUserDTO.class))
                 .webSocketUUID(group.getWebSocketUUID())
+                .usersCount(groupsUsersRepository.countByGroup(group))
                 .build();
     }
 

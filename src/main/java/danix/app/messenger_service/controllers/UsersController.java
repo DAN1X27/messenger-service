@@ -44,29 +44,6 @@ public class UsersController {
         return new ResponseEntity<>(Map.of("UUID", getCurrentUser().getWebSocketUUID()), HttpStatus.OK);
     }
 
-    @PatchMapping("/status")
-    public ResponseEntity<HttpStatus> updateOnlineStatus() {
-        userService.updateOnlineStatus();
-        return ResponseEntity.ok(HttpStatus.OK);
-    }
-
-    @GetMapping("/notifications")
-    public List<ResponseAppMessageDTO> showUserNotifications() {
-        return userService.getAppMessages();
-    }
-
-    @PatchMapping("/image")
-    public ResponseEntity<HttpStatus> updateImage(@RequestParam("image") MultipartFile image) {
-        userService.addImage(image, UserService.getCurrentUser().getId());
-        return new ResponseEntity<>(HttpStatus.CREATED);
-    }
-
-    @DeleteMapping("/image")
-    public ResponseEntity<HttpStatus> deleteImage() {
-        userService.deleteImage(UserService.getCurrentUser().getId());
-        return ResponseEntity.ok(HttpStatus.OK);
-    }
-
     @GetMapping("/find")
     public ResponseEntity<ShowUserDTO> findUser(@RequestParam String username) {
         ShowUserDTO user = userService.findUser(username);
@@ -81,10 +58,9 @@ public class UsersController {
                 .body(image.getFileData());
     }
 
-    @PatchMapping("/private")
-    public ResponseEntity<HttpStatus> updatePrivate(@RequestParam("status") boolean status) {
-        userService.setPrivateStatus(status);
-        return ResponseEntity.ok(HttpStatus.OK);
+    @GetMapping("/notifications")
+    public List<ResponseAppMessageDTO> showUserNotifications() {
+        return userService.getAppMessages();
     }
 
     @GetMapping("/friends/requests")
@@ -92,10 +68,9 @@ public class UsersController {
         return userService.getAllFriendRequests();
     }
 
-    @DeleteMapping("/unblock/{id}")
-    public ResponseEntity<HttpStatus> unblockUser(@PathVariable int id) {
-        userService.unblockUser(id);
-        return ResponseEntity.ok(HttpStatus.OK);
+    @GetMapping("/friends")
+    public List<ShowUserDTO> getUserFriends() {
+        return userService.getAllUserFriends();
     }
 
     @PostMapping("/block/{id}")
@@ -104,16 +79,28 @@ public class UsersController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @DeleteMapping("/friend/request/cancel/{id}")
-    public ResponseEntity<HttpStatus> cancelFriendRequest(@PathVariable int id) {
-        userService.cancelFriendRequest(id);
-        return new ResponseEntity<>(HttpStatus.OK);
+    @PostMapping("/friend/{id}")
+    public ResponseEntity<HttpStatus> addFriend(@PathVariable int id) {
+        userService.addFriend(id);
+        return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @DeleteMapping("/friend/request/reject/{id}")
-    public ResponseEntity<HttpStatus> rejectFriendRequest(@PathVariable int id) {
-        userService.rejectFriendRequest(id);
-        return new ResponseEntity<>(HttpStatus.OK);
+    @PatchMapping("/status")
+    public ResponseEntity<HttpStatus> updateOnlineStatus() {
+        userService.updateOnlineStatus();
+        return ResponseEntity.ok(HttpStatus.OK);
+    }
+
+    @PatchMapping("/image")
+    public ResponseEntity<HttpStatus> updateImage(@RequestParam("image") MultipartFile image) {
+        userService.addImage(image, UserService.getCurrentUser().getId());
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @PatchMapping("/private")
+    public ResponseEntity<HttpStatus> updatePrivate(@RequestParam("status") boolean status) {
+        userService.setPrivateStatus(status);
+        return ResponseEntity.ok(HttpStatus.OK);
     }
 
     @PatchMapping("/friend/request/{id}")
@@ -150,27 +137,34 @@ public class UsersController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @GetMapping("/friends")
-    public List<ShowUserDTO> getUserFriends() {
-        return userService.getAllUserFriends();
+    @DeleteMapping("/unblock/{id}")
+    public ResponseEntity<HttpStatus> unblockUser(@PathVariable int id) {
+        userService.unblockUser(id);
+        return ResponseEntity.ok(HttpStatus.OK);
+    }
+
+    @DeleteMapping("/image")
+    public ResponseEntity<HttpStatus> deleteImage() {
+        userService.deleteImage(UserService.getCurrentUser().getId());
+        return ResponseEntity.ok(HttpStatus.OK);
+    }
+
+    @DeleteMapping("/friend/request/cancel/{id}")
+    public ResponseEntity<HttpStatus> cancelFriendRequest(@PathVariable int id) {
+        userService.cancelFriendRequest(id);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @DeleteMapping("/friend/request/reject/{id}")
+    public ResponseEntity<HttpStatus> rejectFriendRequest(@PathVariable int id) {
+        userService.rejectFriendRequest(id);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @DeleteMapping("/friend/{id}")
     public ResponseEntity<HttpStatus> deleteFriend(@PathVariable int id) {
         userService.deleteFriend(id);
         return new ResponseEntity<>(HttpStatus.OK);
-    }
-
-    @PostMapping("/friend/{id}")
-    public ResponseEntity<HttpStatus> addFriend(@PathVariable int id) {
-        userService.addFriend(id);
-        return new ResponseEntity<>(HttpStatus.CREATED);
-    }
-
-    private void requestHelper(Map<String, String> userData) {
-        if (userData.get("username") == null || userData.get("username").isEmpty()) {
-            throw new UserException("Invalid username");
-        }
     }
 
     @ExceptionHandler
