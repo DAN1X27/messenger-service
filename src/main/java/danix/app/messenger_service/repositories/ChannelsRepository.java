@@ -6,9 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 @Repository
 public interface ChannelsRepository extends JpaRepository<Channel, Integer> {
@@ -16,6 +14,11 @@ public interface ChannelsRepository extends JpaRepository<Channel, Integer> {
 
     Optional<Channel> findByNameStartsWith(String name);
 
-    @Query("select c.webSocketUUID from Channel c left join c.users cu where cu.user.id = :id")
-    Set<String> getWebSocketsByUser(@Param("id") Integer id);
+    @Query(
+            """
+                select exists (select c.id from Channel c left join c.users cu on c.id = cu.channel.id
+                               where c.webSocketUUID = :web_socket_uuid and cu.user.id = :user_id)
+            """
+    )
+    boolean existsByWebSocketUUIDAndUserId(@Param("web_socket_uuid") String webSocketUUID, @Param("user_id") Integer userId);
 }

@@ -7,6 +7,7 @@ import danix.app.messenger_service.repositories.GroupsRepository;
 import danix.app.messenger_service.repositories.UsersRepository;
 import danix.app.messenger_service.security.JWTUtil;
 import danix.app.messenger_service.services.TokensService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 
 @Component
+@Slf4j
 public class AuthChannelInterceptorAdapter implements ChannelInterceptor {
     private final JWTUtil jwtUtil;
     private final TokensService tokensService;
@@ -76,20 +78,19 @@ public class AuthChannelInterceptorAdapter implements ChannelInterceptor {
                     user = usersRepository.findByEmail(email)
                             .orElseThrow(() -> new UsernameNotFoundException("User not found"));
                     String dest = accessor.getDestination();
+                    int id = user.getId();
                     if (dest.startsWith("/topic/user")) {
                         if (!dest.contains(user.getWebSocketUUID())) {
                             throw new IllegalArgumentException("Invalid destination");
                         }
                     } else if (dest.startsWith("/topic/chat/")) {
                         String webSocketUUID = dest.substring(12);
-                        Set<String> webSockets = chatsRepository.getWebSocketsByUser(user.getId());
-                        if (!webSockets.contains(webSocketUUID)) {
+                        if (!chatsRepository.existByWebSocketUUIDAndUserId(webSocketUUID, id)) {
                             throw new IllegalArgumentException("Invalid destination");
                         }
                     } else if (dest.startsWith("/topic/group/")) {
                         String webSocketUUID = dest.substring(13);
-                        Set<String> webSockets = groupsRepository.getWebSocketByUserId(user.getId());
-                        if (!webSockets.contains(webSocketUUID)) {
+                        if (!groupsRepository.existsByWebSocketUUIDAndUserId(webSocketUUID, id)) {
                             throw new IllegalArgumentException("Invalid destination");
                         }
                     } else if (dest.startsWith("/topic/channel/")) {
@@ -99,14 +100,14 @@ public class AuthChannelInterceptorAdapter implements ChannelInterceptor {
                         } else {
                             webSocketUUID = dest.substring(15);
                         }
-                        Set<String> webSocketsUUIDS = channelsRepository.getWebSocketsByUser(user.getId());
-                        if (!webSocketsUUIDS.contains(webSocketUUID)) {
+                        if (!channelsRepository.existsByWebSocketUUIDAndUserId(webSocketUUID, id)) {
                             throw new IllegalArgumentException("Invalid destination");
                         }
                     } else if (!dest.equals("/topic/user/" + user.getWebSocketUUID() + "/errors")){
                         throw new IllegalArgumentException("Invalid destination");
                     }
                 } catch (Exception e) {
+                    log.error(e.getMessage(), e);
                     if (user != null) {
                         messagingTemplate.convertAndSend("/topic/user/" + user.getWebSocketUUID() + "/errors",
                                 Map.of("error", e.getMessage()));

@@ -6,12 +6,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Set;
-
 @Repository
 public interface GroupsRepository extends JpaRepository<Group, Integer> {
 
-    @Query("select g.webSocketUUID from Group g left join g.users gu where gu.user.id = :id")
-    Set<String> getWebSocketByUserId(@Param("id") Integer id);
+    @Query(
+            """
+               select exists (select g.id from Group g left join g.users gu on gu.group.id = g.id
+                             where g.webSocketUUID = :web_socket_uuid and gu.user.id = :user_id)
+            """
+    )
+    boolean existsByWebSocketUUIDAndUserId(@Param("web_socket_uuid") String webSocketUUID, @Param("user_id") Integer userId);
 }

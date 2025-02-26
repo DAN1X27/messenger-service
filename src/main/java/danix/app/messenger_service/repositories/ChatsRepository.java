@@ -9,7 +9,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 @Repository
 public interface ChatsRepository extends JpaRepository<Chat, Integer> {
@@ -17,6 +16,11 @@ public interface ChatsRepository extends JpaRepository<Chat, Integer> {
 
     List<Chat> findByUser1OrUser2(User user1, User user2);
 
-    @Query("select c.webSocketUUID from Chat c where c.user1.id = :id or c.user2.id = :id")
-    Set<String> getWebSocketsByUser(@Param("id") Integer id);
+    @Query(
+            """
+            select exists (select c.id from Chat c where (c.user1.id = :user_id or c.user2.id = :user_id)
+                        and c.webSocketUUID = :web_socket_uuid)
+            """
+    )
+    boolean existByWebSocketUUIDAndUserId(@Param("web_socket_uuid") String webSocketUUID, @Param("user_id") Integer userId);
 }

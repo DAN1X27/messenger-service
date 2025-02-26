@@ -1,6 +1,7 @@
 package danix.app.messenger_service.config;
 
 import danix.app.messenger_service.security.UserDetailsServiceImpl;
+import jakarta.servlet.Filter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -32,6 +33,7 @@ import java.util.List;
 public class SecurityConfig {
     private final UserDetailsServiceImpl personDetailsService;
     private final JwtFilter jwtFilter;
+    private final CorsFilter corsFilter;
     @Value("${client_url}")
     private String clientUrl;
 
@@ -47,6 +49,7 @@ public class SecurityConfig {
         http.sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(corsFilter, org.springframework.web.filter.CorsFilter.class);
         return http.build();
     }
 
