@@ -278,6 +278,7 @@ You can change the user role in the database console with the command 'update ta
 ```
 -ACTION: Returns user group by id.
 -HEADERS: 'Authorization' - 'Bearer ' + jwt token.
+-PARAMS: page - page number of group messages, count - messages count per page. 
 ```
 * POST /groups
 ```
@@ -422,9 +423,14 @@ desription(new group description, not required), groupId.
 ```
 * GET /groups/{id}/image
 ```
--ACTION: Get group image by group id.
--BODY: 
+-ACTION: Return group image by group id.
 -HEADERS: 'Authorization' - 'Bearer ' + jwt token.
+```
+* GET /groups/{id}/users
+```
+-ACTION: Return group users by group id
+-HEADERS: 'Authorization' - 'Bearer ' + jwt token.
+-PARAMS: page - page number of users, count - users count per page
 ```
 ### CHANNELS
 * GET /channels
@@ -702,4 +708,11 @@ desription(new group description, not required), groupId.
 ```
 -ACTION: Returns all post comments by post id.
 -HEADERS: 'Authorization' - 'Bearer ' + jwt token.
+-PARAMS: page - page numbe of comments, count - comments count per page.
+```
+* GET /channels/{id}/users
+```
+-ACTION: Returns channel users by page and count
+-HEADERS: 'Authorization' - 'Bearer ' + jwt token.
+-PARAMS: page - page number of users, count - users count per page.
 ```
