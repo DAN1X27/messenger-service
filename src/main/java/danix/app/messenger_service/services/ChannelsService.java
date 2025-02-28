@@ -206,13 +206,7 @@ public class ChannelsService {
                 .orElseThrow(() -> new ChannelException("Current user not exist in this channel"));
         channelsUsersRepository.delete(currentChannelUser);
         if (channel.getOwner().getId() == currentUser.getId()) {
-            channel.getUsers().forEach(channelUser ->
-                    messagingTemplate.convertAndSend("/topic/user/" +
-                                                     channelUser.getUser().getWebSocketUUID() + "/main", new ResponseChannelDeletionDTO(id))
-            );
-            messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(),
-                    new ResponseChannelDeletionDTO(id));
-            channelsRepository.delete(channel);
+            deleteChannel(id);
         }
     }
 
@@ -415,10 +409,6 @@ public class ChannelsService {
         Channel channel = getById(id);
         User currentUser = getCurrentUser();
         if (channel.getOwner().getId() == currentUser.getId()) {
-            channel.getUsers().forEach(channelUser ->
-                    messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main",
-                            new ResponseChannelDeletionDTO(id))
-            );
             if (channel.getImage() != null && !channel.getImage().equals(DEFAULT_IMAGE_UUID)) {
                 FileUtils.delete(Path.of(AVATARS_PATH), channel.getImage());
             }

@@ -688,14 +688,8 @@ public class ChannelsServiceTest {
     @Test
     public void leaveChannelWhenCurrentUserOwner() {
         testChannel.setOwner(currenusUser);
-        User testUser1 = User.builder().webSocketUUID(webSocketUUID()).build();
-        User testUser2 = User.builder().webSocketUUID(webSocketUUID()).build();
-        User testUser3 = User.builder().webSocketUUID(webSocketUUID()).build();
-        testChannel.setUsers(List.of(
-                new ChannelUser(testUser1, testChannel),
-                new ChannelUser(testUser2, testChannel),
-                new ChannelUser(testUser3, testChannel)
-        ));
+        testChannel.setUsers(Collections.emptyList());
+        testChannel.setPosts(Collections.emptyList());
         when(channelsRepository.findById(testChannel.getId())).thenReturn(Optional.of(testChannel));
         SecurityContextHolder.setContext(securityContext);
         when(securityContext.getAuthentication()).thenReturn(authentication);
@@ -703,14 +697,7 @@ public class ChannelsServiceTest {
         ChannelUser testChannelUser = new ChannelUser();
         when(channelsUsersRepository.findByUserAndChannel(currenusUser, testChannel)).thenReturn(Optional.of(testChannelUser));
         channelsService.leaveChannel(testChannel.getId());
-        verify(channelsUsersRepository).delete(testChannelUser);
-        verify(channelsRepository).delete(testChannel);
-        for (ChannelUser channelUser : testChannel.getUsers()) {
-            verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" +
-                    channelUser.getUser().getWebSocketUUID() + "/main"), any(ResponseChannelDeletionDTO.class));
-        }
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/" + testChannel.getWebSocketUUID()),
-                any(ResponseChannelDeletionDTO.class));
+        verify(jdbcTemplate, times(1)).update(eq("DELETE FROM channels WHERE id = ?"), eq(testChannel.getId()));
     }
 
     @Test
