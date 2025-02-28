@@ -84,12 +84,7 @@ public class AuthController {
     }
 
     @PostMapping("/password")
-    public ResponseEntity<HttpStatus> forgotPassword(@RequestBody Map<String, String> map) {
-
-        String email = map.get("email");
-        if (email == null) {
-            throw new AuthenticationException("Invalid email");
-        }
+    public ResponseEntity<HttpStatus> forgotPassword(@RequestParam String email) {
         userService.getByEmail(email);
         emailsKeysRepository.findByEmail(email).ifPresent(key -> {
             if (key.getExpiredTime().isAfter(LocalDateTime.now())) {
