@@ -15,6 +15,7 @@ public class UserInfoDTO {
     private Integer id;
     private String username;
     private String email;
+    private String description;
     @JsonProperty("created_at")
     private LocalDateTime createdAt;
     @JsonProperty("private")
