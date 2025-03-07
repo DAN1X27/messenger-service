@@ -17,7 +17,7 @@ services:
       - CHATS_AUDIO_PATH=/app/templates/chats_audio
       - GROUPS_MESSAGES_IMAGES_PATH=/app/templates/groups_messages_images
       - GROUPS_MESSAGES_AUDIO_PATH=/app/templates/groups_messages_audio
-      - CHANNELS_AVATARS_ATH=/app/templates/channels_avatars
+      - CHANNELS_AVATARS_PATH=/app/templates/channels_avatars
       - CHANNELS_POSTS_COMMENTS_IMAGES_PATH=/app/templates/channels_posts_comments_images
       - CHANNELS_POSTS_VIDEOS_PATH=/app/templates/channels_posts_videos
       - CHANNELS_POSTS_COMMENTS_VIDEOS_PATH=/app/templates/channels_posts_comments_videos
