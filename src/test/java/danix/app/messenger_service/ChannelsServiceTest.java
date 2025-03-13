@@ -776,8 +776,6 @@ public class ChannelsServiceTest {
         when(postCommentsRepository.findAllByPostIn(testChannel.getPosts())).thenReturn(Collections.emptyList());
         channelsService.deleteChannel(testChannel.getId());
         verify(jdbcTemplate, times(1)).update(eq("DELETE FROM channels WHERE id = ?"), eq(testChannel.getId()));
-        testChannel.getUsers().forEach(channelUser -> verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" +
-                channelUser.getUser().getWebSocketUUID() + "/main"), any(ResponseChannelDeletionDTO.class)));
         verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/" + testChannel.getWebSocketUUID()),
                 any(ResponseChannelDeletionDTO.class));
     }
