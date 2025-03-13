@@ -50,10 +50,14 @@ public final class FileUtils {
             }
             default -> throw new FileException("Unsupported content type");
         }
+        if (!file.getParentFile().exists()) {
+            file.getParentFile().mkdirs();
+        }
         try (FileOutputStream outputStream = new FileOutputStream(file.toString())) {
             outputStream.write(multipartFile.getBytes());
         } catch (IOException e) {
             log.error("Error uploading file - {}", e.getMessage());
+            throw new FileException("Error while uploading file");
         }
     }
 
