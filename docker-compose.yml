@@ -27,6 +27,7 @@ services:
       - CHANNELS_POSTS_IMAGES_PATH=/app/templates/channels_posts_images
       - SPRING_KAFKA_CONSUMER_BOOTSTRAP-SERVERS=kafka:9092
       - SPRING_KAFKA_BOOTSTRAP-SERVERS=kafka:9092
+      - CLIENT_URL=http://localhost:3000
     ports:
       - "8080:8080"
     volumes:

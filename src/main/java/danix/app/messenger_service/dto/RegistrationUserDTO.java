@@ -22,7 +22,7 @@ public class RegistrationUserDTO {
     @NotEmpty(message = "Password cannot be empty")
     private String password;
 
-    @Size(max = 200, message = "Description must be up to 200 characters")
+    @Size(max = 200, message = "Description length should not be more than 200 characters")
     private String description;
 
     @JsonProperty("private")

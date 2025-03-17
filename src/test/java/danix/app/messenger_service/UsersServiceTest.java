@@ -182,7 +182,7 @@ public class UsersServiceTest {
 
     @Test
     public void addFriendWhenUserFoundAndCurrentUserNotBlockedByUserAndFriendNotExistAndUserBlockedByCurrentUser() {
-        when(usersRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(usersRepository.findByUsername(user.getUsername())).thenReturn(Optional.of(user));
         SecurityContextHolder.setContext(securityContext);
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currentUser));
@@ -190,36 +190,36 @@ public class UsersServiceTest {
         when(blockedUsersRepository.findByOwnerAndBlockedUser(currentUser, user)).thenReturn(Optional.of(new BlockedUser()));
         when(usersFriendsRepository.findByOwnerAndFriend(user, currentUser)).thenReturn(Optional.empty());
         when(usersFriendsRepository.findByOwnerAndFriend(currentUser, user)).thenReturn(Optional.empty());
-        userService.addFriend(user.getId());
+        userService.addFriend(user.getUsername());
         verify(usersFriendsRepository, times(1)).save(any(UserFriend.class));
         verify(blockedUsersRepository, times(1)).delete(any(BlockedUser.class));
     }
 
     @Test
     public void addFriendWhenUserNotFound() {
-        when(usersRepository.findById(user.getId())).thenReturn(Optional.empty());
-        assertThrows(UserException.class, () -> userService.addFriend(user.getId()));
+        when(usersRepository.findByUsername(user.getUsername())).thenReturn(Optional.empty());
+        assertThrows(UserException.class, () -> userService.addFriend(user.getUsername()));
     }
 
     @Test
     public void addFriendWhenCurrentUserIsBlockedByUser() {
-        when(usersRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(usersRepository.findByUsername(user.getUsername())).thenReturn(Optional.of(user));
         SecurityContextHolder.setContext(securityContext);
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currentUser));
         when(blockedUsersRepository.findByOwnerAndBlockedUser(user, currentUser)).thenReturn(Optional.of(new BlockedUser()));
-        assertThrows(UserException.class, () -> userService.addFriend(user.getId()));
+        assertThrows(UserException.class, () -> userService.addFriend(user.getUsername()));
     }
 
     @Test
     public void addFriendWhenFriendAlreadyExist() {
-        when(usersRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(usersRepository.findByUsername(user.getUsername())).thenReturn(Optional.of(user));
         SecurityContextHolder.setContext(securityContext);
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currentUser));
         when(blockedUsersRepository.findByOwnerAndBlockedUser(user, currentUser)).thenReturn(Optional.empty());
         when(usersFriendsRepository.findByOwnerAndFriend(user, currentUser)).thenReturn(Optional.of(new UserFriend()));
-        assertThrows(UserException.class, () -> userService.addFriend(user.getId()));
+        assertThrows(UserException.class, () -> userService.addFriend(user.getUsername()));
     }
 
     @Test
@@ -425,68 +425,6 @@ public class UsersServiceTest {
         when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currentUser));
         when(blockedUsersRepository.findByOwnerAndBlockedUser(currentUser, user)).thenReturn(Optional.empty());
         assertThrows(UserException.class, () -> userService.unblockUser(user.getId()));
-    }
-
-    @Test
-    public void updateOnlineStatusToOffline() {
-        currentUser.setChannels(Collections.emptyList());
-        currentUser.setGroups(Collections.emptyList());
-        SecurityContextHolder.setContext(securityContext);
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currentUser));
-        when(usersRepository.findById(currentUser.getId())).thenReturn(Optional.of(currentUser));
-        when(chatsRepository.findByUser1OrUser2(currentUser, currentUser)).thenReturn(Collections.emptyList());
-        userService.updateOnlineStatus();
-        assertEquals(User.OnlineStatus.OFFLINE, currentUser.getOnlineStatus());
-    }
-
-    @Test
-    public void updateOnlineStatusToOnlineAndSendMessagesToTopics() {
-        User testChatUser1 = new User();
-        testChatUser1.setWebSocketUUID(webSocketUUID());
-        User testChatUser2 = new User();
-        testChatUser2.setWebSocketUUID(webSocketUUID());
-        Channel testChannel1 = Channel.builder().webSocketUUID(webSocketUUID()).build();
-        Channel testChannel2 = Channel.builder().webSocketUUID(webSocketUUID()).build();
-        Channel testChannel3 = Channel.builder().webSocketUUID(webSocketUUID()).build();
-        currentUser.setChannels(List.of(
-                new ChannelUser(currentUser, testChannel1),
-                new ChannelUser(currentUser, testChannel2),
-                new ChannelUser(currentUser, testChannel3)
-        ));
-        Group testGroup1 = Group.builder().webSocketUUID(webSocketUUID()).build();
-        Group testGroup2 = Group.builder().webSocketUUID(webSocketUUID()).build();
-        Group testGroup3 = Group.builder().webSocketUUID(webSocketUUID()).build();
-        currentUser.setGroups(List.of(
-                new GroupUser(currentUser, testGroup1, false),
-                new GroupUser(currentUser, testGroup2, false),
-                new GroupUser(currentUser, testGroup3, false)
-        ));
-        currentUser.setOnlineStatus(User.OnlineStatus.OFFLINE);
-        SecurityContextHolder.setContext(securityContext);
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currentUser));
-        when(usersRepository.findById(currentUser.getId())).thenReturn(Optional.of(currentUser));
-        List<Chat> chats = List.of(
-                new Chat(testChatUser1, currentUser, UUID.randomUUID().toString()),
-                new Chat(testChatUser2, currentUser, UUID.randomUUID().toString()),
-                new Chat(currentUser, user, UUID.randomUUID().toString())
-        );
-        when(chatsRepository.findByUser1OrUser2(currentUser, currentUser)).thenReturn(chats);
-        userService.updateOnlineStatus();
-        assertEquals(User.OnlineStatus.ONLINE, currentUser.getOnlineStatus());
-        chats.forEach(chat -> verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/chat/" + chat.getWebSocketUUID()),
-                any(ResponseUpdateUserOnlineStatusDTO.class)));
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" + testChatUser1.getWebSocketUUID() + "/main"),
-                any(ResponseUpdateUserOnlineStatusDTO.class));
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" + testChatUser2.getWebSocketUUID() + "/main"),
-                any(ResponseUpdateUserOnlineStatusDTO.class));
-        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" + user.getWebSocketUUID() + "/main"),
-                any(ResponseUpdateUserOnlineStatusDTO.class));
-        currentUser.getChannels().forEach(channelUser -> verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/" +
-                    channelUser.getChannel().getWebSocketUUID()), any(ResponseUpdateUserOnlineStatusDTO.class)));
-        currentUser.getGroups().forEach(groupUser -> verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/" +
-                    groupUser.getGroup().getWebSocketUUID()), any(ResponseUpdateUserOnlineStatusDTO.class)));
     }
 
     @Test

@@ -6,25 +6,39 @@ import danix.app.messenger_service.services.UserService;
 import danix.app.messenger_service.util.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.Map;
 
 import static danix.app.messenger_service.services.UserService.getCurrentUser;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/user")
+@Slf4j
 public class UsersController {
     private final UserService userService;
     private final PasswordValidator passwordValidator;
     private final PasswordEncoder passwordEncoder;
+
+    @MessageMapping("/status/online")
+    public ResponseEntity<HttpStatus> updateOnlineStatus() {
+        userService.setOnlineStatus();
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @MessageMapping("/status/offline")
+    public ResponseEntity<HttpStatus> setOfflineStatus() {
+        userService.setOfflineStatus();
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 
     @GetMapping("/info")
     public ResponseEntity<UserInfoDTO> showUserInfo() {
@@ -37,11 +51,6 @@ public class UsersController {
         return ResponseEntity.status(HttpStatus.OK)
                 .contentType(image.getType())
                 .body(image.getFileData());
-    }
-
-    @GetMapping("/web-socket-uuid")
-    public ResponseEntity<Map<String, String>> getWebSocketUUID() {
-        return new ResponseEntity<>(Map.of("UUID", getCurrentUser().getWebSocketUUID()), HttpStatus.OK);
     }
 
     @GetMapping("/find")
@@ -79,16 +88,10 @@ public class UsersController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @PostMapping("/friend/{id}")
-    public ResponseEntity<HttpStatus> addFriend(@PathVariable int id) {
-        userService.addFriend(id);
+    @PostMapping("/friend")
+    public ResponseEntity<HttpStatus> addFriend(@RequestParam String username) {
+        userService.addFriend(username);
         return new ResponseEntity<>(HttpStatus.CREATED);
-    }
-
-    @PatchMapping("/status")
-    public ResponseEntity<HttpStatus> updateOnlineStatus() {
-        userService.updateOnlineStatus();
-        return ResponseEntity.ok(HttpStatus.OK);
     }
 
     @PatchMapping("/image")
@@ -97,29 +100,17 @@ public class UsersController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @PatchMapping("/private")
-    public ResponseEntity<HttpStatus> updatePrivate(@RequestParam("status") boolean status) {
-        userService.setPrivateStatus(status);
-        return ResponseEntity.ok(HttpStatus.OK);
-    }
-
     @PatchMapping("/friend/request/{id}")
     public ResponseEntity<HttpStatus> acceptFriendRequest(@PathVariable int id) {
         userService.acceptFriend(id);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @PatchMapping("/username")
-    public ResponseEntity<HttpStatus> updateUsername(@RequestBody @Valid UpdateUsernameDTO updateUsernameDTO,
-                                                     BindingResult bindingResult) {
-        passwordValidator.validate(updateUsernameDTO.getPassword(), bindingResult);
+    @PatchMapping
+    public ResponseEntity<HttpStatus> updateInfo(@RequestBody @Valid UpdateUserDTO updateUserDTO,
+                                                  BindingResult bindingResult) {
         ErrorHandler.handleException(bindingResult, ExceptionType.USER_EXCEPTION);
-        User currentUser = getCurrentUser();
-        if (updateUsernameDTO.getUsername().equals(currentUser.getUsername())) {
-            throw new UserException("Еhe new username must be different from the old one");
-        }
-        currentUser.setUsername(updateUsernameDTO.getUsername());
-        userService.updateUser(currentUser.getId(), currentUser);
+        userService.update(updateUserDTO);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
@@ -132,8 +123,7 @@ public class UsersController {
         if (passwordEncoder.matches(updatePasswordDTO.getNewPassword(), currentUser.getPassword())) {
             throw new UserException("Password must be different from the old one");
         }
-        currentUser.setPassword(passwordEncoder.encode(updatePasswordDTO.getNewPassword()));
-        userService.updateUser(currentUser.getId(), currentUser);
+        userService.updatePassword(updatePasswordDTO.getNewPassword());
         return new ResponseEntity<>(HttpStatus.OK);
     }
 

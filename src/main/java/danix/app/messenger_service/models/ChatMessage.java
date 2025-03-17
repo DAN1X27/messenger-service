@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Entity
 @Table(name = "Chats_Messages")
@@ -39,7 +40,8 @@ public class ChatMessage {
     private ContentType contentType;
 
     public ChatMessage() {
-        sentTime = LocalDateTime.now();
+        ZoneId zoneId = ZoneId.of("Europe/Minsk");
+        sentTime = LocalDateTime.now(zoneId);
         isRead = false;
     }
 }

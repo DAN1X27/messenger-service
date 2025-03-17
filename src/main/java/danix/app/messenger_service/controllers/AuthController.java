@@ -15,11 +15,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,7 +34,6 @@ public class AuthController {
     private final TokensService tokensService;
     private final RegistrationUserValidator registrationUserValidator;
     private final BannedUsersRepository bannedUsersRepository;
-    private final PasswordEncoder passwordEncoder;
     private final EmailsKeysRepository emailsKeysRepository;
     private final EmailKeyValidator emailKeyValidator;
 
@@ -114,9 +111,7 @@ public class AuthController {
         ErrorHandler.handleException(bindingResult, ExceptionType.AUTHENTICATION_EXCEPTION);
         emailKeyValidator.validate(recoverPasswordDTO, bindingResult);
         ErrorHandler.handleException(bindingResult, ExceptionType.AUTHENTICATION_EXCEPTION);
-        User user = userService.getByEmail(recoverPasswordDTO.getEmail());
-        user.setPassword(passwordEncoder.encode(recoverPasswordDTO.getNewPassword()));
-        userService.updateUser(user.getId(), user);
+        userService.updatePassword(recoverPasswordDTO.getNewPassword());
         return ResponseEntity.ok(HttpStatus.OK);
     }
 

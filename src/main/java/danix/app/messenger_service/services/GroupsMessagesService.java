@@ -136,7 +136,7 @@ public class GroupsMessagesService {
             }
             message.setText(text);
             messagingTemplate.convertAndSend("/topic/group/" + group.getWebSocketUUID(),
-                    new ResponseMessageUpdatingDTO(messageId, text));
+                    new ResponseMessageUpdatingDTO(messageId, text, message.getSentTime(), message.getMessageOwner().getId()));
         } else {
             throw new MessageException("User must be owner of this message");
         }

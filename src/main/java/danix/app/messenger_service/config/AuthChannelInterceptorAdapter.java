@@ -4,9 +4,11 @@ import danix.app.messenger_service.models.*;
 import danix.app.messenger_service.repositories.ChannelsRepository;
 import danix.app.messenger_service.repositories.ChatsRepository;
 import danix.app.messenger_service.repositories.GroupsRepository;
-import danix.app.messenger_service.repositories.UsersRepository;
 import danix.app.messenger_service.security.JWTUtil;
+import danix.app.messenger_service.security.UserDetailsImpl;
+import danix.app.messenger_service.security.UserDetailsServiceImpl;
 import danix.app.messenger_service.services.TokensService;
+import danix.app.messenger_service.services.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.Message;
@@ -17,8 +19,7 @@ import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -28,22 +29,23 @@ import java.util.*;
 public class AuthChannelInterceptorAdapter implements ChannelInterceptor {
     private final JWTUtil jwtUtil;
     private final TokensService tokensService;
-    private final UsersRepository usersRepository;
     private final ChannelsRepository channelsRepository;
     private final GroupsRepository groupsRepository;
     private final ChatsRepository chatsRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final UserDetailsServiceImpl userDetailsService;
 
-    public AuthChannelInterceptorAdapter(JWTUtil jwtUtil, TokensService tokensService, UsersRepository usersRepository,
+    public AuthChannelInterceptorAdapter(JWTUtil jwtUtil, TokensService tokensService,
                                          ChannelsRepository channelsRepository, GroupsRepository groupsRepository,
-                                         ChatsRepository chatsRepository, @Lazy SimpMessagingTemplate messagingTemplate) {
+                                         ChatsRepository chatsRepository, @Lazy SimpMessagingTemplate messagingTemplate,
+                                         UserDetailsServiceImpl userDetailsService) {
         this.jwtUtil = jwtUtil;
         this.tokensService = tokensService;
-        this.usersRepository = usersRepository;
         this.channelsRepository = channelsRepository;
         this.groupsRepository = groupsRepository;
         this.chatsRepository = chatsRepository;
         this.messagingTemplate = messagingTemplate;
+        this.userDetailsService = userDetailsService;
     }
 
     @Override
@@ -56,17 +58,17 @@ public class AuthChannelInterceptorAdapter implements ChannelInterceptor {
                 if (token != null && token.startsWith("Bearer ")) {
                     token = token.substring(7);
                     String email = jwtUtil.validateTokenAndRetrieveClaim(token);
-                    User user = usersRepository.findByEmail(email)
-                            .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                    UserDetailsImpl userDetails = (UserDetailsImpl) userDetailsService.loadUserByUsername(email);
                     if (!tokensService.isValid(jwtUtil.getIdFromToken(token))) {
                         throw new IllegalArgumentException("Invalid token");
                     }
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(
-                                    user.getEmail(),
-                                    null,
-                                    Collections.singleton(new SimpleGrantedAuthority(user.getRole().toString()))
+                                    userDetails,
+                                    userDetails.getPassword(),
+                                    userDetails.getAuthorities()
                             );
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
                     accessor.setUser(authToken);
                 }
             }
@@ -74,9 +76,8 @@ public class AuthChannelInterceptorAdapter implements ChannelInterceptor {
                 User user = null;
                 try {
                     Authentication authentication = (Authentication) accessor.getUser();
-                    String email = authentication.getPrincipal().toString();
-                    user = usersRepository.findByEmail(email)
-                            .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                    UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+                    user = userDetails.getUser();
                     String dest = accessor.getDestination();
                     int id = user.getId();
                     if (dest.startsWith("/topic/user")) {
@@ -107,7 +108,6 @@ public class AuthChannelInterceptorAdapter implements ChannelInterceptor {
                         throw new IllegalArgumentException("Invalid destination");
                     }
                 } catch (Exception e) {
-                    log.error(e.getMessage(), e);
                     if (user != null) {
                         messagingTemplate.convertAndSend("/topic/user/" + user.getWebSocketUUID() + "/errors",
                                 Map.of("error", e.getMessage()));

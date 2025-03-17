@@ -32,3 +32,4 @@ build/
 .vscode/
 /postgres/db_data
 /src/main/resources/web_socket_test
+/src/main/java/danix/app/messenger_service/controllers/TestController.java

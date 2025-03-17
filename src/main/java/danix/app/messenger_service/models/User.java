@@ -97,6 +97,9 @@ public class User {
     @Column(name = "is_banned")
     private boolean isBanned;
 
+    @Column(name = "last_online_status_update")
+    private LocalDateTime lastOnlineStatusUpdate;
+
     public static Builder builder() {
         return new Builder();
     }
@@ -114,6 +117,7 @@ public class User {
         this.onlineStatus = OnlineStatus.ONLINE;
         this.webSocketUUID = builder.webSocketUUID;
         this.isBanned = false;
+        this.lastOnlineStatusUpdate = LocalDateTime.now();
     }
 
     public static class Builder {

@@ -17,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -40,12 +42,12 @@ public class ChatsMessagesService {
     private String CHATS_AUDIO_PATH;
 
     @Transactional
-    public void sendTextMessage(String message, int chatId) {
-        sendMessage(message, ContentType.TEXT, chatId);
+    public long sendTextMessage(String message, int chatId) {
+       return sendMessage(message, ContentType.TEXT, chatId);
     }
 
     @Transactional
-    public void sendFile(MultipartFile file, int chatId, ContentType contentType) {
+    public long sendFile(MultipartFile file, int chatId, ContentType contentType) {
         String uuid = UUID.randomUUID().toString();
         switch (contentType) {
             case IMAGE -> FileUtils.upload(Path.of(CHATS_IMAGES_PATH), file, uuid, contentType);
@@ -54,7 +56,7 @@ public class ChatsMessagesService {
             default -> throw new MessageException("Unsupported content type");
         }
         try {
-            sendMessage(uuid, contentType, chatId);
+            return sendMessage(uuid, contentType, chatId);
         } catch (MessageException e) {
             FileUtils.delete(Path.of(CHATS_IMAGES_PATH), uuid);
             FileUtils.delete(Path.of(CHATS_VIDEOS_PATH), uuid);
@@ -62,15 +64,15 @@ public class ChatsMessagesService {
         }
     }
 
-    private void sendMessage(String message, ContentType contentType, int chatId) {
+    private long sendMessage(String message, ContentType contentType, int chatId) {
         User currentUser = getCurrentUser();
         Chat chat = chatsUsersRepository.findById(chatId)
                 .orElseThrow(() -> new ChatException("Chat not found"));
         User user = chat.getUser1().getId() == currentUser.getId() ? chat.getUser2() : chat.getUser1();
         blockedUsersRepository.findByOwnerAndBlockedUser(user, currentUser).ifPresentOrElse(person -> {
-            throw new MessageException("Current user blocked by this user");
+            throw new MessageException("The user blocked you");
         }, () -> blockedUsersRepository.findByOwnerAndBlockedUser(currentUser, user).ifPresent(person -> {
-            throw new MessageException("Current user has blocked this user");
+            throw new MessageException("You have blocked this user");
         }));
         ChatMessage chatMessage = new ChatMessage();
         chatMessage.setChat(chat);
@@ -88,6 +90,7 @@ public class ChatsMessagesService {
                 .sentTime(chatMessage.getSentTime())
                 .build();
         messagingTemplate.convertAndSend("/topic/chat/" + chat.getWebSocketUUID(), responseChatMessageDTO);
+        return chatMessage.getId();
     }
 
     @Transactional
@@ -111,7 +114,7 @@ public class ChatsMessagesService {
         }
         message.setText(text);
         messagingTemplate.convertAndSend("/topic/chat/" + message.getChat().getWebSocketUUID(),
-                new ResponseMessageUpdatingDTO(messageId, text));
+                new ResponseMessageUpdatingDTO(messageId, text, message.getSentTime(), message.getOwner().getId()));
     }
 
     public ResponseFileDTO getMessageFile(long messageId) {
@@ -120,7 +123,7 @@ public class ChatsMessagesService {
         Chat chat = chatMessage.getChat();
         User currentUser = getCurrentUser();
         if (chat.getUser1().getId() != currentUser.getId() && chat.getUser2().getId() != currentUser.getId()) {
-            throw new ChatException("Current user not exist in this chat");
+            throw new ChatException("You are not in this chat");
         }
         switch (chatMessage.getContentType()) {
             case IMAGE -> {
@@ -143,10 +146,10 @@ public class ChatsMessagesService {
         Chat chat = message.getChat();
         if (chat.getUser1().getId() == currentUser.getId() || chat.getUser2().getId() == currentUser.getId()) {
             if (message.getOwner().getId() != currentUser.getId()) {
-                throw new MessageException("Current user not own this message.");
+                throw new MessageException("You are not own thi message");
             }
         } else {
-            throw new MessageException("Curren user not exist in this chat.");
+            throw new MessageException("You are not in this chat");
         }
         return message;
     }

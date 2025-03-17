@@ -20,4 +20,6 @@ public class UserInfoDTO {
     private LocalDateTime createdAt;
     @JsonProperty("private")
     private boolean isPrivate;
+    @JsonProperty("web_socket")
+    private String webSocketUUID;
 }

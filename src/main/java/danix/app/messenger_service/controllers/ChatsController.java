@@ -47,36 +47,36 @@ public class ChatsController {
     }
 
     @PostMapping("/{id}/message/image")
-    public ResponseEntity<HttpStatus> sendImage(@RequestParam("image") MultipartFile image, @PathVariable int id) {
-        chatsMessagesService.sendFile(image, id, ContentType.IMAGE);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<Map<String, Object>> sendImage(@RequestParam("image") MultipartFile image, @PathVariable int id) {
+        long messageId = chatsMessagesService.sendFile(image, id, ContentType.IMAGE);
+        return new ResponseEntity<>(Map.of("id", messageId), HttpStatus.OK);
     }
 
     @PostMapping("/{id}/message/video")
-    public ResponseEntity<HttpStatus> sendVideo(@RequestParam("video") MultipartFile video, @PathVariable int id) {
-        chatsMessagesService.sendFile(video, id, ContentType.VIDEO);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<Map<String, Object>> sendVideo(@RequestParam("video") MultipartFile video, @PathVariable int id) {
+        long messageId = chatsMessagesService.sendFile(video, id, ContentType.VIDEO);
+        return new ResponseEntity<>(Map.of("id", messageId), HttpStatus.CREATED);
     }
 
     @PostMapping("/{id}/message/audio/mp3")
-    public ResponseEntity<HttpStatus> sendAudioMP3(@RequestParam("audio") MultipartFile audio, @PathVariable int id) {
-        chatsMessagesService.sendFile(audio, id, ContentType.AUDIO_MP3);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<Map<String, Object>> sendAudioMP3(@RequestParam("audio") MultipartFile audio, @PathVariable int id) {
+        long messageId = chatsMessagesService.sendFile(audio, id, ContentType.AUDIO_MP3);
+        return new ResponseEntity<>(Map.of("id", messageId), HttpStatus.CREATED);
     }
 
     @PostMapping("/{id}/message/audio/ogg")
-    public ResponseEntity<HttpStatus> sendAudioOgg(@RequestParam("audio") MultipartFile audio, @PathVariable int id) {
-        chatsMessagesService.sendFile(audio, id, ContentType.AUDIO_OGG);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<Map<String, Object>> sendAudioOgg(@RequestParam("audio") MultipartFile audio, @PathVariable int id) {
+        long messageId = chatsMessagesService.sendFile(audio, id, ContentType.AUDIO_OGG);
+        return new ResponseEntity<>(Map.of("id", messageId), HttpStatus.CREATED);
     }
 
     @PostMapping("/{id}/message")
-    public ResponseEntity<HttpStatus> sendMessage(@RequestBody Map<String, String> message , @PathVariable int id) {
+    public ResponseEntity<Map<String, Object>> sendMessage(@RequestBody Map<String, String> message , @PathVariable int id) {
         if (!message.containsKey("message")) {
             throw new MessageException("Message must not be empty");
         }
-        chatsMessagesService.sendTextMessage(message.get("message"), id);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+        long messageId = chatsMessagesService.sendTextMessage(message.get("message"), id);
+        return new ResponseEntity<>(Map.of("id", messageId), HttpStatus.CREATED);
     }
 
     @PatchMapping("/message/{id}")

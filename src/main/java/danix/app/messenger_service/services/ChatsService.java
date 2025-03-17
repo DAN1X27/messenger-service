@@ -12,6 +12,7 @@ import danix.app.messenger_service.util.ChatException;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,7 +55,7 @@ public class ChatsService {
         User currentUser = getCurrentUser();
         User user = userService.getById(userId);
         if (user.getId() == currentUser.getId()) {
-            throw new ChatException("Current user cannot create chat with himself");
+            throw new ChatException("Invalid operation");
         }
         chatsRepository.findByUser1AndUser2(currentUser, user).ifPresentOrElse(chat -> {
             throw new ChatException("Chat already exist");
@@ -62,9 +63,9 @@ public class ChatsService {
             throw new ChatException("Chat already exist");
         }));
         blockedUsersRepository.findByOwnerAndBlockedUser(user, currentUser).ifPresentOrElse(blockedUser -> {
-            throw new ChatException("User blocked current user");
+            throw new ChatException("The user blocked you");
         }, () -> blockedUsersRepository.findByOwnerAndBlockedUser(currentUser, user).ifPresent(blockedUser -> {
-            throw new ChatException("Current user has blocked this user");
+            throw new ChatException("You have blocked this user");
         }));
         if (user.getIsPrivate()) {
             if (userService.findUserFriend(user, currentUser) == null) {
@@ -88,7 +89,7 @@ public class ChatsService {
 
     private ShowChatDTO convertToShowChatDTO(Chat chat, int page, int count) {
         ShowChatDTO showChatDTO = new ShowChatDTO();
-        showChatDTO.setMessages(messagesRepository.findAllByChat(chat, PageRequest.of(page, count)).stream()
+        showChatDTO.setMessages(messagesRepository.findAllByChat(chat, PageRequest.of(page, count, Sort.by(Sort.Direction.DESC, "id"))).stream()
                 .map(this::convertToMessageDTO)
                 .toList());
         User user = chat.getUser1().getId() == getCurrentUser().getId() ? chat.getUser2() : chat.getUser1();

@@ -50,7 +50,7 @@ public class UserService {
 
     public ShowUserDTO findUser(String username) {
         User user = usersRepository.findByUsername(username).orElse(null);
-        if (user == null || user.getId() == getCurrentUser().getId()) {
+        if (user == null || user.getId() == getCurrentUser().getId() || user.getIsPrivate()) {
             return null;
         }
         return modelMapper.map(user, ShowUserDTO.class);
@@ -216,8 +216,8 @@ public class UserService {
     }
 
     @Transactional
-    public void addFriend(int id) {
-        User user = getById(id);
+    public void addFriend(String username) {
+        User user = getByUsername(username);
         User currentUser = getCurrentUser();
         blockedUsersRepository.findByOwnerAndBlockedUser(user, currentUser).ifPresentOrElse(blockedUser -> {
             throw new UserException("The user has blocked you");
@@ -268,9 +268,22 @@ public class UserService {
     }
 
     @Transactional
-    public void updateUser(int id, User user) {
-        user.setId(id);
-        usersRepository.save(user);
+    public void update(UpdateUserDTO updateUserDTO) {
+        User user = getById(getCurrentUser().getId());
+        usersRepository.findByUsername(updateUserDTO.getUsername()).ifPresent(foundUser -> {
+            if (foundUser.getId() != user.getId()) {
+                throw new UserException("Username is already taken");
+            }
+        });
+        user.setUsername(updateUserDTO.getUsername());
+        user.setDescription(updateUserDTO.getDescription());
+        user.setIsPrivate(updateUserDTO.isPrivate());
+    }
+
+    @Transactional
+    public void updatePassword(String password) {
+        User user = getById(getCurrentUser().getId());
+        user.setPassword(passwordEncoder.encode(password));
     }
 
     @Transactional
@@ -313,13 +326,32 @@ public class UserService {
     }
 
     @Transactional
-    public void updateOnlineStatus() {
+    public void setOnlineStatus() {
         User user = getById(getCurrentUser().getId());
-        switch (user.getOnlineStatus()) {
-            case ONLINE -> user.setOnlineStatus(User.OnlineStatus.OFFLINE);
-            case OFFLINE -> user.setOnlineStatus(User.OnlineStatus.ONLINE);
+        if (user.getOnlineStatus() == User.OnlineStatus.OFFLINE) {
+            user.setOnlineStatus(User.OnlineStatus.ONLINE);
+            sendOnlineStatusUpdateMessage(user, User.OnlineStatus.ONLINE);
         }
-        ResponseUpdateUserOnlineStatusDTO respUser = new ResponseUpdateUserOnlineStatusDTO(user.getId(), user.getOnlineStatus());
+        user.setLastOnlineStatusUpdate(LocalDateTime.now());
+    }
+
+    @Transactional
+    public void setOfflineStatus() {
+        User user = getById(getCurrentUser().getId());
+        user.setOnlineStatus(User.OnlineStatus.OFFLINE);
+        sendOnlineStatusUpdateMessage(user, User.OnlineStatus.OFFLINE);
+    }
+
+    @Transactional
+    public void setOfflineStatusForOfflineUsers() {
+        List<User> users = usersRepository.findAllByOnlineStatusAndLastOnlineStatusUpdateBefore(User.OnlineStatus.ONLINE,
+                LocalDateTime.now().minusMinutes(2));
+        usersRepository.updateOnlineStatus(users);
+        users.forEach(user -> sendOnlineStatusUpdateMessage(user, User.OnlineStatus.OFFLINE));
+    }
+
+    private void sendOnlineStatusUpdateMessage(User user, User.OnlineStatus status) {
+        ResponseUpdateUserOnlineStatusDTO respUser = new ResponseUpdateUserOnlineStatusDTO(user.getId(), status);
         chatsRepository.findByUser1OrUser2(user, user).forEach(chat -> {
             messagingTemplate.convertAndSend("/topic/chat/" + chat.getWebSocketUUID(), respUser);
             User recipient = chat.getUser1().getId() != user.getId() ? chat.getUser1() : chat.getUser2();
@@ -329,12 +361,6 @@ public class UserService {
                 messagingTemplate.convertAndSend("/topic/channel/" + channelUser.getChannel().getWebSocketUUID(), respUser));
         user.getGroups().forEach(groupUser ->
                 messagingTemplate.convertAndSend("/topic/group/" + groupUser.getGroup().getWebSocketUUID(), respUser));
-    }
-
-    @Transactional
-    public void setPrivateStatus(boolean privateStatus) {
-        User currentUser = getById(getCurrentUser().getId());
-        currentUser.setIsPrivate(privateStatus);
     }
 
     public UserFriend findUserFriend(User user1, User user2) {
