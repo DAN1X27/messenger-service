@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -350,7 +351,7 @@ public class ChannelsPostsService {
         if (!channel.isPostsCommentsAllowed()) {
             return Collections.emptyList();
         }
-        return commentsRepository.findAllByPost(post, PageRequest.of(page, count)).stream()
+        return commentsRepository.findAllByPost(post, PageRequest.of(page, count, Sort.by(Sort.Direction.DESC, "id"))).stream()
                 .map(comment -> {
                     ResponseChannelPostCommentDTO commentDTO = modelMapper.map(comment, ResponseChannelPostCommentDTO.class);
                     User commentOwner = userService.getByUsername(comment.getOwner().getUsername());

@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -89,7 +90,7 @@ public class GroupsService {
                 .name(group.getName())
                 .description(group.getDescription())
                 .createdAt(group.getCreatedAt())
-                .messages(messagesRepository.findAllByGroup(group, PageRequest.of(page, count)).stream()
+                .messages(messagesRepository.findAllByGroup(group, PageRequest.of(page, count, Sort.by(Sort.Direction.DESC, "id"))).stream()
                         .map(this::convertToMessageDTO)
                         .toList())
                 .groupActionMessages(group.getActionMessages().stream()

@@ -14,7 +14,8 @@ create table person
     image         varchar default '3a2cd62f-121a-48b5-b0aa-e54454d4d996'::character varying not null,
     online_status varchar default 'OFFLINE'::character varying                              not null,
     is_banned     boolean default false not null,
-    web_socket_uuid varchar not null
+    web_socket_uuid varchar not null,
+    last_online_status_update timestamp default CURRENT_TIMESTAMP
 );
 
 create table tokens

@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -461,7 +462,7 @@ public class ChannelsService {
                 .name(channel.getName())
                 .description(channel.getDescription())
                 .createdAt(channel.getCreatedAt())
-                .posts(channelsPostsRepository.findAllByChannel(channel, PageRequest.of(postsPage, postsCount)).stream()
+                .posts(channelsPostsRepository.findAllByChannel(channel, PageRequest.of(postsPage, postsCount, Sort.by(Sort.Direction.DESC, "id"))).stream()
                         .map(this::convertToResponseChannelPostDTO)
                         .toList())
                 .webSocketUUID(channel.getWebSocketUUID())
