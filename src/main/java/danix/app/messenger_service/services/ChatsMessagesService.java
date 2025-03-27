@@ -146,7 +146,7 @@ public class ChatsMessagesService {
         Chat chat = message.getChat();
         if (chat.getUser1().getId() == currentUser.getId() || chat.getUser2().getId() == currentUser.getId()) {
             if (message.getOwner().getId() != currentUser.getId()) {
-                throw new MessageException("You are not own thi message");
+                throw new MessageException("You are not own this message");
             }
         } else {
             throw new MessageException("You are not in this chat");

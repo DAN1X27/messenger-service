@@ -124,7 +124,7 @@ public class ChatsMessagesServiceTest {
         try {
             chatsMessagesService.deleteMessage(1L);
         } catch (MessageException e) {
-            assertEquals("Curren user not exist in this chat.", e.getMessage());
+            assertEquals("You are not in this chat", e.getMessage());
         }
     }
 
@@ -137,7 +137,7 @@ public class ChatsMessagesServiceTest {
         try {
             chatsMessagesService.deleteMessage(1L);
         } catch (MessageException e) {
-            assertEquals("Current user not own this message.", e.getMessage());
+            assertEquals("You are not own this message", e.getMessage());
         }
     }
 
