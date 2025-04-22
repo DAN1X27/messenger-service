@@ -33,10 +33,10 @@ public class JwtFilter extends OncePerRequestFilter {
             try {
                 String token = authHeader.substring(7);
                 if (token.isBlank()) {
-                    throw new AccessDeniedException("Invalid token");
+                    throw new IllegalArgumentException("Invalid token");
                 }
                 if (!tokensService.isValid(jwtUtil.getIdFromToken(token))) {
-                    throw new AccessDeniedException("Invalid token");
+                    throw new IllegalArgumentException("Invalid token");
                 }
                 String email = jwtUtil.validateTokenAndRetrieveClaim(token);
                 UserDetails userDetails = detailsService.loadUserByUsername(email);
@@ -49,12 +49,10 @@ public class JwtFilter extends OncePerRequestFilter {
                 filterChain.doFilter(request, response);
             } catch (Exception e) {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
             }
-        } else if (request.getRequestURI().startsWith("/auth") && !request.getRequestURI().equals("/auth/logout")) {
-            filterChain.doFilter(request, response);
-        } else {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
         }
+        filterChain.doFilter(request, response);
 
     }
 }

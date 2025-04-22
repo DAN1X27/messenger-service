@@ -23,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -145,8 +146,9 @@ public class ChatsServiceTest {
         testMessage3.setOwner(testUser);
         testChat.setMessages(List.of(testMessage1, testMessage2, testMessage3));
         when(chatsRepository.findById(testChat.getId())).thenReturn(Optional.of(testChat));
-        when(chatsMessagesRepository.findAllByChat(testChat, PageRequest.of(1, 1)))
-                .thenReturn(List.of(testMessage1, testMessage2, testMessage3));
+        when(chatsMessagesRepository.findAllByChat(testChat,
+                PageRequest.of(1, 1, Sort.by(Sort.Direction.DESC, "id"))))
+                    .thenReturn(List.of(testMessage1, testMessage2, testMessage3));
         ResponseUserDTO respUser1 = new ResponseUserDTO();
         respUser1.setId(testUser.getId());
         when(modelMapper.map(testUser, ResponseUserDTO.class)).thenReturn(respUser1);

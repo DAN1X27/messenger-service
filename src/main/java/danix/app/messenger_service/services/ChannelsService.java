@@ -380,10 +380,10 @@ public class ChannelsService {
         if (channel.getOwner().getId() == getCurrentUser().getId()) {
             channel.setName(updateChannelDTO.getName() == null ? channel.getName() : updateChannelDTO.getName());
             channel.setDescription(updateChannelDTO.getDescription() == null ? channel.getDescription() : updateChannelDTO.getDescription());
+            ResponseChannelUpdatingDTO response =
+                    new ResponseChannelUpdatingDTO(modelMapper.map(channel, ResponseChannelDTO.class), false);
             channel.getUsers().forEach(channelUser ->
-                    messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main",
-                            new ResponseChannelUpdatingDTO(modelMapper.map(channel, ResponseChannelDTO.class), false))
-            );
+                    messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main", response));
         } else {
             throw new ChannelException("Current user is not owner of this channel");
         }
@@ -462,7 +462,8 @@ public class ChannelsService {
                 .name(channel.getName())
                 .description(channel.getDescription())
                 .createdAt(channel.getCreatedAt())
-                .posts(channelsPostsRepository.findAllByChannel(channel, PageRequest.of(postsPage, postsCount, Sort.by(Sort.Direction.DESC, "id"))).stream()
+                .posts(channelsPostsRepository.findAllByChannel(channel,
+                                PageRequest.of(postsPage, postsCount, Sort.by(Sort.Direction.DESC, "id"))).stream()
                         .map(this::convertToResponseChannelPostDTO)
                         .toList())
                 .webSocketUUID(channel.getWebSocketUUID())
