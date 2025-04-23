@@ -2,6 +2,7 @@ package danix.app.messenger_service;
 
 import danix.app.messenger_service.dto.ResponseGroupMessageDTO;
 import danix.app.messenger_service.dto.ResponseMessageUpdatingDTO;
+import danix.app.messenger_service.dto.ResponseUserDTO;
 import danix.app.messenger_service.models.*;
 import danix.app.messenger_service.repositories.GroupsMessagesRepository;
 import danix.app.messenger_service.security.UserDetailsImpl;
@@ -68,6 +69,8 @@ public class GroupsMessagesServiceTest {
     public void sendTextMessage() {
         when(groupsService.getById(testGroup.getId())).thenReturn(testGroup);
         when(groupsService.getGroupUser(testGroup, currentUser)).thenReturn(new GroupUser());
+        when(modelMapper.map(any(), eq(ResponseGroupMessageDTO.class))).thenReturn(new ResponseGroupMessageDTO());
+        when(modelMapper.map(currentUser, ResponseUserDTO.class)).thenReturn(new ResponseUserDTO());
         groupsMessagesService.sendTextMessage("test message", testGroup.getId());
         verify(messagesRepository, times(1)).save(any(GroupMessage.class));
         verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/" + testGroup.getWebSocketUUID()),
@@ -119,6 +122,7 @@ public class GroupsMessagesServiceTest {
         GroupMessage testMessage = getGroupMessage();
         when(messagesRepository.findById(testMessage.getId())).thenReturn(Optional.of(testMessage));
         when(groupsService.getGroupUser(testGroup, currentUser)).thenReturn(new GroupUser());
+        when(modelMapper.map(any(), eq(ResponseMessageUpdatingDTO.class))).thenReturn(new ResponseMessageUpdatingDTO());
         groupsMessagesService.updateMessage(testMessage.getId(), "new message");
         assertNotNull(testMessage.getText());
         assertEquals("new message", testMessage.getText());

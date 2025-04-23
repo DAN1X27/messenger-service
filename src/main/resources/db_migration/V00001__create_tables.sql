@@ -125,13 +125,6 @@ create table channels_users(
     is_admin   boolean not null
 );
 
-create table banned_channels_users
-(
-    user_id    integer not null references person on delete cascade,
-    channel_id integer not null references channels on delete cascade,
-    primary key (user_id, channel_id)
-);
-
 create table channels_posts
 (
     id           bigint generated always as identity primary key,

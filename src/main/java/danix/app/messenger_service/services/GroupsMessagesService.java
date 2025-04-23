@@ -38,7 +38,7 @@ public class GroupsMessagesService {
     private String GROUPS_MESSAGES_AUDIO_PATH;
 
     @Transactional
-    public void sendFile(MultipartFile image, int groupId, ContentType contentType) {
+    public long sendFile(MultipartFile image, int groupId, ContentType contentType) {
         if (contentType != ContentType.IMAGE && contentType != ContentType.VIDEO &&
             contentType != ContentType.AUDIO_MP3 && contentType != ContentType.AUDIO_OGG) {
             throw new MessageException("Unsupported content type");
@@ -50,7 +50,7 @@ public class GroupsMessagesService {
             case AUDIO_MP3, AUDIO_OGG -> FileUtils.upload(Path.of(GROUPS_MESSAGES_AUDIO_PATH), image, uuid, contentType);
         }
         try {
-            sendMessage(uuid, groupId, contentType);
+            return sendMessage(uuid, groupId, contentType);
         } catch (GroupException e) {
             FileUtils.delete(Path.of(GROUPS_MESSAGES_IMAGES_PATH), uuid);
             FileUtils.delete(Path.of(GROUPS_MESSAGES_VIDEOS_PATH), uuid);
@@ -59,8 +59,8 @@ public class GroupsMessagesService {
     }
 
     @Transactional
-    public void sendTextMessage(String message, int groupId) {
-        sendMessage(message, groupId, ContentType.TEXT);
+    public long sendTextMessage(String message, int groupId) {
+        return sendMessage(message, groupId, ContentType.TEXT);
     }
 
     public ResponseFileDTO getFile(long messageId) {
@@ -82,24 +82,23 @@ public class GroupsMessagesService {
         }
     }
 
-    private void sendMessage(String message, int groupId, ContentType contentType) {
+    private long sendMessage(String message, int groupId, ContentType contentType) {
         User currentUser = getCurrentUser();
         Group group = groupsService.getById(groupId);
         groupsService.getGroupUser(group, currentUser);
-        GroupMessage groupMessage = new GroupMessage();
-        groupMessage.setText(message);
-        groupMessage.setGroup(group);
-        groupMessage.setContentType(contentType);
-        groupMessage.setSentTime(LocalDateTime.now());
-        groupMessage.setMessageOwner(currentUser);
+        GroupMessage groupMessage = GroupMessage.builder()
+                .text(message)
+                .group(group)
+                .contentType(contentType)
+                .messageOwner(currentUser)
+                .sentTime(LocalDateTime.now())
+                .build();
         groupsMessagesRepository.save(groupMessage);
-        ResponseGroupMessageDTO messageDTO = new ResponseGroupMessageDTO();
-        messageDTO.setMessage(message);
-        messageDTO.setMessageId(groupMessage.getId());
-        messageDTO.setSentTime(groupMessage.getSentTime());
-        messageDTO.setSender(modelMapper.map(groupMessage.getMessageOwner(), ResponseUserDTO.class));
-        messageDTO.setContentType(contentType);
+        ResponseGroupMessageDTO messageDTO = modelMapper.map(groupMessage, ResponseGroupMessageDTO.class);
+        messageDTO.setText(message);
+        messageDTO.setSender(modelMapper.map(currentUser, ResponseUserDTO.class));
         messagingTemplate.convertAndSend("/topic/group/" + group.getWebSocketUUID(), messageDTO);
+        return groupMessage.getId();
     }
 
     @Transactional
@@ -135,8 +134,9 @@ public class GroupsMessagesService {
                 throw new MessageException("The file cannot be changed");
             }
             message.setText(text);
-            messagingTemplate.convertAndSend("/topic/group/" + group.getWebSocketUUID(),
-                    new ResponseMessageUpdatingDTO(messageId, text, message.getSentTime(), message.getMessageOwner().getId()));
+            ResponseMessageUpdatingDTO response = modelMapper.map(message, ResponseMessageUpdatingDTO.class);
+            response.setSenderId(currentUser.getId());
+            messagingTemplate.convertAndSend("/topic/group/" + group.getWebSocketUUID(), response);
         } else {
             throw new MessageException("User must be owner of this message");
         }

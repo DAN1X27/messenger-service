@@ -77,6 +77,7 @@ public class ChatsMessagesServiceTest {
         when(blockedUsersRepository.findByOwnerAndBlockedUser(testUser, currentUser)).thenReturn(Optional.empty());
         when(blockedUsersRepository.findByOwnerAndBlockedUser(currentUser, testUser)).thenReturn(Optional.empty());
         when(modelMapper.map(currentUser, ResponseUserDTO.class)).thenReturn(new ResponseUserDTO());
+        when(modelMapper.map(any(), eq(ResponseChatMessageDTO.class))).thenReturn(new ResponseChatMessageDTO());
         chatsMessagesService.sendTextMessage("Test message", testChat.getId());
         verify(chatsMessagesRepository, times(1)).save(any(ChatMessage.class));
         verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/chat/" + testChat.getWebSocketUUID()),
@@ -145,6 +146,7 @@ public class ChatsMessagesServiceTest {
     public void updateMessage() {
         ChatMessage chatMessage = getChatMessage();
         when(chatsMessagesRepository.findById(1L)).thenReturn(Optional.of(chatMessage));
+        when(modelMapper.map(any(), eq(ResponseMessageUpdatingDTO.class))).thenReturn(new ResponseMessageUpdatingDTO());
         chatsMessagesService.updateMessage(1L, "New message");
         assertEquals("New message", chatMessage.getText());
         verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/chat/" + testChat.getWebSocketUUID()),

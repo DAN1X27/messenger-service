@@ -288,19 +288,18 @@ public class UserService {
 
     @Transactional
     public void temporalRegister(RegistrationUserDTO personDTO) {
-        usersRepository.save(
-                User.builder()
-                        .username(personDTO.getUsername())
-                        .createdAt(LocalDateTime.now())
-                        .description(personDTO.getDescription())
-                        .email(personDTO.getEmail())
-                        .role(User.Roles.ROLE_USER)
-                        .password(passwordEncoder.encode(personDTO.getPassword()))
-                        .isPrivate(personDTO.getIsPrivate() != null && personDTO.getIsPrivate())
-                        .imageUUID(DEFAULT_IMAGE_UUID)
-                        .userStatus(User.Status.TEMPORALLY_REGISTERED)
-                        .webSocketUUID(UUID.randomUUID().toString())
-                        .build()
+        usersRepository.save(User.builder()
+              .username(personDTO.getUsername())
+              .createdAt(LocalDateTime.now())
+              .description(personDTO.getDescription())
+              .email(personDTO.getEmail())
+              .role(User.Roles.ROLE_USER)
+              .password(passwordEncoder.encode(personDTO.getPassword()))
+              .isPrivate(personDTO.getIsPrivate() != null && personDTO.getIsPrivate())
+              .imageUUID(DEFAULT_IMAGE_UUID)
+              .userStatus(User.Status.TEMPORALLY_REGISTERED)
+              .webSocketUUID(UUID.randomUUID().toString())
+              .build()
         );
     }
 

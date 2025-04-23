@@ -1,20 +1,16 @@
 package danix.app.messenger_service.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import java.time.LocalDateTime;
 
-@Getter
-@Setter
-@AllArgsConstructor
+@Data
 public class ResponseMessageUpdatingDTO {
     @JsonProperty("message_id")
-    private Long updatedMessageId;
+    private Long id;
     @JsonProperty("updated_message")
-    private String updatedMessage;
+    private String text;
     @JsonProperty("sent_time")
     private LocalDateTime sentTime;
     @JsonProperty("sender_id")

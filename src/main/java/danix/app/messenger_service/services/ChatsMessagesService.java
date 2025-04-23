@@ -17,8 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 
@@ -70,26 +69,25 @@ public class ChatsMessagesService {
                 .orElseThrow(() -> new ChatException("Chat not found"));
         User user = chat.getUser1().getId() == currentUser.getId() ? chat.getUser2() : chat.getUser1();
         blockedUsersRepository.findByOwnerAndBlockedUser(user, currentUser).ifPresentOrElse(person -> {
-            throw new MessageException("The user blocked you");
+            throw new MessageException("This user has blocked you");
         }, () -> blockedUsersRepository.findByOwnerAndBlockedUser(currentUser, user).ifPresent(person -> {
             throw new MessageException("You have blocked this user");
         }));
-        ChatMessage chatMessage = new ChatMessage();
-        chatMessage.setChat(chat);
-        chatMessage.setText(message);
-        chatMessage.setContentType(contentType);
-        chatMessage.setOwner(currentUser);
-        messagesRepository.save(chatMessage);
-
-        ResponseChatMessageDTO responseChatMessageDTO = ResponseChatMessageDTO.builder()
-                .message(message)
-                .messageId(chatMessage.getId())
-                .sender(modelMapper.map(chatMessage.getOwner(), ResponseUserDTO.class))
-                .isRead(true)
-                .type(contentType)
-                .sentTime(chatMessage.getSentTime())
+        ChatMessage chatMessage = ChatMessage.builder()
+                .text(message)
+                .owner(currentUser)
+                .contentType(contentType)
+                .sentTime(LocalDateTime.now())
+                .chat(chat)
+                .isRead(false)
                 .build();
-        messagingTemplate.convertAndSend("/topic/chat/" + chat.getWebSocketUUID(), responseChatMessageDTO);
+        messagesRepository.save(chatMessage);
+        ResponseChatMessageDTO messageDTO = modelMapper.map(chatMessage, ResponseChatMessageDTO.class);
+        messageDTO.setSender(modelMapper.map(chatMessage.getOwner(), ResponseUserDTO.class));
+        if (contentType != ContentType.TEXT) {
+            messageDTO.setText(null);
+        }
+        messagingTemplate.convertAndSend("/topic/chat/" + chat.getWebSocketUUID(), messageDTO);
         return chatMessage.getId();
     }
 
@@ -113,8 +111,9 @@ public class ChatsMessagesService {
             throw new MessageException("The image cannot be changed");
         }
         message.setText(text);
-        messagingTemplate.convertAndSend("/topic/chat/" + message.getChat().getWebSocketUUID(),
-                new ResponseMessageUpdatingDTO(messageId, text, message.getSentTime(), message.getOwner().getId()));
+        ResponseMessageUpdatingDTO response = modelMapper.map(message, ResponseMessageUpdatingDTO.class);
+        response.setSenderId(message.getOwner().getId());
+        messagingTemplate.convertAndSend("/topic/chat/" + message.getChat().getWebSocketUUID(), response);
     }
 
     public ResponseFileDTO getMessageFile(long messageId) {

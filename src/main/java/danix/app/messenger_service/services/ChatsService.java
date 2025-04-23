@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static danix.app.messenger_service.services.UserService.getCurrentUser;
 
@@ -42,16 +41,33 @@ public class ChatsService {
         if (chat.getUser1().getId() != currentUser.getId() && chat.getUser2().getId() != currentUser.getId()) {
             throw new ChatException("User not exist in this chat");
         }
-        chat.getMessages().forEach(message -> {
-            if (!message.isRead() && message.getOwner().getId() != currentUser.getId()) {
+        List<ChatMessage> messages = messagesRepository.findAllByChat(chat,
+                PageRequest.of(page, count, Sort.by(Sort.Direction.DESC, "id")));
+        messages.forEach(message -> {
+            if (!message.isRead()) {
                 message.setRead(true);
             }
         });
-        return convertToShowChatDTO(chat, page, count);
+        ShowChatDTO showChatDTO = new ShowChatDTO();
+        showChatDTO.setMessages(messages.stream()
+                .map(message -> {
+                    ResponseChatMessageDTO messageDTO = modelMapper.map(message, ResponseChatMessageDTO.class);
+                    if (message.getContentType() != ContentType.TEXT) {
+                        messageDTO.setText(null);
+                    }
+                    messageDTO.setSender(modelMapper.map(message.getOwner(), ResponseUserDTO.class));
+                    return messageDTO;
+                })
+                .toList());
+        User user = chat.getUser1().getId() == getCurrentUser().getId() ? chat.getUser2() : chat.getUser1();
+        showChatDTO.setUser(modelMapper.map(user, ResponseUserDTO.class));
+        showChatDTO.setId(chat.getId());
+        showChatDTO.setWebSocketUUID(chat.getWebSocketUUID());
+        return showChatDTO;
     }
 
     @Transactional
-    public void createChat(int userId) {
+    public long createChat(int userId) {
         User currentUser = getCurrentUser();
         User user = userService.getById(userId);
         if (user.getId() == currentUser.getId()) {
@@ -78,43 +94,19 @@ public class ChatsService {
         responseChatDTO.setCreatedChatId(chat.getId());
         responseChatDTO.setUser(modelMapper.map(currentUser, ResponseUserDTO.class));
         messagingTemplate.convertAndSend("/topic/user/" + user.getWebSocketUUID() + "/main", responseChatDTO);
+        return chat.getId();
     }
 
     public List<ResponseChatDTO> getAllUserChats() {
         User currentUser = getCurrentUser();
         return chatsRepository.findByUser1OrUser2(currentUser, currentUser).stream()
-                .map(this::convertToResponseChatDTO)
-                .collect(Collectors.toList());
-    }
-
-    private ShowChatDTO convertToShowChatDTO(Chat chat, int page, int count) {
-        ShowChatDTO showChatDTO = new ShowChatDTO();
-        showChatDTO.setMessages(messagesRepository.findAllByChat(chat, PageRequest.of(page, count, Sort.by(Sort.Direction.DESC, "id"))).stream()
-                .map(this::convertToMessageDTO)
-                .toList());
-        User user = chat.getUser1().getId() == getCurrentUser().getId() ? chat.getUser2() : chat.getUser1();
-        showChatDTO.setUser(modelMapper.map(user, ResponseUserDTO.class));
-        showChatDTO.setId(chat.getId());
-        showChatDTO.setWebSocketUUID(chat.getWebSocketUUID());
-        return showChatDTO;
-    }
-
-    private ResponseChatDTO convertToResponseChatDTO(Chat chat) {
-        ResponseChatDTO responseChatDTO = new ResponseChatDTO();
-        User user = chat.getUser1().getId() == getCurrentUser().getId() ? chat.getUser2() : chat.getUser1();
-        responseChatDTO.setUser(modelMapper.map(user, ResponseUserDTO.class));
-        responseChatDTO.setId(chat.getId());
-        return responseChatDTO;
-    }
-
-    private ResponseChatMessageDTO convertToMessageDTO(ChatMessage chatMessage) {
-        return ResponseChatMessageDTO.builder()
-                .message(chatMessage.getContentType() == ContentType.TEXT ? chatMessage.getText() : null)
-                .messageId(chatMessage.getId())
-                .sender(modelMapper.map(chatMessage.getOwner(), ResponseUserDTO.class))
-                .sentTime(chatMessage.getSentTime())
-                .type(chatMessage.getContentType())
-                .isRead(chatMessage.isRead())
-                .build();
+                .map(chat -> {
+                    ResponseChatDTO responseChatDTO = new ResponseChatDTO();
+                    User user = chat.getUser1().getId() == getCurrentUser().getId() ? chat.getUser2() : chat.getUser1();
+                    responseChatDTO.setUser(modelMapper.map(user, ResponseUserDTO.class));
+                    responseChatDTO.setId(chat.getId());
+                    return responseChatDTO;
+                })
+                .toList();
     }
 }

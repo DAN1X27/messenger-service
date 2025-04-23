@@ -61,24 +61,19 @@ public class GroupsService {
 
     public List<ResponseGroupInviteDTO> getAllUserGroupsInvites() {
         return groupsInvitesRepository.findByUser(getCurrentUser()).stream()
-                .map(this::convertToResponseGroupInviteDTO)
+                .map(invite -> modelMapper.map(invite, ResponseGroupInviteDTO.class))
                 .collect(Collectors.toList());
-    }
-
-    private ResponseGroupInviteDTO convertToResponseGroupInviteDTO(GroupInvite groupInvite) {
-        ResponseGroupInviteDTO responseGroupInviteDTO = new ResponseGroupInviteDTO();
-        responseGroupInviteDTO.setGroupId(groupInvite.getGroup().getId());
-        responseGroupInviteDTO.setGroupName(groupInvite.getGroup().getName());
-        responseGroupInviteDTO.setGroupName(groupInvite.getGroup().getName());
-        responseGroupInviteDTO.setSentTime(groupInvite.getSentTime());
-        return responseGroupInviteDTO;
     }
 
     public List<ResponseGroupUserDTO> getGroupUsers(int groupId, int page, int count) {
         Group group = getById(groupId);
         getGroupUser(group, getCurrentUser());
         return groupsUsersRepository.findAllByGroup(group, PageRequest.of(page, count)).stream()
-                .map(this::convertToUserDTO)
+                .map(groupUser -> {
+                    ResponseGroupUserDTO responseDTO = modelMapper.map(groupUser.getUser(), ResponseGroupUserDTO.class);
+                    responseDTO.setAdmin(groupUser.isAdmin());
+                    return responseDTO;
+                })
                 .toList();
     }
 
@@ -91,7 +86,14 @@ public class GroupsService {
                 .description(group.getDescription())
                 .createdAt(group.getCreatedAt())
                 .messages(messagesRepository.findAllByGroup(group, PageRequest.of(page, count, Sort.by(Sort.Direction.DESC, "id"))).stream()
-                        .map(this::convertToMessageDTO)
+                        .map(message -> {
+                            ResponseGroupMessageDTO messageDTO = modelMapper.map(message, ResponseGroupMessageDTO.class);
+                            messageDTO.setSender(modelMapper.map(message.getMessageOwner(), ResponseUserDTO.class));
+                            if (message.getContentType() != ContentType.TEXT) {
+                                messageDTO.setText(null);
+                            }
+                            return messageDTO;
+                        })
                         .toList())
                 .groupActionMessages(group.getActionMessages().stream()
                         .map(message -> modelMapper.map(message, ResponseGroupActionMessageDTO.class))
@@ -102,28 +104,8 @@ public class GroupsService {
                 .build();
     }
 
-    private ResponseGroupUserDTO convertToUserDTO(GroupUser user) {
-        ResponseGroupUserDTO respUser = new ResponseGroupUserDTO();
-        respUser.setId(user.getUser().getId());
-        respUser.setUsername(user.getUser().getUsername());
-        respUser.setAdmin(user.isAdmin());
-        respUser.setOnlineStatus(user.getUser().getOnlineStatus());
-        return respUser;
-    }
-
-    private ResponseGroupMessageDTO convertToMessageDTO(GroupMessage message) {
-        ResponseGroupMessageDTO messageDTO = new ResponseGroupMessageDTO();
-        messageDTO.setContentType(message.getContentType());
-        messageDTO.setSentTime(message.getSentTime());
-        messageDTO.setMessageId(message.getId());
-        messageDTO.setMessage(message.getContentType() == ContentType.TEXT ? message.getText() : null);
-        messageDTO.setMessageId(message.getId());
-        messageDTO.setSender(modelMapper.map(message.getMessageOwner(), ResponseUserDTO.class));
-        return messageDTO;
-    }
-
     @Transactional
-    public void createGroup(CreateGroupDTO groupDTO) {
+    public long createGroup(CreateGroupDTO groupDTO) {
         User currentUser = getCurrentUser();
         Group group = Group.builder()
                 .name(groupDTO.getName())
@@ -139,6 +121,7 @@ public class GroupsService {
         groupUser.setUser(currentUser);
         groupUser.setAdmin(true);
         groupsUsersRepository.save(groupUser);
+        return group.getId();
     }
 
     @Transactional
@@ -148,12 +131,7 @@ public class GroupsService {
         if (group.getOwner().getId() == currentUser.getId()) {
             group.setName(updateGroupDTO.getName() != null ? updateGroupDTO.getName() : group.getName());
             group.setDescription(updateGroupDTO.getDescription() != null ? updateGroupDTO.getDescription() : group.getDescription());
-            group.getUsers().forEach(groupUser ->
-                    messagingTemplate.convertAndSend("/topic/user/" + groupUser.getUser().getWebSocketUUID() + "/main",
-                            new ResponseGroupUpdatingDTO(modelMapper.map(group, ResponseGroupDTO.class), false))
-            );
-            messagingTemplate.convertAndSend("/topic/group/" + group.getWebSocketUUID(),
-                    new ResponseGroupUpdatingDTO(modelMapper.map(group, ResponseGroupDTO.class), false));
+            sendUpdatedGroupMessage(group, false);
         } else {
             throw new GroupException("User must be owner of group");
         }
@@ -168,10 +146,7 @@ public class GroupsService {
         String uuid = UUID.randomUUID().toString();
         FileUtils.upload(Path.of(AVATARS_PATH), image, uuid, ContentType.IMAGE);
         sendGroupActionMessage(id, getCurrentUser().getUsername() + " updated group image");
-        group.getUsers().forEach(groupUser ->
-                messagingTemplate.convertAndSend("/topic/user/" + groupUser.getUser().getWebSocketUUID() + "/main",
-                        new ResponseGroupUpdatingDTO(modelMapper.map(group, ResponseGroupDTO.class), true))
-        );
+        sendUpdatedGroupMessage(group, true);
         if (group.getImage().equals(DEFAULT_IMAGE_UUID)) {
             group.setImage(uuid);
             return;
@@ -185,16 +160,14 @@ public class GroupsService {
         Group group = getById(id);
         if (group.getOwner().getId() != getCurrentUser().getId()) {
             throw new FileException("User must be owner of group");
-        } else if (group.getImage().equals(DEFAULT_IMAGE_UUID)) {
+        }
+        if (group.getImage().equals(DEFAULT_IMAGE_UUID)) {
             throw new FileException("Group already have default image");
         }
         FileUtils.delete(Path.of(AVATARS_PATH), group.getImage());
         group.setImage(DEFAULT_IMAGE_UUID);
         sendGroupActionMessage(id, getCurrentUser().getUsername() + " deleted group image");
-        group.getUsers().forEach(groupUser ->
-                messagingTemplate.convertAndSend("/topic/user/" + groupUser.getUser().getWebSocketUUID() + "/main",
-                        new ResponseGroupUpdatingDTO(modelMapper.map(group, ResponseGroupDTO.class), true))
-        );
+        sendUpdatedGroupMessage(group, true);
     }
 
     public ResponseFileDTO getImage(int id) {
@@ -240,7 +213,7 @@ public class GroupsService {
     }
 
     @Transactional
-    public void inviteUser(int groupId, int userId) {
+    public long inviteUser(int groupId, int userId) {
         User user = userService.getById(userId);
         User currentUser = getCurrentUser();
         Group group = getById(groupId);
@@ -269,6 +242,7 @@ public class GroupsService {
         groupInvite.setGroup(group);
         groupInvite.setUser(user);
         groupsInvitesRepository.save(groupInvite);
+        return groupInvite.getId();
     }
 
     @Transactional
@@ -424,6 +398,14 @@ public class GroupsService {
         groupsActionsMessagesRepository.save(groupActionMessage);
         messagingTemplate.convertAndSend("/topic/group/" + group.getWebSocketUUID(),
                 new ResponseGroupActionMessageDTO(message, LocalDateTime.now()));
+    }
+
+    private void sendUpdatedGroupMessage(Group group, boolean imageUpdated) {
+        ResponseGroupUpdatingDTO response =
+                new ResponseGroupUpdatingDTO(modelMapper.map(group, ResponseGroupDTO.class), imageUpdated);
+        group.getUsers().forEach(groupUser ->
+                messagingTemplate.convertAndSend("/topic/user/" + groupUser.getUser().getWebSocketUUID() + "/main", response));
+        messagingTemplate.convertAndSend("/topic/group/" + group.getWebSocketUUID(), response);
     }
 
     public GroupUser getGroupUser(Group group, User user) {

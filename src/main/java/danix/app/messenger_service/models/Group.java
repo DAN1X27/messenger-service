@@ -1,6 +1,8 @@
 package danix.app.messenger_service.models;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -11,6 +13,8 @@ import java.util.List;
 @Table(name = "groups")
 @Data
 @NoArgsConstructor
+@Builder
+@AllArgsConstructor
 public class Group {
 
     @Id
@@ -48,60 +52,4 @@ public class Group {
     private String webSocketUUID;
 
     private String description;
-
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public Group(Builder builder) {
-        this.name = builder.name;
-        this.owner = builder.owner;
-        this.createdAt = builder.createdAt;
-        this.description = builder.description;
-        this.image = builder.image;
-        this.webSocketUUID = builder.webSocketUUID;
-    }
-
-    public static class Builder {
-        private String name;
-        private User owner;
-        private Date createdAt;
-        private String description;
-        private String image;
-        private String webSocketUUID;
-
-        public Builder webSocketUUID(String webSocketUUID) {
-            this.webSocketUUID = webSocketUUID;
-            return this;
-        }
-
-        public Builder name(String name) {
-            this.name = name;
-            return this;
-        }
-
-        public Builder owner(User owner) {
-            this.owner = owner;
-            return this;
-        }
-
-        public Builder createdAt(Date createdAt) {
-            this.createdAt = createdAt;
-            return this;
-        }
-
-        public Builder description(String description) {
-            this.description = description;
-            return this;
-        }
-
-        public Builder image(String image) {
-            this.image = image;
-            return this;
-        }
-
-        public Group build() {
-            return new Group(this);
-        }
-    }
 }

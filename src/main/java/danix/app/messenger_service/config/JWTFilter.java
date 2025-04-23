@@ -8,8 +8,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,8 +18,7 @@ import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
-@Slf4j
-public class JwtFilter extends OncePerRequestFilter {
+public class JWTFilter extends OncePerRequestFilter {
     private final JWTUtil jwtUtil;
     private final UserDetailsServiceImpl detailsService;
     private final TokensService tokensService;
@@ -41,19 +38,18 @@ public class JwtFilter extends OncePerRequestFilter {
                 String email = jwtUtil.validateTokenAndRetrieveClaim(token);
                 UserDetails userDetails = detailsService.loadUserByUsername(email);
                 UsernamePasswordAuthenticationToken authenticationToken =
-                        new UsernamePasswordAuthenticationToken(userDetails,
-                                userDetails.getPassword(), userDetails.getAuthorities());
-                if (SecurityContextHolder.getContext().getAuthentication() == null) {
-                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                }
-                filterChain.doFilter(request, response);
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
+                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
             } catch (Exception e) {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }
         }
         filterChain.doFilter(request, response);
-
     }
 }
 

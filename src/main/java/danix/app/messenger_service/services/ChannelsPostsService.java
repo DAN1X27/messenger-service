@@ -19,8 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static danix.app.messenger_service.services.UserService.getCurrentUser;
 
@@ -53,12 +53,12 @@ public class ChannelsPostsService {
     private String COMMENTS_AUDIO_PATH;
 
     @Transactional
-    public void createPost(CreateChannelPostDTO post) {
-        savePost(post.getText(), post.getChannelId(), ContentType.TEXT);
+    public long createPost(CreateChannelPostDTO post) {
+        return savePost(post.getText(), post.getChannelId(), ContentType.TEXT).getId();
     }
 
     @Transactional
-    public void createPost(MultipartFile file, int id, ContentType contentType) {
+    public long createPost(MultipartFile file, int id, ContentType contentType) {
         String uuid = UUID.randomUUID().toString();
         switch (contentType) {
             case IMAGE -> FileUtils.upload(Path.of(POSTS_IMAGES_PATH), file, uuid, contentType);
@@ -71,6 +71,7 @@ public class ChannelsPostsService {
         postFile.setFileUUID(uuid);
         postFile.setContentType(contentType);
         filesRepository.save(postFile);
+        return post.getId();
     }
 
     private ChannelPost savePost(String text, int groupId, ContentType contentType) {
@@ -78,11 +79,12 @@ public class ChannelsPostsService {
         Channel channel = channelsService.getById(groupId);
         ChannelUser user = channelsService.getChannelUser(curentUser, channel);
         if (user.getIsAdmin()) {
-            ChannelPost post = new ChannelPost();
-            post.setText(text);
-            post.setOwner(user);
-            post.setContentType(contentType);
-            post.setChannel(channel);
+            ChannelPost post = ChannelPost.builder()
+                    .text(text)
+                    .channel(channel)
+                    .contentType(contentType)
+                    .createdAt(LocalDateTime.now())
+                    .build();
             ChannelLog channelLog = new ChannelLog();
             channelLog.setMessage(curentUser.getUsername() + " created post");
             channelLog.setChannel(channel);
@@ -96,7 +98,7 @@ public class ChannelsPostsService {
     }
 
     @Transactional
-    public void addFile(long postId, MultipartFile file, ContentType contentType) {
+    public long addFile(long postId, MultipartFile file, ContentType contentType) {
         User curentUser = getCurrentUser();
         ChannelPost post = getById(postId);
         Channel channel = post.getChannel();
@@ -106,13 +108,11 @@ public class ChannelsPostsService {
                 throw new ChannelException("Files limit exceeded");
             }
             String uuid = UUID.randomUUID().toString();
-            if (file != null) {
-                switch (contentType) {
-                    case IMAGE -> FileUtils.upload(Path.of(POSTS_IMAGES_PATH), file, uuid, contentType);
-                    case VIDEO -> FileUtils.upload(Path.of(POSTS_VIDEOS_PATH), file, uuid, contentType);
-                    case AUDIO_MP3, AUDIO_OGG -> FileUtils.upload(Path.of(POSTS_AUDIO_PATH), file, uuid, contentType);
-                    default -> throw new ChannelException("Unsupported content type");
-                }
+            switch (contentType) {
+                case IMAGE -> FileUtils.upload(Path.of(POSTS_IMAGES_PATH), file, uuid, contentType);
+                case VIDEO -> FileUtils.upload(Path.of(POSTS_VIDEOS_PATH), file, uuid, contentType);
+                case AUDIO_MP3, AUDIO_OGG -> FileUtils.upload(Path.of(POSTS_AUDIO_PATH), file, uuid, contentType);
+                default -> throw new ChannelException("Unsupported content type");
             }
             ChannelPostFile postFile = new ChannelPostFile();
             postFile.setFileUUID(uuid);
@@ -122,9 +122,9 @@ public class ChannelsPostsService {
             if (post.getContentType() == ContentType.TEXT) {
                 post.setContentType(ContentType.TEXT_FILE);
             }
-            post.getFiles().add(postFile);
             messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(),
                     new ResponsePostUpdatingDTO(channelsService.convertToResponseChannelPostDTO(post)));
+            return postFile.getId();
         } else {
             throw new ChannelException("Current user must be admin of channel or owner of post");
         }
@@ -222,12 +222,12 @@ public class ChannelsPostsService {
     }
 
     @Transactional
-    public void createComment(CreateChannelPostCommentDTO commentDTO) {
-        saveComment(commentDTO.getPostId(), commentDTO.getComment(), ContentType.TEXT);
+    public long createComment(CreateChannelPostCommentDTO commentDTO) {
+        return saveComment(commentDTO.getPostId(), commentDTO.getComment(), ContentType.TEXT);
     }
 
     @Transactional
-    public void createComment(long postId, MultipartFile file, ContentType contentType) {
+    public long createComment(long postId, MultipartFile file, ContentType contentType) {
         String uuid = UUID.randomUUID().toString();
         Path path;
         switch (contentType) {
@@ -246,14 +246,14 @@ public class ChannelsPostsService {
             default -> throw new ChannelException("Unsupported content type");
         }
         try {
-            saveComment(postId, uuid, contentType);
+            return saveComment(postId, uuid, contentType);
         } catch (ChannelException e) {
             FileUtils.delete(path, uuid);
             throw e;
         }
     }
 
-    private void saveComment(Long postId, String text, ContentType contentType) {
+    private long saveComment(Long postId, String text, ContentType contentType) {
         ChannelPost post = getById(postId);
         Channel channel = post.getChannel();
         ChannelUser user = channelsService.getChannelUser(getCurrentUser(), channel);
@@ -267,19 +267,21 @@ public class ChannelsPostsService {
             }
             isFile = true;
         }
-
-        ChannelPostComment comment = new ChannelPostComment();
-        comment.setText(text);
-        comment.setOwner(user);
-        comment.setPost(post);
-        comment.setContentType(contentType);
+        ChannelPostComment comment = ChannelPostComment.builder()
+                .text(text)
+                .owner(user)
+                .contentType(contentType)
+                .post(post)
+                .createdAt(LocalDateTime.now())
+                .build();
         commentsRepository.save(comment);
-        post.getComments().add(comment);
         ResponseChannelPostCommentDTO commentDTO = modelMapper.map(comment, ResponseChannelPostCommentDTO.class);
         if (isFile) {
             commentDTO.setText(null);
         }
+        commentDTO.setOwner(modelMapper.map(comment.getOwner(), ResponseUserDTO.class));
         messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID() + "/post/" + post.getId() + "/comments", commentDTO);
+        return comment.getId();
     }
 
     public ResponseFileDTO getCommentFile(long commentId) {
@@ -335,7 +337,7 @@ public class ChannelsPostsService {
             if (comment.getContentType() == ContentType.TEXT) {
                 comment.setText(commentDTO.getText());
                 messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID() + "/post/" +
-                                  comment.getPost().getId() + "/comments", new ResponseCommentUpdatingDTO(comment.getId(), commentDTO.getText()));
+                                                 comment.getPost().getId() + "/comments", new ResponseCommentUpdatingDTO(comment.getId(), commentDTO.getText()));
             } else {
                 throw new ChannelException("File cannot be updated");
             }

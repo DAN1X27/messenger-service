@@ -1,6 +1,8 @@
 package danix.app.messenger_service.models;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -11,6 +13,8 @@ import java.util.List;
 @Table(name = "Person")
 @Data
 @NoArgsConstructor
+@Builder
+@AllArgsConstructor
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -99,93 +103,6 @@ public class User {
 
     @Column(name = "last_online_status_update")
     private LocalDateTime lastOnlineStatusUpdate;
-
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    private User(Builder builder) {
-        this.username = builder.username;
-        this.email = builder.email;
-        this.password = builder.password;
-        this.description = builder.description;
-        this.isPrivate = builder.isPrivate;
-        this.createdAt = builder.createdAt;
-        this.role = builder.role;
-        this.userStatus = builder.userStatus;
-        this.imageUUID = builder.imageUUID;
-        this.onlineStatus = OnlineStatus.ONLINE;
-        this.webSocketUUID = builder.webSocketUUID;
-        this.isBanned = false;
-        this.lastOnlineStatusUpdate = LocalDateTime.now();
-    }
-
-    public static class Builder {
-        private String username;
-        private String email;
-        private String password;
-        private String description;
-        private Boolean isPrivate;
-        private LocalDateTime createdAt;
-        private Roles role;
-        private Status userStatus;
-        private String imageUUID;
-        private String webSocketUUID;
-
-        public Builder webSocketUUID(String webSocketUUID) {
-            this.webSocketUUID = webSocketUUID;
-            return this;
-        }
-
-        public Builder imageUUID(String imageUUID) {
-            this.imageUUID = imageUUID;
-            return this;
-        }
-
-        public Builder username(String username) {
-            this.username = username;
-            return this;
-        }
-
-        public Builder email(String email) {
-            this.email = email;
-            return this;
-        }
-
-        public Builder password(String password) {
-            this.password = password;
-            return this;
-        }
-
-        public Builder description(String description) {
-            this.description = description;
-            return this;
-        }
-
-        public Builder isPrivate(Boolean isPrivate) {
-            this.isPrivate = isPrivate;
-            return this;
-        }
-
-        public Builder createdAt(LocalDateTime createdAt) {
-            this.createdAt = createdAt;
-            return this;
-        }
-
-        public Builder role(Roles role) {
-            this.role = role;
-            return this;
-        }
-
-        public Builder userStatus(Status userStatus) {
-            this.userStatus = userStatus;
-            return this;
-        }
-
-        public User build() {
-            return new User(this);
-        }
-    }
 
     public enum Status {
         REGISTERED,

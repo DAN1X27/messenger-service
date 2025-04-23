@@ -7,7 +7,6 @@ import danix.app.messenger_service.security.UserDetailsImpl;
 import danix.app.messenger_service.services.ChannelsService;
 import danix.app.messenger_service.services.UserService;
 import danix.app.messenger_service.util.ChannelException;
-import org.checkerframework.checker.units.qual.C;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -96,6 +95,28 @@ public class ChannelsServiceTest {
     @BeforeEach
     public void setUp() {
         testChannel.setBannedUsers(new ArrayList<>());
+    }
+
+    @Test
+    public void createWhenNameIsBusy() {
+        CreateChannelDTO createChannelDTO = new CreateChannelDTO();
+        createChannelDTO.setName("test_name");
+        when(channelsRepository.findByName(createChannelDTO.getName())).thenReturn(Optional.of(new Channel()));
+        assertThrows(ChannelException.class, () -> channelsService.createChannel(createChannelDTO));
+    }
+
+    @Test
+    public void createChannelWhenNameIsNotBusy() {
+        CreateChannelDTO createChannelDTO = new CreateChannelDTO();
+        createChannelDTO.setName("test_name");
+        createChannelDTO.setIsPrivate(false);
+        when(channelsRepository.findByName(createChannelDTO.getName())).thenReturn(Optional.empty());
+        SecurityContextHolder.setContext(securityContext);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currenusUser));
+        channelsService.createChannel(createChannelDTO);
+        verify(channelsRepository, times(1)).save(any());
+        verify(channelsUsersRepository, times(1)).save(any());
     }
 
     @Test
@@ -815,6 +836,8 @@ public class ChannelsServiceTest {
         testChannel.getUsers().forEach(channelUser -> verify(messagingTemplate, times(1))
                 .convertAndSend(eq("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main"),
                         any(ResponseChannelUpdatingDTO.class)));
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/" + testChannel.getWebSocketUUID()),
+                any(ResponseChannelUpdatingDTO.class));
     }
 
     @Test

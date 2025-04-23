@@ -5,14 +5,15 @@ import danix.app.messenger_service.models.ContentType;
 import danix.app.messenger_service.services.ChatsService;
 import danix.app.messenger_service.services.ChatsMessagesService;
 import danix.app.messenger_service.util.*;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -41,50 +42,48 @@ public class ChatsController {
     }
 
     @PostMapping("/{userId}")
-    public ResponseEntity<HttpStatus> createChat(@PathVariable int userId) {
-        chatsService.createChat(userId);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<IdDTO> createChat(@PathVariable int userId) {
+        long id = chatsService.createChat(userId);
+        return new ResponseEntity<>(new IdDTO(id), HttpStatus.CREATED);
     }
 
     @PostMapping("/{id}/message/image")
-    public ResponseEntity<Map<String, Object>> sendImage(@RequestParam("image") MultipartFile image, @PathVariable int id) {
+    public ResponseEntity<IdDTO> sendImage(@RequestParam("image") MultipartFile image, @PathVariable int id) {
         long messageId = chatsMessagesService.sendFile(image, id, ContentType.IMAGE);
-        return new ResponseEntity<>(Map.of("id", messageId), HttpStatus.OK);
+        return new ResponseEntity<>(new IdDTO(messageId), HttpStatus.OK);
     }
 
     @PostMapping("/{id}/message/video")
-    public ResponseEntity<Map<String, Object>> sendVideo(@RequestParam("video") MultipartFile video, @PathVariable int id) {
+    public ResponseEntity<IdDTO> sendVideo(@RequestParam("video") MultipartFile video, @PathVariable int id) {
         long messageId = chatsMessagesService.sendFile(video, id, ContentType.VIDEO);
-        return new ResponseEntity<>(Map.of("id", messageId), HttpStatus.CREATED);
+        return new ResponseEntity<>(new IdDTO(messageId), HttpStatus.CREATED);
     }
 
     @PostMapping("/{id}/message/audio/mp3")
-    public ResponseEntity<Map<String, Object>> sendAudioMP3(@RequestParam("audio") MultipartFile audio, @PathVariable int id) {
+    public ResponseEntity<IdDTO> sendAudioMP3(@RequestParam("audio") MultipartFile audio, @PathVariable int id) {
         long messageId = chatsMessagesService.sendFile(audio, id, ContentType.AUDIO_MP3);
-        return new ResponseEntity<>(Map.of("id", messageId), HttpStatus.CREATED);
+        return new ResponseEntity<>(new IdDTO(messageId), HttpStatus.CREATED);
     }
 
     @PostMapping("/{id}/message/audio/ogg")
-    public ResponseEntity<Map<String, Object>> sendAudioOgg(@RequestParam("audio") MultipartFile audio, @PathVariable int id) {
+    public ResponseEntity<IdDTO> sendAudioOgg(@RequestParam("audio") MultipartFile audio, @PathVariable int id) {
         long messageId = chatsMessagesService.sendFile(audio, id, ContentType.AUDIO_OGG);
-        return new ResponseEntity<>(Map.of("id", messageId), HttpStatus.CREATED);
+        return new ResponseEntity<>(new IdDTO(messageId), HttpStatus.CREATED);
     }
 
     @PostMapping("/{id}/message")
-    public ResponseEntity<Map<String, Object>> sendMessage(@RequestBody Map<String, String> message , @PathVariable int id) {
-        if (!message.containsKey("message")) {
-            throw new MessageException("Message must not be empty");
-        }
-        long messageId = chatsMessagesService.sendTextMessage(message.get("message"), id);
-        return new ResponseEntity<>(Map.of("id", messageId), HttpStatus.CREATED);
+    public ResponseEntity<IdDTO> sendMessage(@RequestBody @Valid MessageDTO messageDTO,
+                                             @PathVariable int id, BindingResult bindingResult) {
+        ErrorHandler.handleException(bindingResult, ExceptionType.AUTHENTICATION_EXCEPTION);
+        long messageId = chatsMessagesService.sendTextMessage(messageDTO.getMessage(), id);
+        return new ResponseEntity<>(new IdDTO(messageId), HttpStatus.CREATED);
     }
 
     @PatchMapping("/message/{id}")
-    public ResponseEntity<HttpStatus> updateMessage(@RequestBody Map<String, String> message, @PathVariable long id) {
-        if (!message.containsKey("message")) {
-            throw new MessageException("Message must not be empty");
-        }
-        chatsMessagesService.updateMessage(id, message.get("message"));
+    public ResponseEntity<HttpStatus> updateMessage(@PathVariable long id, @RequestBody @Valid MessageDTO messageDTO,
+                                                    BindingResult bindingResult) {
+        ErrorHandler.handleException(bindingResult, ExceptionType.CHAT_EXCEPTION);
+        chatsMessagesService.updateMessage(id, messageDTO.getMessage());
         return ResponseEntity.ok(HttpStatus.OK);
     }
 

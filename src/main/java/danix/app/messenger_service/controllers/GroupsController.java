@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/groups")
@@ -67,17 +66,17 @@ public class GroupsController {
     }
 
     @PostMapping
-    public ResponseEntity<HttpStatus> createGroup(@RequestBody @Valid CreateGroupDTO createGroupDTO,
-                                                  BindingResult bindingResult) {
+    public ResponseEntity<IdDTO> createGroup(@RequestBody @Valid CreateGroupDTO createGroupDTO,
+                                             BindingResult bindingResult) {
         ErrorHandler.handleException(bindingResult, ExceptionType.GROUP_EXCEPTION);
-        groupsService.createGroup(createGroupDTO);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+        long id = groupsService.createGroup(createGroupDTO);
+        return new ResponseEntity<>(new IdDTO(id), HttpStatus.CREATED);
     }
 
     @PostMapping("/{groupId}/user/{userId}/invite")
-    public ResponseEntity<HttpStatus> invite(@PathVariable int groupId, @PathVariable int userId) {
-        groupsService.inviteUser(groupId, userId);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<IdDTO> invite(@PathVariable int groupId, @PathVariable int userId) {
+        long id = groupsService.inviteUser(groupId, userId);
+        return new ResponseEntity<>(new IdDTO(id), HttpStatus.CREATED);
     }
 
     @PostMapping("/{groupId}/user/{userId}/ban")
@@ -87,36 +86,35 @@ public class GroupsController {
     }
 
     @PostMapping("/{id}/message")
-    public ResponseEntity<HttpStatus> sendMessage(@PathVariable int id, @RequestBody Map<String, String> message) {
-        if (!message.containsKey("message")) {
-            throw new MessageException("Message must not be empty");
-        }
-        groupsMessagesService.sendTextMessage(message.get("message"), id);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<IdDTO> sendMessage(@PathVariable int id, @RequestBody @Valid MessageDTO messageDTO,
+                                             BindingResult bindingResult) {
+        ErrorHandler.handleException(bindingResult, ExceptionType.GROUP_EXCEPTION);
+        long messageId = groupsMessagesService.sendTextMessage(messageDTO.getMessage(), id);
+        return new ResponseEntity<>(new IdDTO(messageId), HttpStatus.CREATED);
     }
 
     @PostMapping("/{id}/message/image")
-    public ResponseEntity<HttpStatus> sendImage(@PathVariable int id, @RequestParam("image") MultipartFile file) {
-        groupsMessagesService.sendFile(file, id, ContentType.IMAGE);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<IdDTO> sendImage(@PathVariable int id, @RequestParam("image") MultipartFile file) {
+        long messageId = groupsMessagesService.sendFile(file, id, ContentType.IMAGE);
+        return new ResponseEntity<>(new IdDTO(messageId), HttpStatus.CREATED);
     }
 
     @PostMapping("/{id}/message/video")
-    public ResponseEntity<HttpStatus> sendVideo(@PathVariable int id, @RequestParam("video") MultipartFile file) {
-        groupsMessagesService.sendFile(file, id, ContentType.VIDEO);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<IdDTO> sendVideo(@PathVariable int id, @RequestParam("video") MultipartFile file) {
+        long messageId = groupsMessagesService.sendFile(file, id, ContentType.VIDEO);
+        return new ResponseEntity<>(new IdDTO(messageId), HttpStatus.CREATED);
     }
 
     @PostMapping("/{id}/message/audio/ogg")
-    public ResponseEntity<HttpStatus> sendAudioOgg(@PathVariable int id, @RequestParam("audio") MultipartFile file) {
-        groupsMessagesService.sendFile(file, id, ContentType.AUDIO_OGG);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<IdDTO> sendAudioOgg(@PathVariable int id, @RequestParam("audio") MultipartFile file) {
+        long messageId = groupsMessagesService.sendFile(file, id, ContentType.AUDIO_OGG);
+        return new ResponseEntity<>(new IdDTO(messageId), HttpStatus.CREATED);
     }
 
     @PostMapping("/{id}/message/audio/mp3")
-    public ResponseEntity<HttpStatus> sendAudioMP3(@PathVariable int id, @RequestParam("audio") MultipartFile file) {
-        groupsMessagesService.sendFile(file, id, ContentType.AUDIO_MP3);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<IdDTO> sendAudioMP3(@PathVariable int id, @RequestParam("audio") MultipartFile file) {
+        long messageId = groupsMessagesService.sendFile(file, id, ContentType.AUDIO_MP3);
+        return new ResponseEntity<>(new IdDTO(messageId), HttpStatus.CREATED);
     }
 
     @PatchMapping
@@ -146,11 +144,10 @@ public class GroupsController {
     }
 
     @PatchMapping("/message/{message_id}")
-    public ResponseEntity<HttpStatus> updateMessage(@PathVariable int message_id, @RequestBody Map<String, String> message) {
-        if (!message.containsKey("message")) {
-            throw new MessageException("Message must not be empty");
-        }
-        groupsMessagesService.updateMessage(message_id, message.get("message"));
+    public ResponseEntity<HttpStatus> updateMessage(@PathVariable int message_id, @RequestBody @Valid MessageDTO messageDTO,
+                                                    BindingResult bindingResult) {
+        ErrorHandler.handleException(bindingResult, ExceptionType.GROUP_EXCEPTION);
+        groupsMessagesService.updateMessage(message_id, messageDTO.getMessage());
         return new ResponseEntity<>(HttpStatus.OK);
     }
 

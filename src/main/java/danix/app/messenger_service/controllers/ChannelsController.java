@@ -17,7 +17,6 @@ import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.Map;
 
 import static danix.app.messenger_service.util.ExceptionType.CHANNEL_EXCEPTION;
 import static danix.app.messenger_service.util.ExceptionType.MESSAGE_EXCEPTION;
@@ -119,11 +118,11 @@ public class ChannelsController {
     }
 
     @PostMapping
-    public ResponseEntity<HttpStatus> createChannel(@RequestBody @Valid CreateChannelDTO createChannelDTO,
-                                                    BindingResult bindingResult) {
+    public ResponseEntity<IdDTO> createChannel(@RequestBody @Valid CreateChannelDTO createChannelDTO,
+                                               BindingResult bindingResult) {
         ErrorHandler.handleException(bindingResult, CHANNEL_EXCEPTION);
-        channelsService.createChannel(createChannelDTO);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+        long id = channelsService.createChannel(createChannelDTO);
+        return new ResponseEntity<>(new IdDTO(id), HttpStatus.CREATED);
     }
 
     @PostMapping("/{channelId}/user/{userId}/ban")
@@ -133,58 +132,58 @@ public class ChannelsController {
     }
 
     @PostMapping("/post")
-    public ResponseEntity<HttpStatus> createPost(@RequestBody @Valid CreateChannelPostDTO post, BindingResult bindingResult) {
+    public ResponseEntity<IdDTO> createPost(@RequestBody @Valid CreateChannelPostDTO post, BindingResult bindingResult) {
         ErrorHandler.handleException(bindingResult, CHANNEL_EXCEPTION);
-        channelsPostsService.createPost(post);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+        long id = channelsPostsService.createPost(post);
+        return new ResponseEntity<>(new IdDTO(id), HttpStatus.CREATED);
     }
 
     @PostMapping("/{id}/post/image")
-    public ResponseEntity<HttpStatus> createPost(@PathVariable int id, @RequestParam MultipartFile image) {
-        channelsPostsService.createPost(image, id, ContentType.IMAGE);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<IdDTO> createPostWithImage(@PathVariable int id, @RequestParam MultipartFile image) {
+        long postId = channelsPostsService.createPost(image, id, ContentType.IMAGE);
+        return new ResponseEntity<>(new IdDTO(postId), HttpStatus.CREATED);
     }
 
     @PostMapping("/{id}/post/video")
-    public ResponseEntity<HttpStatus> createPostWithVideo(@PathVariable int id, @RequestParam MultipartFile video) {
-        channelsPostsService.createPost(video, id, ContentType.VIDEO);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<IdDTO> createPostWithVideo(@PathVariable int id, @RequestParam MultipartFile video) {
+        long postId = channelsPostsService.createPost(video, id, ContentType.VIDEO);
+        return new ResponseEntity<>(new IdDTO(postId), HttpStatus.CREATED);
     }
 
     @PostMapping("/{id}/post/audio/ogg")
-    public ResponseEntity<HttpStatus> createPostWithAudioOgg(@PathVariable int id, @RequestParam MultipartFile audio) {
-        channelsPostsService.createPost(audio, id, ContentType.AUDIO_OGG);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<IdDTO> createPostWithAudioOgg(@PathVariable int id, @RequestParam MultipartFile audio) {
+        long postId = channelsPostsService.createPost(audio, id, ContentType.AUDIO_OGG);
+        return new ResponseEntity<>(new IdDTO(postId), HttpStatus.CREATED);
     }
 
     @PostMapping("/{id}/post/audio/mp3")
-    public ResponseEntity<HttpStatus> createPostWithAudioMP3(@PathVariable int id, @RequestParam MultipartFile audio) {
-        channelsPostsService.createPost(audio, id, ContentType.AUDIO_MP3);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<IdDTO> createPostWithAudioMP3(@PathVariable int id, @RequestParam MultipartFile audio) {
+        long postId = channelsPostsService.createPost(audio, id, ContentType.AUDIO_MP3);
+        return new ResponseEntity<>(new IdDTO(postId), HttpStatus.CREATED);
     }
 
     @PostMapping("/post/{id}/video")
-    public ResponseEntity<HttpStatus> addPostVideo(@PathVariable long id, @RequestParam("video") MultipartFile video) {
-        channelsPostsService.addFile(id, video, ContentType.VIDEO);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<IdDTO> addPostVideo(@PathVariable long id, @RequestParam("video") MultipartFile video) {
+        long videoId = channelsPostsService.addFile(id, video, ContentType.VIDEO);
+        return new ResponseEntity<>(new IdDTO(videoId), HttpStatus.CREATED);
     }
 
     @PostMapping("/post/{id}/image")
-    public ResponseEntity<HttpStatus> addPostImage(@PathVariable long id, @RequestParam("image") MultipartFile image) {
-        channelsPostsService.addFile(id, image, ContentType.IMAGE);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<IdDTO> addPostImage(@PathVariable long id, @RequestParam("image") MultipartFile image) {
+        long imageId = channelsPostsService.addFile(id, image, ContentType.IMAGE);
+        return new ResponseEntity<>(new IdDTO(imageId), HttpStatus.CREATED);
     }
 
     @PostMapping("/post/{id}/audio/ogg")
-    public ResponseEntity<HttpStatus> addPostAudioOgg(@PathVariable long id, @RequestParam("audio") MultipartFile audio) {
-        channelsPostsService.addFile(id, audio, ContentType.AUDIO_OGG);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<IdDTO> addPostAudioOgg(@PathVariable long id, @RequestParam("audio") MultipartFile audio) {
+        long audioId = channelsPostsService.addFile(id, audio, ContentType.AUDIO_OGG);
+        return new ResponseEntity<>(new IdDTO(audioId), HttpStatus.CREATED);
     }
 
     @PostMapping("/post/{id}/audio/mp3")
-    public ResponseEntity<HttpStatus> addPostAudioMP3(@PathVariable long id, @RequestParam("audio") MultipartFile audio) {
-        channelsPostsService.addFile(id, audio, ContentType.AUDIO_MP3);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<IdDTO> addPostAudioMP3(@PathVariable long id, @RequestParam("audio") MultipartFile audio) {
+        long audioId = channelsPostsService.addFile(id, audio, ContentType.AUDIO_MP3);
+        return new ResponseEntity<>(new IdDTO(audioId), HttpStatus.CREATED);
     }
 
     @PostMapping("/post/{id}/like")
@@ -194,39 +193,39 @@ public class ChannelsController {
     }
 
     @PostMapping("/post/comment")
-    public ResponseEntity<HttpStatus> createComment(@RequestBody @Valid CreateChannelPostCommentDTO comment,
-                                                    BindingResult bindingResult) {
+    public ResponseEntity<IdDTO> createComment(@RequestBody @Valid CreateChannelPostCommentDTO comment,
+                                               BindingResult bindingResult) {
         ErrorHandler.handleException(bindingResult, MESSAGE_EXCEPTION);
-        channelsPostsService.createComment(comment);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+        long id = channelsPostsService.createComment(comment);
+        return new ResponseEntity<>(new IdDTO(id), HttpStatus.CREATED);
     }
 
     @PostMapping("/post/{id}/comment/image")
-    public ResponseEntity<HttpStatus> createImageComment(@PathVariable long id, @RequestParam("image") MultipartFile image) {
-        channelsPostsService.createComment(id, image, ContentType.IMAGE);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<IdDTO> createImageComment(@PathVariable long id, @RequestParam("image") MultipartFile image) {
+        long commentId = channelsPostsService.createComment(id, image, ContentType.IMAGE);
+        return new ResponseEntity<>(new IdDTO(commentId), HttpStatus.CREATED);
     }
 
     @PostMapping("/post/{id}/comment/video")
-    public ResponseEntity<HttpStatus> createVideoComment(@PathVariable long id, @RequestParam("video") MultipartFile video) {
-        channelsPostsService.createComment(id, video, ContentType.VIDEO);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<IdDTO> createVideoComment(@PathVariable long id, @RequestParam("video") MultipartFile video) {
+        long commentId = channelsPostsService.createComment(id, video, ContentType.VIDEO);
+        return new ResponseEntity<>(new IdDTO(commentId), HttpStatus.CREATED);
     }
 
     @PostMapping("/post/{id}/comment/audio/ogg")
-    public ResponseEntity<HttpStatus> createAudioOggComment(@PathVariable long id, @RequestParam("audio") MultipartFile audio) {
-        channelsPostsService.createComment(id, audio, ContentType.AUDIO_OGG);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<IdDTO> createAudioOggComment(@PathVariable long id, @RequestParam("audio") MultipartFile audio) {
+        long commentId = channelsPostsService.createComment(id, audio, ContentType.AUDIO_OGG);
+        return new ResponseEntity<>(new IdDTO(commentId), HttpStatus.CREATED);
     }
 
     @PostMapping("/post/{id}/comment/audio/mp3")
-    public ResponseEntity<HttpStatus> createAudioMP3Comment(@PathVariable long id, @RequestParam("audio") MultipartFile audio) {
+    public ResponseEntity<IdDTO> createAudioMP3Comment(@PathVariable long id, @RequestParam("audio") MultipartFile audio) {
         try {
-            channelsPostsService.createComment(id, audio, ContentType.AUDIO_MP3);
+            long commentId = channelsPostsService.createComment(id, audio, ContentType.AUDIO_MP3);
+            return new ResponseEntity<>(new IdDTO(commentId), HttpStatus.CREATED);
         } catch (MultipartException e) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
     @PatchMapping("/post/comment/{id}")

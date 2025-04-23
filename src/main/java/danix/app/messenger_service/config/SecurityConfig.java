@@ -27,7 +27,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final UserDetailsServiceImpl personDetailsService;
-    private final JwtFilter jwtFilter;
+    private final JWTFilter jwtFilter;
     private final CorsFilter corsFilter;
     @Value("${client_url}")
     private String clientUrl;

@@ -83,40 +83,35 @@ public class ChannelsService {
 
     public List<ResponseChannelInviteDTO> getChannelsInvites() {
         return channelsInvitesRepository.findAllByUser(getCurrentUser()).stream()
-                .map(this::convertToInviteDTO)
+                .map(invite -> modelMapper.map(invite, ResponseChannelInviteDTO.class))
                 .collect(Collectors.toList());
     }
 
-    private ResponseChannelInviteDTO convertToInviteDTO(ChannelInvite invite) {
-        ResponseChannelInviteDTO inviteDTO = new ResponseChannelInviteDTO();
-        inviteDTO.setChannelName(invite.getChannel().getName());
-        inviteDTO.setSendTime(invite.getSendTime());
-        inviteDTO.setChannelId(invite.getChannel().getId());
-        return inviteDTO;
-    }
-
     @Transactional
-    public void createChannel(CreateChannelDTO createChannelDTO) {
-        channelsRepository.findByName(createChannelDTO.getName()).ifPresentOrElse(channel -> {
+    public long createChannel(CreateChannelDTO createChannelDTO) {
+        channelsRepository.findByName(createChannelDTO.getName()).ifPresent(channel -> {
             throw new ChannelException("Channel with this name already exists");
-        }, () -> {
-            Channel channel = Channel.builder()
-                    .name(createChannelDTO.getName())
-                    .createdAt(new Date())
-                    .description(createChannelDTO.getDescription())
-                    .owner(getCurrentUser())
-                    .image(DEFAULT_IMAGE_UUID)
-                    .isPrivate(createChannelDTO.getIsPrivate() != null && createChannelDTO.getIsPrivate())
-                    .webSocketUUID(UUID.randomUUID().toString())
-                    .build();
-
-            ChannelUser channelUser = new ChannelUser();
-            channelUser.setChannel(channel);
-            channelUser.setUser(getCurrentUser());
-            channelUser.setIsAdmin(true);
-            channelsRepository.save(channel);
-            channelsUsersRepository.save(channelUser);
         });
+        Channel channel = Channel.builder()
+                .name(createChannelDTO.getName())
+                .createdAt(new Date())
+                .description(createChannelDTO.getDescription())
+                .owner(getCurrentUser())
+                .image(DEFAULT_IMAGE_UUID)
+                .isPrivate(createChannelDTO.getIsPrivate() != null && createChannelDTO.getIsPrivate())
+                .webSocketUUID(UUID.randomUUID().toString())
+                .isPostsCommentsAllowed(true)
+                .isFilesAllowed(true)
+                .isInvitesAllowed(true)
+                .build();
+
+        ChannelUser channelUser = new ChannelUser();
+        channelUser.setChannel(channel);
+        channelUser.setUser(getCurrentUser());
+        channelUser.setIsAdmin(true);
+        channelsRepository.save(channel);
+        channelsUsersRepository.save(channelUser);
+        return channel.getId();
     }
 
     @Transactional
@@ -133,10 +128,7 @@ public class ChannelsService {
         }
         FileUtils.delete(Path.of(AVATARS_PATH), channel.getImage());
         channel.setImage(uuid);
-        channel.getUsers().forEach(channelUser ->
-                messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main",
-                        new ResponseChannelUpdatingDTO(modelMapper.map(channel, ResponseChannelDTO.class), true))
-        );
+        sendUpdateChannelMessage(channel, true);
     }
 
     public ResponseFileDTO getImage(int channelId) {
@@ -156,10 +148,7 @@ public class ChannelsService {
         }
         FileUtils.delete(Path.of(AVATARS_PATH), channel.getImage());
         channel.setImage(DEFAULT_IMAGE_UUID);
-        channel.getUsers().forEach(channelUser ->
-                messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main",
-                        new ResponseChannelUpdatingDTO(modelMapper.map(channel, ResponseChannelDTO.class), true))
-        );
+        sendUpdateChannelMessage(channel, true);
     }
 
     @Transactional
@@ -380,10 +369,7 @@ public class ChannelsService {
         if (channel.getOwner().getId() == getCurrentUser().getId()) {
             channel.setName(updateChannelDTO.getName() == null ? channel.getName() : updateChannelDTO.getName());
             channel.setDescription(updateChannelDTO.getDescription() == null ? channel.getDescription() : updateChannelDTO.getDescription());
-            ResponseChannelUpdatingDTO response =
-                    new ResponseChannelUpdatingDTO(modelMapper.map(channel, ResponseChannelDTO.class), false);
-            channel.getUsers().forEach(channelUser ->
-                    messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main", response));
+            sendUpdateChannelMessage(channel, false);
         } else {
             throw new ChannelException("Current user is not owner of this channel");
         }
@@ -545,5 +531,13 @@ public class ChannelsService {
     public ChannelUser getChannelUser(User user, Channel channel) {
         return channelsUsersRepository.findByUserAndChannel(user, channel)
                 .orElseThrow(() -> new ChannelException("Current user not exist in this channel"));
+    }
+
+    private void sendUpdateChannelMessage(Channel channel, boolean imageUpdated) {
+        ResponseChannelUpdatingDTO response =
+                new ResponseChannelUpdatingDTO(modelMapper.map(channel, ResponseChannelDTO.class), imageUpdated);
+        channel.getUsers().forEach(channelUser ->
+                messagingTemplate.convertAndSend("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main", response));
+        messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(), response);
     }
 }

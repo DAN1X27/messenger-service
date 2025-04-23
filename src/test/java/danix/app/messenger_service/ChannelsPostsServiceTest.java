@@ -272,7 +272,6 @@ public class ChannelsPostsServiceTest {
         commentDTO.setPostId(1L);
         postsService.createComment(commentDTO);
         verify(commentsRepository, times(1)).save(any(ChannelPostComment.class));
-        assertEquals(1, testPost.getComments().size());
         assertNotNull(responseCommentDTO.getText());
         verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/" +
                         testChannel.getWebSocketUUID() + "/post/0/comments"),

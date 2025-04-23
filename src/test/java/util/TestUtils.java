@@ -63,6 +63,9 @@ public final class TestUtils {
                 .name("Test name")
                 .description("Test description")
                 .isPrivate(false)
+                .isInvitesAllowed(true)
+                .isPostsCommentsAllowed(true)
+                .isFilesAllowed(true)
                 .createdAt(new Date())
                 .webSocketUUID(webSocketUUID())
                 .build();
