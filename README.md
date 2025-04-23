@@ -1,6 +1,6 @@
 # DESCRIPTION
 ```
-This is messenger on Java Spring Boot, to test this project use postman.
+This is messenger on Java Spring Boot.
 ```
 
 # LAUNCH
@@ -73,12 +73,6 @@ Use 'localhost:8080' for all endpoints.
 -HEADERS: 'Authorization' - 'Bearer ' + jwt token.
 -RETURNS: Http status 'OK'.
 ```
-* PATCH /user/status
-```
--ACTION: Update user online status.
--HEADERS: 'Authorization' - 'Bearer ' + jwt token.
--RETURNS: Http status 'OK'.
-```
 * GET /user/notifications
 ```
 -ACTION: Returns all user notifications.
@@ -94,12 +88,6 @@ Use 'localhost:8080' for all endpoints.
 ```
 -ACTION: Reuturns user image by user id.
 -HEADERS: 'Authorization' - 'Bearer ' + jwt token.
-```
-* PATCH /user/private
-```
--ACTION: Update user private status.
--HEADERS: 'Authorization' - 'Bearer ' + jwt token.
--RETURNS: Http status 'OK'.
 ```
 * GET /user/friends/requests
 ```
@@ -153,18 +141,18 @@ Use 'localhost:8080' for all endpoints.
 -HEADERS: 'Authorization' - 'Bearer ' + jwt token.
 -RETURNS: Http status 'OK'.
 ```
-* PATCH /user/username
-```
--ACTION: Update username.
--HEADERS: 'Authorization' - 'Bearer ' + jwt token.
--BODY: username(new username), password.
--RETURNS: Http status 'OK'.
-```
 * PATCH /user/password
 ```
 -ACTION: Update password.
 -HEADERS: 'Authorization' - 'Bearer ' + jwt token.
 -BODY: password(current password), newPassword.
+-RETURNS: Http status 'OK'.
+```
+* PATCH
+```
+-ACTION: Update user info.
+-HEADERS: 'Authorization' - 'Bearer ' + jwt token.
+-BODY: username, description, is_private.
 -RETURNS: Http status 'OK'.
 ```
 ### ADMIN
