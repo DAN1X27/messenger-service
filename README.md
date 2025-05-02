@@ -449,6 +449,11 @@ desription(new group description, not required), groupId.
 ```
 -ACTIONS: Returns channel by id.
 -HEADERS: 'Authorization' - 'Bearer ' + jwt token.
+```
+* GET /channels/{id}/posts
+```
+-ACTIONS: Returns posts by channel id.
+-HEADERS: 'Authorization' - 'Bearer ' + jwt token.
 -PARAMS: page - page number of posts (min value = 0), count - posts count for 1 page.
 ```
 * GET /channels/find

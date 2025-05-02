@@ -49,9 +49,14 @@ public class ChannelsController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ShowChannelDTO> showChannel(@PathVariable int id, @RequestParam("page") int page,
-                                                      @RequestParam("count") int count) {
-        return new ResponseEntity<>(channelsService.showChannel(id, page, count), HttpStatus.OK);
+    public ResponseEntity<ShowChannelDTO> showChannel(@PathVariable int id) {
+        return new ResponseEntity<>(channelsService.showChannel(id), HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}/posts")
+    public ResponseEntity<List<ResponseChannelPostDTO>> getChannelPosts(@PathVariable int id, @RequestParam int page,
+                                                                        @RequestParam int count) {
+        return new ResponseEntity<>(channelsPostsService.getByChannel(id, page, count), HttpStatus.OK);
     }
 
     @GetMapping("/{id}/users")
@@ -220,12 +225,8 @@ public class ChannelsController {
 
     @PostMapping("/post/{id}/comment/audio/mp3")
     public ResponseEntity<IdDTO> createAudioMP3Comment(@PathVariable long id, @RequestParam("audio") MultipartFile audio) {
-        try {
-            long commentId = channelsPostsService.createComment(id, audio, ContentType.AUDIO_MP3);
-            return new ResponseEntity<>(new IdDTO(commentId), HttpStatus.CREATED);
-        } catch (MultipartException e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+        long commentId = channelsPostsService.createComment(id, audio, ContentType.AUDIO_MP3);
+        return new ResponseEntity<>(new IdDTO(commentId), HttpStatus.CREATED);
     }
 
     @PatchMapping("/post/comment/{id}")
@@ -233,13 +234,13 @@ public class ChannelsController {
                                                     BindingResult bindingResult) {
         ErrorHandler.handleException(bindingResult, MESSAGE_EXCEPTION);
         channelsPostsService.updateComment(comment, id);
-        return ResponseEntity.ok(HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @PatchMapping("/{id}/image")
     public ResponseEntity<HttpStatus> updateChannelImage(@PathVariable int id, @RequestParam("image") MultipartFile image) {
         channelsService.addImage(image, id);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @PatchMapping("/post")
@@ -247,19 +248,19 @@ public class ChannelsController {
                                                  BindingResult bindingResult) {
         ErrorHandler.handleException(bindingResult, CHANNEL_EXCEPTION);
         channelsPostsService.updatePost(post);
-        return ResponseEntity.ok(HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @PatchMapping("/{channelId}/user/{userId}/admin/add")
     public ResponseEntity<HttpStatus> addAdmin(@PathVariable int channelId, @PathVariable int userId) {
         channelsService.addAdmin(channelId, userId);
-        return ResponseEntity.ok(HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @PatchMapping("/{channelId}/user/{userId}/admin/delete")
     public ResponseEntity<HttpStatus> deleteAdmin(@PathVariable int channelId, @PathVariable int userId) {
         channelsService.deleteAdmin(channelId, userId);
-        return ResponseEntity.ok(HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @PatchMapping("/{id}")
@@ -267,55 +268,55 @@ public class ChannelsController {
                                                     BindingResult bindingResult, @PathVariable int id) {
         ErrorHandler.handleException(bindingResult, CHANNEL_EXCEPTION);
         channelsService.updateChannel(updateChannelDTO, id);
-        return ResponseEntity.ok(HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @PatchMapping("/{id}/options")
     public ResponseEntity<HttpStatus> updateChannelOptions(@PathVariable int id, @RequestBody ChannelsOptionsDTO channelsOptionsDTO) {
         channelsService.updateChannelOptions(id, channelsOptionsDTO);
-        return ResponseEntity.ok(HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @DeleteMapping("/post/comment/{id}")
     public ResponseEntity<HttpStatus> deleteComment(@PathVariable long id) {
         channelsPostsService.deleteComment(id);
-        return ResponseEntity.ok(HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @DeleteMapping("/post/{id}/like")
     public ResponseEntity<HttpStatus> deletePostLike(@PathVariable long id) {
         channelsPostsService.deletePostLike(id);
-        return ResponseEntity.ok(HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @DeleteMapping("/post/{id}")
     public ResponseEntity<HttpStatus> deletePost(@PathVariable long id) {
         channelsPostsService.deletePost(id);
-        return ResponseEntity.ok(HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<HttpStatus> deleteChannel(@PathVariable int id) {
         channelsService.deleteChannel(id);
-        return ResponseEntity.ok(HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @DeleteMapping("/{channelId}/user/{userId}/unban")
     public ResponseEntity<HttpStatus> unbanUser(@PathVariable int channelId, @PathVariable int userId) {
         channelsService.unbanUser(channelId, userId);
-        return ResponseEntity.ok(HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}/leave")
     public ResponseEntity<HttpStatus> leaveFromChannel(@PathVariable int id) {
         channelsService.leaveChannel(id);
-        return ResponseEntity.ok(HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}/image")
     public ResponseEntity<HttpStatus> deleteChannelImage(@PathVariable int id) {
         channelsService.deleteImage(id);
-        return ResponseEntity.ok(HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @ExceptionHandler

@@ -14,7 +14,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
@@ -23,6 +22,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import util.TestUtils;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.*;
@@ -42,10 +42,7 @@ public class ChannelsServiceTest {
     private ChannelsPostsRepository channelsPostsRepository;
 
     @Mock
-    private ChannelsPostsFilesRepository postsImagesRepository;
-
-    @Mock
-    private JdbcTemplate jdbcTemplate;
+    private ChannelsPostsFilesRepository postsFilesRepository;
 
     @Mock
     private ChannelsPostsCommentsRepository postCommentsRepository;
@@ -717,8 +714,9 @@ public class ChannelsServiceTest {
         when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currenusUser));
         ChannelUser testChannelUser = new ChannelUser();
         when(channelsUsersRepository.findByUserAndChannel(currenusUser, testChannel)).thenReturn(Optional.of(testChannelUser));
-        channelsService.leaveChannel(testChannel.getId());
-        verify(jdbcTemplate, times(1)).update(eq("DELETE FROM channels WHERE id = ?"), eq(testChannel.getId()));
+        CompletableFuture<Void> future = channelsService.leaveChannel(testChannel.getId());
+        future.join();
+        verify(channelsRepository).deleteById(testChannel.getId());
     }
 
     @Test
@@ -794,9 +792,10 @@ public class ChannelsServiceTest {
         SecurityContextHolder.setContext(securityContext);
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currenusUser));
-        when(postCommentsRepository.findAllByPostIn(testChannel.getPosts())).thenReturn(Collections.emptyList());
-        channelsService.deleteChannel(testChannel.getId());
-        verify(jdbcTemplate, times(1)).update(eq("DELETE FROM channels WHERE id = ?"), eq(testChannel.getId()));
+        when(channelsPostsRepository.findAllByChannel(any(), any())).thenReturn(Collections.emptyList());
+        CompletableFuture<Void> future = channelsService.deleteChannel(testChannel.getId());
+        future.join();
+        verify(channelsRepository).deleteById(testChannel.getId());
         verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/" + testChannel.getWebSocketUUID()),
                 any(ResponseChannelDeletionDTO.class));
     }

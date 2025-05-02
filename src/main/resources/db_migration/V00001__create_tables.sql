@@ -102,6 +102,13 @@ create table channels(
     web_socket_uuid varchar not null
 );
 
+create table banned_channels_users
+(
+    channel_id int references channels(id) on delete cascade not null,
+    user_id int references person(id) on delete cascade not null,
+    primary key (channel_id, user_id)
+);
+
 create table channels_invites(
     id           bigint generated always as identity primary key,
     user_id      integer references person on delete cascade,

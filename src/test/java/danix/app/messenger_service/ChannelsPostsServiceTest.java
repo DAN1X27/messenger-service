@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -64,9 +65,6 @@ public class ChannelsPostsServiceTest {
     private ModelMapper modelMapper;
 
     @Mock
-    private JdbcTemplate jdbcTemplate;
-
-    @Mock
     private Authentication authentication;
 
     @Mock
@@ -88,8 +86,6 @@ public class ChannelsPostsServiceTest {
         channelUser.setIsAdmin(true);
         when(channelsService.getById(testChannel.getId())).thenReturn(testChannel);
         when(channelsService.getChannelUser(currentUser, testChannel)).thenReturn(channelUser);
-        when(channelsService.convertToResponseChannelPostDTO(any(ChannelPost.class)))
-                .thenReturn(ResponseChannelPostDTO.builder().build());
         CreateChannelPostDTO createChannelPostDTO = new CreateChannelPostDTO();
         createChannelPostDTO.setChannelId(testChannel.getId());
         createChannelPostDTO.setText("test text");
@@ -117,15 +113,16 @@ public class ChannelsPostsServiceTest {
         testPost.setId(1L);
         testPost.setChannel(testChannel);
         testPost.setFiles(Collections.emptyList());
-        testPost.setComments(Collections.emptyList());
         when(postsRepository.findById(1L)).thenReturn(Optional.of(testPost));
         ChannelUser channelUser = new ChannelUser();
         channelUser.setIsAdmin(true);
         channelUser.setUser(currentUser);
         when(channelsService.getChannelUser(currentUser, testChannel)).thenReturn(channelUser);
-        postsService.deletePost(1L);
+        when(commentsRepository.findAllByPost(eq(testPost), any())).thenReturn(Collections.emptyList());
+        CompletableFuture<Void> future = postsService.deletePost(1L);
+        future.join();
         verify(logsRepository, times(1)).save(any(ChannelLog.class));
-        verify(jdbcTemplate, times(1)).update(eq("DELETE FROM channels_posts where id = ?"), eq(1L));
+        verify(postsRepository).deleteById(testPost.getId());
         verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/" + testChannel.getWebSocketUUID()),
                 any(Map.class));
     }
@@ -159,8 +156,6 @@ public class ChannelsPostsServiceTest {
         testPost.setContentType(ContentType.TEXT);
         when(postsRepository.findById(1L)).thenReturn(Optional.of(testPost));
         when(channelsService.getChannelUser(currentUser, testChannel)).thenReturn(channelUser);
-        when(channelsService.convertToResponseChannelPostDTO(any(ChannelPost.class)))
-                .thenReturn(ResponseChannelPostDTO.builder().build());
         UpdateChannelPostDTO updateChannelPostDTO = new UpdateChannelPostDTO();
         updateChannelPostDTO.setId(1L);
         updateChannelPostDTO.setText("new text");

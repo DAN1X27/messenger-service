@@ -12,7 +12,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +20,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static danix.app.messenger_service.services.UserService.getCurrentUser;
 
@@ -37,7 +39,6 @@ public class ChannelsPostsService {
     private final ChannelsPostsFilesRepository filesRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final UserService userService;
-    private final JdbcTemplate jdbcTemplate;
 
     @Value("${channels_posts_images_path}")
     private String POSTS_IMAGES_PATH;
@@ -51,6 +52,23 @@ public class ChannelsPostsService {
     private String POSTS_AUDIO_PATH;
     @Value("${channels_posts_comments_audio_path}")
     private String COMMENTS_AUDIO_PATH;
+
+    public List<ResponseChannelPostDTO> getByChannel(int id, int page, int count) {
+        User currentUser = getCurrentUser();
+        Channel channel = channelsService.getById(id);
+        channelsService.getChannelUser(currentUser, channel);
+        List<ChannelPost> posts = channelsPostsRepository.findAllByChannel(channel, PageRequest.of(page, count,
+                Sort.by(Sort.Direction.DESC, "id")));
+        List<ChannelPostFile> files = filesRepository.findAllByPostIn(posts);
+        return posts.stream()
+                .map(post -> {
+                    post.setFiles(files.stream()
+                            .filter(file -> file.getPost().getId() == post.getId())
+                            .toList());
+                    return convertToResponseChannelPostDTO(post);
+                })
+                .toList();
+    }
 
     @Transactional
     public long createPost(CreateChannelPostDTO post) {
@@ -84,13 +102,14 @@ public class ChannelsPostsService {
                     .channel(channel)
                     .contentType(contentType)
                     .createdAt(LocalDateTime.now())
+                    .owner(user)
                     .build();
             ChannelLog channelLog = new ChannelLog();
             channelLog.setMessage(curentUser.getUsername() + " created post");
             channelLog.setChannel(channel);
             channelsPostsRepository.save(post);
             channelsLogsRepository.save(channelLog);
-            ResponseChannelPostDTO postDTO = channelsService.convertToResponseChannelPostDTO(post);
+            ResponseChannelPostDTO postDTO = convertToResponseChannelPostDTO(post);
             messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(), postDTO);
             return post;
         }
@@ -123,7 +142,7 @@ public class ChannelsPostsService {
                 post.setContentType(ContentType.TEXT_FILE);
             }
             messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(),
-                    new ResponsePostUpdatingDTO(channelsService.convertToResponseChannelPostDTO(post)));
+                    new ResponsePostUpdatingDTO(convertToResponseChannelPostDTO(post)));
             return postFile.getId();
         } else {
             throw new ChannelException("Current user must be admin of channel or owner of post");
@@ -149,7 +168,7 @@ public class ChannelsPostsService {
     }
 
     @Transactional
-    public void deletePost(long postId) {
+    public CompletableFuture<Void> deletePost(long postId) {
         User curentUser = getCurrentUser();
         ChannelPost post = getById(postId);
         Channel channel = post.getChannel();
@@ -158,24 +177,25 @@ public class ChannelsPostsService {
             ChannelLog channelLog = new ChannelLog();
             channelLog.setMessage(channelUser.getUsername() + " deleted post");
             channelLog.setChannel(channel);
-            post.getFiles().forEach(file -> {
-                switch (file.getContentType()) {
-                    case IMAGE -> FileUtils.delete(Path.of(POSTS_IMAGES_PATH), file.getFileUUID());
-                    case VIDEO -> FileUtils.delete(Path.of(POSTS_VIDEOS_PATH), file.getFileUUID());
-                    case AUDIO_MP3, AUDIO_OGG -> FileUtils.delete(Path.of(POSTS_AUDIO_PATH), file.getFileUUID());
-                }
-            });
-            post.getComments().forEach(comment -> {
-                switch (comment.getContentType()) {
-                    case IMAGE -> FileUtils.delete(Path.of(COMMENTS_IMAGES_PATH), comment.getText());
-                    case VIDEO -> FileUtils.delete(Path.of(COMMENTS_VIDEOS_PATH), comment.getText());
-                    case AUDIO_OGG, AUDIO_MP3 -> FileUtils.delete(Path.of(COMMENTS_AUDIO_PATH), comment.getText());
-                }
-            });
             channelsLogsRepository.save(channelLog);
-            jdbcTemplate.update("DELETE FROM channels_posts where id = ?", postId);
             messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(),
                     Map.of("deleted_post_id", postId));
+            ExecutorService executorService = Executors.newFixedThreadPool(2);
+            CompletableFuture<Void> deleteFilesTask = CompletableFuture
+                    .runAsync(() -> post.getFiles().forEach(file -> deletePostFile(file, POSTS_IMAGES_PATH,
+                            POSTS_VIDEOS_PATH, POSTS_AUDIO_PATH)), executorService);
+            CompletableFuture<Void> deleteCommentsTask = CompletableFuture.runAsync(() -> {
+                List<ChannelPostComment> comments;
+                int page = 0;
+                do {
+                    comments = commentsRepository.findAllByPost(post, PageRequest.of(page, 50));
+                    comments.forEach(comment -> deleteCommentFile(comment, COMMENTS_IMAGES_PATH, COMMENTS_VIDEOS_PATH,
+                            COMMENTS_AUDIO_PATH));
+                    page++;
+                } while (!comments.isEmpty());
+            }, executorService);
+            return CompletableFuture.allOf(deleteFilesTask, deleteCommentsTask)
+                    .thenRun(() -> channelsPostsRepository.deleteById(postId));
         } else {
             throw new ChannelException("Current user is not admin of this channel");
         }
@@ -215,7 +235,7 @@ public class ChannelsPostsService {
             }
             channelPost.setText(post.getText());
             messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(),
-                    new ResponsePostUpdatingDTO(channelsService.convertToResponseChannelPostDTO(channelPost)));
+                    new ResponsePostUpdatingDTO(convertToResponseChannelPostDTO(channelPost)));
         } else {
             throw new ChannelException("Current user must be admin of this channel and owner of post");
         }
@@ -368,5 +388,39 @@ public class ChannelsPostsService {
     private ChannelPost getById(long id) {
         return channelsPostsRepository.findById(id)
                 .orElseThrow(() -> new ChannelException("Post not found"));
+    }
+
+    private ResponseChannelPostDTO convertToResponseChannelPostDTO(ChannelPost channelPost) {
+        User currentUser = userService.getById(getCurrentUser().getId());
+        return ResponseChannelPostDTO.builder()
+                .text(channelPost.getText())
+                .id(channelPost.getId())
+                .owner(modelMapper.map(channelPost.getOwner(), ResponseUserDTO.class))
+                .commentsCount(channelPost.getComments() != null && channelPost.getChannel().isPostsCommentsAllowed()
+                        ? channelPost.getComments().size() : 0)
+                .likes(channelPost.getLikes() != null ? channelPost.getLikes().size() : 0)
+                .isLiked(channelPost.getLikes() != null && channelPost.getLikes().contains(currentUser))
+                .contentType(channelPost.getContentType())
+                .files(channelPost.getFiles() != null ? channelPost.getFiles().stream()
+                        .map(file -> new ResponseChannelPostFilesDTO(file.getId()))
+                        .toList() : Collections.emptyList())
+                .createdAt(channelPost.getCreatedAt())
+                .build();
+    }
+
+    static void deletePostFile(ChannelPostFile file, String imagesPath, String videosPath, String audioPath) {
+        switch (file.getContentType()) {
+            case IMAGE -> FileUtils.delete(Path.of(imagesPath), file.getFileUUID());
+            case VIDEO -> FileUtils.delete(Path.of(videosPath), file.getFileUUID());
+            case AUDIO_MP3, AUDIO_OGG -> FileUtils.delete(Path.of(audioPath), file.getFileUUID());
+        }
+    }
+
+    static void deleteCommentFile(ChannelPostComment comment, String imagesPath, String videosPath, String audioPath) {
+        switch (comment.getContentType()) {
+            case IMAGE -> FileUtils.delete(Path.of(imagesPath), comment.getText());
+            case VIDEO -> FileUtils.delete(Path.of(videosPath), comment.getText());
+            case AUDIO_OGG, AUDIO_MP3 -> FileUtils.delete(Path.of(audioPath), comment.getText());
+        }
     }
 }
