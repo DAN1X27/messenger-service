@@ -14,4 +14,6 @@ import java.util.Optional;
 public interface GroupsMessagesRepository extends JpaRepository<GroupMessage, Long> {
 
     List<GroupMessage> findAllByGroup(Group group, Pageable pageable);
+
+    List<GroupMessage> findAllByGroupAndContentTypeIsNot(Group group, ContentType contentType, Pageable pageable);
 }

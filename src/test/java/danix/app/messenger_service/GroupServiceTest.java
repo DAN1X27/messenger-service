@@ -24,6 +24,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import util.TestUtils;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -40,9 +41,6 @@ public class GroupServiceTest {
 
     @Mock
     private SimpMessagingTemplate messagingTemplate;
-
-    @Mock
-    private JdbcTemplate jdbcTemplate;
 
     @Mock
     private GroupsActionsMessagesRepository groupsActionsMessagesRepository;
@@ -64,6 +62,9 @@ public class GroupServiceTest {
 
     @Mock
     private GroupsUsersRepository groupsUsersRepository;
+
+    @Mock
+    private GroupsMessagesRepository messagesRepository;
 
     @Mock
     private GroupsRepository groupsRepository;
@@ -394,14 +395,13 @@ public class GroupServiceTest {
         when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currentUser));
         when(groupsRepository.findById(testGroup.getId())).thenReturn(Optional.of(testGroup));
         when(groupsUsersRepository.findByGroupAndUser(testGroup, currentUser)).thenReturn(Optional.of(new GroupUser()));
-        groupsService.leaveGroup(testGroup.getId());
-        for (GroupUser groupUser : testGroup.getUsers()) {
-            verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" +
-                    groupUser.getUser().getWebSocketUUID() + "/main"), any(ResponseDeletionGroupDTO.class));
-        }
+        when(messagesRepository.findAllByGroupAndContentTypeIsNot(eq(testGroup), eq(ContentType.TEXT), any()))
+                .thenReturn(Collections.emptyList());
+        CompletableFuture<Void> future = groupsService.leaveGroup(testGroup.getId());
+        future.join();
+        verify(groupsRepository).deleteById(testGroup.getId());
         verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/" + testGroup.getWebSocketUUID()),
                 any(ResponseDeletionGroupDTO.class));
-        verify(groupsRepository, times(1)).delete(testGroup);
     }
 
     @Test
@@ -544,14 +544,13 @@ public class GroupServiceTest {
         SecurityContextHolder.setContext(securityContext);
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currentUser));
-        groupsService.deleteGroup(testGroup.getId());
-        verify(jdbcTemplate, times(1)).update(eq("DELETE FROM groups where id = ?"), eq(testGroup.getId()));
+        when(messagesRepository.findAllByGroupAndContentTypeIsNot(eq(testGroup), eq(ContentType.TEXT), any()))
+                .thenReturn(Collections.emptyList());
+        CompletableFuture<Void> future = groupsService.deleteGroup(testGroup.getId());
+        future.join();
+        verify(groupsRepository).deleteById(testGroup.getId());
         verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/" + testGroup.getWebSocketUUID()),
                 any(ResponseDeletionGroupDTO.class));
-        for (GroupUser groupUser : testGroup.getUsers()) {
-            verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" +
-                    groupUser.getUser().getWebSocketUUID() + "/main"), any(ResponseDeletionGroupDTO.class));
-        }
     }
 
     @Test
@@ -587,10 +586,6 @@ public class GroupServiceTest {
         groupsService.updateGroup(updateGroupDTO);
         assertEquals(updateGroupDTO.getName(), testGroup.getName());
         assertNotNull(testGroup.getDescription());
-        for (GroupUser groupUser : testGroup.getUsers()) {
-            verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" +
-                    groupUser.getUser().getWebSocketUUID() + "/main"), any(ResponseGroupUpdatingDTO.class));
-        }
         verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/group/" + testGroup.getWebSocketUUID()),
                 any(ResponseGroupUpdatingDTO.class));
     }

@@ -4,10 +4,7 @@ import danix.app.messenger_service.dto.ResponseChatCreatedDTO;
 import danix.app.messenger_service.dto.ResponseChatMessageDTO;
 import danix.app.messenger_service.dto.ResponseUserDTO;
 import danix.app.messenger_service.dto.ShowChatDTO;
-import danix.app.messenger_service.models.BlockedUser;
-import danix.app.messenger_service.models.Chat;
-import danix.app.messenger_service.models.ChatMessage;
-import danix.app.messenger_service.models.User;
+import danix.app.messenger_service.models.*;
 import danix.app.messenger_service.repositories.BlockedUsersRepository;
 import danix.app.messenger_service.repositories.ChatsMessagesRepository;
 import danix.app.messenger_service.repositories.ChatsRepository;
@@ -30,12 +27,8 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import util.TestUtils;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -47,7 +40,7 @@ public class ChatsServiceTest {
 
     private final User testUser = TestUtils.getTestUser();
 
-    private final Chat testChat = new Chat(currentUser, testUser, UUID.randomUUID().toString());
+    private Chat testChat;
 
     @Mock
     private ModelMapper modelMapper;
@@ -77,14 +70,15 @@ public class ChatsServiceTest {
     private ChatsService chatsService;
 
     @BeforeEach
-    public void setUp() {
-        SecurityContextHolder.setContext(securityContext);
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currentUser));
+    public void setTestChat() {
+       testChat = new Chat(currentUser, testUser, UUID.randomUUID().toString());
     }
 
     @Test
     public void createChat() {
+        SecurityContextHolder.setContext(securityContext);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currentUser));
         when(userService.getById(testUser.getId())).thenReturn(testUser);
         when(chatsRepository.findByUser1AndUser2(currentUser, testUser)).thenReturn(Optional.empty());
         when(chatsRepository.findByUser1AndUser2(testUser, currentUser)).thenReturn(Optional.empty());
@@ -98,6 +92,9 @@ public class ChatsServiceTest {
 
     @Test
     public void createChatWhenChatExistsByCurrentUser() {
+        SecurityContextHolder.setContext(securityContext);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currentUser));
         when(userService.getById(testUser.getId())).thenReturn(testUser);
         when(chatsRepository.findByUser1AndUser2(currentUser, testUser)).thenReturn(Optional.of(new Chat()));
         assertThrows(ChatException.class, () -> chatsService.createChat(testUser.getId()));
@@ -105,6 +102,9 @@ public class ChatsServiceTest {
 
     @Test
     public void createChatWhenChatExistsByUser() {
+        SecurityContextHolder.setContext(securityContext);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currentUser));
         when(userService.getById(testUser.getId())).thenReturn(testUser);
         when(chatsRepository.findByUser1AndUser2(currentUser, testUser)).thenReturn(Optional.empty());
         when(chatsRepository.findByUser1AndUser2(testUser, currentUser)).thenReturn(Optional.of(new Chat()));
@@ -113,6 +113,9 @@ public class ChatsServiceTest {
 
     @Test
     public void createChatWhenCurrentUserBlockedByUser() {
+        SecurityContextHolder.setContext(securityContext);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currentUser));
         when(userService.getById(testUser.getId())).thenReturn(testUser);
         when(chatsRepository.findByUser1AndUser2(currentUser, testUser)).thenReturn(Optional.empty());
         when(chatsRepository.findByUser1AndUser2(testUser, currentUser)).thenReturn(Optional.empty());
@@ -122,6 +125,9 @@ public class ChatsServiceTest {
 
     @Test
     public void createChatWhenUserBlockedByCurrentUser() {
+        SecurityContextHolder.setContext(securityContext);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currentUser));
         when(userService.getById(testUser.getId())).thenReturn(testUser);
         when(chatsRepository.findByUser1AndUser2(currentUser, testUser)).thenReturn(Optional.empty());
         when(chatsRepository.findByUser1AndUser2(testUser, currentUser)).thenReturn(Optional.empty());
@@ -132,6 +138,9 @@ public class ChatsServiceTest {
 
     @Test
     public void showChat() {
+        SecurityContextHolder.setContext(securityContext);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currentUser));
         ChatMessage testMessage1 = new ChatMessage();
         testMessage1.setId(1);
         testMessage1.setText("testMessage1");
@@ -170,10 +179,44 @@ public class ChatsServiceTest {
 
     @Test
     public void showChatWhenCurrentUserNotExistsInChat() {
+        SecurityContextHolder.setContext(securityContext);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currentUser));
         User testChatUser = new User();
         testChatUser.setId(3);
         testChat.setUser1(testChatUser);
         when(chatsRepository.findById(testChat.getId())).thenReturn(Optional.of(testChat));
         assertThrows(ChatException.class, () -> chatsService.showChat(testChat.getId(), 1, 1));
+    }
+
+    @Test
+    public void deleteChat() {
+        SecurityContextHolder.setContext(securityContext);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currentUser));
+        when(chatsRepository.findById(testChat.getId())).thenReturn(Optional.of(testChat));
+        when(chatsMessagesRepository.findAllByChatAndContentTypeIsNot(eq(testChat), eq(ContentType.TEXT), any()))
+                .thenReturn(Collections.emptyList());
+        CompletableFuture<Void> future = chatsService.deleteChat(testChat.getId());
+        future.join();
+        verify(messagingTemplate).convertAndSend("/topic/chat/" + testChat.getWebSocketUUID(),
+                Map.of("deleted", true));
+        verify(chatsRepository).deleteById(testChat.getId());
+    }
+
+    @Test
+    public void deleteChatWhenChatNotFound() {
+        when(chatsRepository.findById(testChat.getId())).thenReturn(Optional.empty());
+        assertThrows(ChatException.class, () -> chatsService.deleteChat(testChat.getId()));
+    }
+
+    @Test
+    public void deleteChatWhenUserNotExistsInChat() {
+        testChat.setUser1(testUser);
+        SecurityContextHolder.setContext(securityContext);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currentUser));
+        when(chatsRepository.findById(testChat.getId())).thenReturn(Optional.of(testChat));
+        assertThrows(ChatException.class, () -> chatsService.deleteChat(testChat.getId()));
     }
 }

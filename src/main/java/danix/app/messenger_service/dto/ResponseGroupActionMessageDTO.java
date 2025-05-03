@@ -1,23 +1,17 @@
 package danix.app.messenger_service.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ResponseGroupActionMessageDTO {
-    @JsonProperty("notification")
-    private String actionMessageText;
+    @JsonProperty("action_message")
+    private String text;
     @JsonProperty("sent_time")
     private LocalDateTime sentTime;
-
-    public ResponseGroupActionMessageDTO(String actionMessageText, LocalDateTime sentTime) {
-        this.actionMessageText = actionMessageText;
-        this.sentTime = sentTime;
-    }
 }

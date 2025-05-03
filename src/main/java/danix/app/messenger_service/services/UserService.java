@@ -5,7 +5,7 @@ import danix.app.messenger_service.models.*;
 import danix.app.messenger_service.repositories.*;
 import danix.app.messenger_service.security.UserDetailsImpl;
 import danix.app.messenger_service.util.FileException;
-import danix.app.messenger_service.util.FileUtils;
+import danix.app.messenger_service.util.FilesUtils;
 import danix.app.messenger_service.util.UserException;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -62,19 +62,19 @@ public class UserService {
 
     public ResponseFileDTO getImage(int id) {
         User user = getById(id);
-        return FileUtils.download(Path.of(USERS_IMAGES_PATH), user.getImageUUID(), ContentType.IMAGE);
+        return FilesUtils.download(Path.of(USERS_IMAGES_PATH), user.getImageUUID(), ContentType.IMAGE);
     }
 
     @Transactional
     public void addImage(MultipartFile imageFile, int id) {
         User currentUser = getById(id);
         String uuid = UUID.randomUUID().toString();
-        FileUtils.upload(Path.of(USERS_IMAGES_PATH), imageFile, uuid, ContentType.IMAGE);
+        FilesUtils.upload(Path.of(USERS_IMAGES_PATH), imageFile, uuid, ContentType.IMAGE);
         if (currentUser.getImageUUID().equals(DEFAULT_IMAGE_UUID)) {
             currentUser.setImageUUID(uuid);
             return;
         }
-        FileUtils.delete(Path.of(USERS_IMAGES_PATH), currentUser.getImageUUID());
+        FilesUtils.delete(Path.of(USERS_IMAGES_PATH), currentUser.getImageUUID());
         currentUser.setImageUUID(uuid);
     }
 
@@ -84,7 +84,7 @@ public class UserService {
         if (currentUser.getImageUUID().equals(DEFAULT_IMAGE_UUID)) {
             throw new FileException("User already have default image");
         }
-        FileUtils.delete(Path.of(USERS_IMAGES_PATH), currentUser.getImageUUID());
+        FilesUtils.delete(Path.of(USERS_IMAGES_PATH), currentUser.getImageUUID());
         currentUser.setImageUUID(DEFAULT_IMAGE_UUID);
     }
 

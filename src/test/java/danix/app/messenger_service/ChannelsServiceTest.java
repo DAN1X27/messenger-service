@@ -507,9 +507,10 @@ public class ChannelsServiceTest {
         channelsService.banUser(testChannel.getId(), user.getId());
         verify(channelsUsersRepository, times(1)).delete(channelUser);
         verify(appMessagesRepository, times(1)).save(any(AppMessage.class));
-        verify(messagingTemplate, times(1)).convertAndSend(any(), any(ResponseAppMessageDTO.class));
-        verify(messagingTemplate, times(1)).convertAndSend(any(), any(ResponseChannelDeletionDTO.class));
-        verify(messagingTemplate, times(1)).convertAndSend(any(), any(Map.class));
+        verify(messagingTemplate).convertAndSend(eq("/topic/user/" + user.getWebSocketUUID() + "/main"),
+                any(ResponseAppMessageDTO.class));
+        verify(messagingTemplate).convertAndSend("/topic/user/" + user.getWebSocketUUID() + "/main",
+                Map.of("deleted_channel", testChannel.getId()));
         assertTrue(testChannel.getBannedUsers().contains(user));
         verify(channelsLogsRepository, times(1)).save(any(ChannelLog.class));
     }
@@ -717,6 +718,8 @@ public class ChannelsServiceTest {
         CompletableFuture<Void> future = channelsService.leaveChannel(testChannel.getId());
         future.join();
         verify(channelsRepository).deleteById(testChannel.getId());
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/" + testChannel.getWebSocketUUID()),
+                eq(Map.of("deleted", true)));
     }
 
     @Test
@@ -737,10 +740,8 @@ public class ChannelsServiceTest {
         verify(appMessagesRepository, times(1)).save(any(AppMessage.class));
         verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" +
                 currenusUser.getWebSocketUUID() + "/main"), any(ResponseAppMessageDTO.class));
-        testChannel.getUsers().forEach(channelUser -> verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main"),
-                any(ResponseChannelDeletionDTO.class)));
         verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/" + testChannel.getWebSocketUUID()),
-                any(ResponseChannelDeletionDTO.class));
+               eq(Map.of("deleted", true)));
     }
 
     @Test
@@ -797,7 +798,7 @@ public class ChannelsServiceTest {
         future.join();
         verify(channelsRepository).deleteById(testChannel.getId());
         verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/" + testChannel.getWebSocketUUID()),
-                any(ResponseChannelDeletionDTO.class));
+                eq(Map.of("deleted", true)));
     }
 
     @Test
@@ -832,9 +833,6 @@ public class ChannelsServiceTest {
         channelsService.updateChannel(updateChannelDTO, testChannel.getId());
         assertEquals(testChannel.getDescription(), oldDescription);
         assertEquals(testChannel.getName(), updateChannelDTO.getName());
-        testChannel.getUsers().forEach(channelUser -> verify(messagingTemplate, times(1))
-                .convertAndSend(eq("/topic/user/" + channelUser.getUser().getWebSocketUUID() + "/main"),
-                        any(ResponseChannelUpdatingDTO.class)));
         verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/channel/" + testChannel.getWebSocketUUID()),
                 any(ResponseChannelUpdatingDTO.class));
     }

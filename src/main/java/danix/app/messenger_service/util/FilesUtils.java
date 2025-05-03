@@ -14,39 +14,40 @@ import java.nio.file.Path;
 import java.util.Objects;
 
 @Slf4j
-public final class FileUtils {
+public final class FilesUtils {
 
-    private FileUtils() {
+    private FilesUtils() {
     }
 
     public static void upload(Path filesPath, MultipartFile multipartFile, String uuid, ContentType contentType) {
         File file;
+        String name = Objects.requireNonNull(multipartFile.getOriginalFilename());
+        String extension = name.substring(name.lastIndexOf('.'));
+        String nameToSave = uuid + extension;
         switch (contentType) {
             case IMAGE -> {
-                if (!Objects.requireNonNull(multipartFile.getOriginalFilename()).endsWith(".png") &&
-                    !Objects.requireNonNull(multipartFile.getOriginalFilename()).endsWith(".jpg")) {
+                if (!extension.equals(".png") && !extension.equals(".jpg")) {
                     throw new FileException("Unsupported file");
                 }
-                file = new File(filesPath.toString(), uuid +
-                        (Objects.requireNonNull(multipartFile.getOriginalFilename().endsWith(".jpg") ? ".jpg" : ".png")));
+                file = new File(filesPath.toString(), nameToSave);
             }
             case VIDEO -> {
-                if (!Objects.requireNonNull(multipartFile.getOriginalFilename()).endsWith(".mp4")) {
+                if (!extension.equals(".mp4")) {
                     throw new FileException("Unsupported file");
                 }
-                file = new File(filesPath.toString(), uuid + ".mp4");
+                file = new File(filesPath.toString(), nameToSave);
             }
             case AUDIO_OGG -> {
-                if (!Objects.requireNonNull(multipartFile.getOriginalFilename()).endsWith(".ogg")) {
+                if (!extension.equals(".ogg")) {
                     throw new FileException("Unsupported file");
                 }
-                file = new File(filesPath.toString(), uuid + ".ogg");
+                file = new File(filesPath.toString(), nameToSave);
             }
             case AUDIO_MP3 -> {
-                if (!Objects.requireNonNull(multipartFile.getOriginalFilename()).endsWith(".mp3")) {
+                if (!extension.equals(".mp3")) {
                     throw new FileException("Unsupported file");
                 }
-                file = new File(filesPath.toString(), uuid + ".mp3");
+                file = new File(filesPath.toString(), nameToSave);
             }
             default -> throw new FileException("Unsupported content type");
         }

@@ -33,6 +33,12 @@ public class ChatsController {
         return new ResponseEntity<>(chatsService.showChat(id, page, count), HttpStatus.OK);
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<HttpStatus> deleteChat(@PathVariable int id) {
+        chatsService.deleteChat(id);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
     @GetMapping("/message/{id}/file")
     public ResponseEntity<?> getMessageFile(@PathVariable long id) {
         ResponseFileDTO image = chatsMessagesService.getMessageFile(id);
@@ -72,9 +78,9 @@ public class ChatsController {
     }
 
     @PostMapping("/{id}/message")
-    public ResponseEntity<IdDTO> sendMessage(@RequestBody @Valid MessageDTO messageDTO,
-                                             @PathVariable int id, BindingResult bindingResult) {
-        ErrorHandler.handleException(bindingResult, ExceptionType.AUTHENTICATION_EXCEPTION);
+    public ResponseEntity<IdDTO> sendMessage(@PathVariable int id,@RequestBody @Valid MessageDTO messageDTO,
+                                             BindingResult bindingResult) {
+        ErrorHandler.handleException(bindingResult, ExceptionType.CHAT_EXCEPTION);
         long messageId = chatsMessagesService.sendTextMessage(messageDTO.getMessage(), id);
         return new ResponseEntity<>(new IdDTO(messageId), HttpStatus.CREATED);
     }
