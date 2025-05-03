@@ -49,9 +49,21 @@ public class GroupsController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ShowGroupDTO> showGroup(@PathVariable("id") int groupId,
-                                                  @RequestParam("page") int page, @RequestParam("count") int count) {
-        return ResponseEntity.ok(groupsService.showGroup(groupId, page, count));
+    public ResponseEntity<ShowGroupDTO> showGroup(@PathVariable("id") int groupId) {
+        return ResponseEntity.ok(groupsService.showGroup(groupId));
+    }
+
+    @GetMapping("/{id}/messages")
+    public ResponseEntity<List<ResponseGroupMessageDTO>> getGroupMessages(@PathVariable int id, @RequestParam int page,
+                                                                          @RequestParam int count) {
+        return new ResponseEntity<>(groupsMessagesService.getMessages(id, page, count), HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}/messages/action")
+    public ResponseEntity<List<ResponseGroupActionMessageDTO>> getGroupActionMessages(@PathVariable int id,
+                                                                                      @RequestParam int page,
+                                                                                      @RequestParam int count) {
+        return new ResponseEntity<>(groupsMessagesService.getActionMessages(id, page, count), HttpStatus.OK);
     }
 
     @GetMapping("/{id}/users")

@@ -9,16 +9,21 @@ import danix.app.messenger_service.repositories.BlockedUsersRepository;
 import danix.app.messenger_service.repositories.ChatsMessagesRepository;
 import danix.app.messenger_service.repositories.ChatsRepository;
 import danix.app.messenger_service.util.ChatException;
+import danix.app.messenger_service.util.FilesUtils;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import static danix.app.messenger_service.services.UserService.getCurrentUser;
 
@@ -32,6 +37,12 @@ public class ChatsService {
     private final BlockedUsersRepository blockedUsersRepository;
     private final ModelMapper modelMapper;
     private final SimpMessagingTemplate messagingTemplate;
+    @Value("${chats_images_path}")
+    private String IMAGES_PATH;
+    @Value("${chats_videos_path}")
+    private String VIDEOS_PATH;
+    @Value("${chats_audio_path}")
+    private String AUDIO_PATH;
 
     @Transactional
     public ShowChatDTO showChat(int id, int page, int count) {
@@ -43,11 +54,7 @@ public class ChatsService {
         }
         List<ChatMessage> messages = messagesRepository.findAllByChat(chat,
                 PageRequest.of(page, count, Sort.by(Sort.Direction.DESC, "id")));
-        messages.forEach(message -> {
-            if (!message.isRead()) {
-                message.setRead(true);
-            }
-        });
+        messages.forEach(message -> message.setRead(true));
         ShowChatDTO showChatDTO = new ShowChatDTO();
         showChatDTO.setMessages(messages.stream()
                 .map(message -> {
@@ -61,8 +68,6 @@ public class ChatsService {
                 .toList());
         User user = chat.getUser1().getId() == getCurrentUser().getId() ? chat.getUser2() : chat.getUser1();
         showChatDTO.setUser(modelMapper.map(user, ResponseUserDTO.class));
-        showChatDTO.setId(chat.getId());
-        showChatDTO.setWebSocketUUID(chat.getWebSocketUUID());
         return showChatDTO;
     }
 
@@ -97,6 +102,31 @@ public class ChatsService {
         return chat.getId();
     }
 
+    @Transactional
+    public CompletableFuture<Void> deleteChat(int id) {
+        Chat chat = getById(id);
+        checkUserInChat(chat);
+        return CompletableFuture.runAsync(() -> {
+           List<ChatMessage> messages;
+           int page = 0;
+           do {
+               messages = messagesRepository.findAllByChatAndContentTypeIsNot(chat, ContentType.TEXT,
+                       PageRequest.of(page, 50));
+               for (ChatMessage message : messages) {
+                   switch (message.getContentType()) {
+                       case IMAGE -> FilesUtils.delete(Path.of(IMAGES_PATH), message.getText());
+                       case VIDEO -> FilesUtils.delete(Path.of(VIDEOS_PATH), message.getText());
+                       case AUDIO_MP3, AUDIO_OGG -> FilesUtils.delete(Path.of(AUDIO_PATH), message.getText());
+                   }
+               }
+               page++;
+           } while (!messages.isEmpty());
+           chatsRepository.deleteById(id);
+           messagingTemplate.convertAndSend("/topic/chat/" + chat.getWebSocketUUID(),
+                    Map.of("deleted", true));
+        });
+    }
+
     public List<ResponseChatDTO> getAllUserChats() {
         User currentUser = getCurrentUser();
         return chatsRepository.findByUser1OrUser2(currentUser, currentUser).stream()
@@ -108,5 +138,16 @@ public class ChatsService {
                     return responseChatDTO;
                 })
                 .toList();
+    }
+
+    private Chat getById(int id) {
+        return chatsRepository.findById(id).orElseThrow(() -> new ChatException("Chat not found"));
+    }
+
+    private void checkUserInChat(Chat chat) {
+        User curretnUser = getCurrentUser();
+        if (chat.getUser1().getId() != curretnUser.getId() && chat.getUser2().getId() != curretnUser.getId()) {
+            throw new ChatException("You are not in this chat");
+        }
     }
 }

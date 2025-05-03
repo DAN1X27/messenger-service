@@ -5,7 +5,7 @@ import danix.app.messenger_service.models.*;
 import danix.app.messenger_service.repositories.*;
 import danix.app.messenger_service.util.ChannelException;
 import danix.app.messenger_service.util.FileException;
-import danix.app.messenger_service.util.FileUtils;
+import danix.app.messenger_service.util.FilesUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -79,9 +79,9 @@ public class ChannelsPostsService {
     public long createPost(MultipartFile file, int id, ContentType contentType) {
         String uuid = UUID.randomUUID().toString();
         switch (contentType) {
-            case IMAGE -> FileUtils.upload(Path.of(POSTS_IMAGES_PATH), file, uuid, contentType);
-            case VIDEO -> FileUtils.upload(Path.of(POSTS_VIDEOS_PATH), file, uuid, contentType);
-            case AUDIO_MP3, AUDIO_OGG -> FileUtils.upload(Path.of(POSTS_AUDIO_PATH), file, uuid, contentType);
+            case IMAGE -> FilesUtils.upload(Path.of(POSTS_IMAGES_PATH), file, uuid, contentType);
+            case VIDEO -> FilesUtils.upload(Path.of(POSTS_VIDEOS_PATH), file, uuid, contentType);
+            case AUDIO_MP3, AUDIO_OGG -> FilesUtils.upload(Path.of(POSTS_AUDIO_PATH), file, uuid, contentType);
         }
         ChannelPost post = savePost(null, id, ContentType.IMAGE);
         ChannelPostFile postFile = new ChannelPostFile();
@@ -128,9 +128,9 @@ public class ChannelsPostsService {
             }
             String uuid = UUID.randomUUID().toString();
             switch (contentType) {
-                case IMAGE -> FileUtils.upload(Path.of(POSTS_IMAGES_PATH), file, uuid, contentType);
-                case VIDEO -> FileUtils.upload(Path.of(POSTS_VIDEOS_PATH), file, uuid, contentType);
-                case AUDIO_MP3, AUDIO_OGG -> FileUtils.upload(Path.of(POSTS_AUDIO_PATH), file, uuid, contentType);
+                case IMAGE -> FilesUtils.upload(Path.of(POSTS_IMAGES_PATH), file, uuid, contentType);
+                case VIDEO -> FilesUtils.upload(Path.of(POSTS_VIDEOS_PATH), file, uuid, contentType);
+                case AUDIO_MP3, AUDIO_OGG -> FilesUtils.upload(Path.of(POSTS_AUDIO_PATH), file, uuid, contentType);
                 default -> throw new ChannelException("Unsupported content type");
             }
             ChannelPostFile postFile = new ChannelPostFile();
@@ -155,13 +155,13 @@ public class ChannelsPostsService {
         channelsService.getChannelUser(getCurrentUser(), file.getPost().getChannel());
         switch (file.getContentType()) {
             case IMAGE -> {
-                return FileUtils.download(Path.of(POSTS_IMAGES_PATH), file.getFileUUID(), file.getContentType());
+                return FilesUtils.download(Path.of(POSTS_IMAGES_PATH), file.getFileUUID(), file.getContentType());
             }
             case VIDEO -> {
-                return FileUtils.download(Path.of(POSTS_VIDEOS_PATH), file.getFileUUID(), file.getContentType());
+                return FilesUtils.download(Path.of(POSTS_VIDEOS_PATH), file.getFileUUID(), file.getContentType());
             }
             case AUDIO_MP3, AUDIO_OGG -> {
-                return FileUtils.download(Path.of(POSTS_AUDIO_PATH), file.getFileUUID(), file.getContentType());
+                return FilesUtils.download(Path.of(POSTS_AUDIO_PATH), file.getFileUUID(), file.getContentType());
             }
             default -> throw new FileException("File not found");
         }
@@ -188,7 +188,8 @@ public class ChannelsPostsService {
                 List<ChannelPostComment> comments;
                 int page = 0;
                 do {
-                    comments = commentsRepository.findAllByPost(post, PageRequest.of(page, 50));
+                    comments = commentsRepository.findAllByPostAndContentTypeIsNot(post, ContentType.TEXT,
+                            PageRequest.of(page, 50));
                     comments.forEach(comment -> deleteCommentFile(comment, COMMENTS_IMAGES_PATH, COMMENTS_VIDEOS_PATH,
                             COMMENTS_AUDIO_PATH));
                     page++;
@@ -253,22 +254,22 @@ public class ChannelsPostsService {
         switch (contentType) {
             case IMAGE -> {
                 path = Path.of(COMMENTS_IMAGES_PATH);
-                FileUtils.upload(path, file, uuid, contentType);
+                FilesUtils.upload(path, file, uuid, contentType);
             }
             case VIDEO -> {
                 path = Path.of(COMMENTS_VIDEOS_PATH);
-                FileUtils.upload(path, file, uuid, contentType);
+                FilesUtils.upload(path, file, uuid, contentType);
             }
             case AUDIO_MP3, AUDIO_OGG -> {
                 path = Path.of(COMMENTS_AUDIO_PATH);
-                FileUtils.upload(path, file, uuid, contentType);
+                FilesUtils.upload(path, file, uuid, contentType);
             }
             default -> throw new ChannelException("Unsupported content type");
         }
         try {
             return saveComment(postId, uuid, contentType);
         } catch (ChannelException e) {
-            FileUtils.delete(path, uuid);
+            FilesUtils.delete(path, uuid);
             throw e;
         }
     }
@@ -311,13 +312,13 @@ public class ChannelsPostsService {
         channelsService.getChannelUser(getCurrentUser(), channel);
         switch (comment.getContentType()) {
             case IMAGE -> {
-                return FileUtils.download(Path.of(COMMENTS_IMAGES_PATH), comment.getText(), comment.getContentType());
+                return FilesUtils.download(Path.of(COMMENTS_IMAGES_PATH), comment.getText(), comment.getContentType());
             }
             case VIDEO -> {
-                return FileUtils.download(Path.of(COMMENTS_VIDEOS_PATH), comment.getText(), comment.getContentType());
+                return FilesUtils.download(Path.of(COMMENTS_VIDEOS_PATH), comment.getText(), comment.getContentType());
             }
             case AUDIO_MP3, AUDIO_OGG -> {
-                return FileUtils.download(Path.of(COMMENTS_AUDIO_PATH), comment.getText(), comment.getContentType());
+                return FilesUtils.download(Path.of(COMMENTS_AUDIO_PATH), comment.getText(), comment.getContentType());
             }
             default -> throw new ChannelException("Comment is not file");
         }
@@ -332,11 +333,7 @@ public class ChannelsPostsService {
         Channel channel = post.getChannel();
         ChannelUser channelUser = channelsService.getChannelUser(currentUser, channel);
         if (comment.getOwner().getId() == channelUser.getId() || channelUser.getIsAdmin()) {
-            switch (comment.getContentType()) {
-                case IMAGE -> FileUtils.delete(Path.of(COMMENTS_IMAGES_PATH), comment.getText());
-                case VIDEO -> FileUtils.delete(Path.of(COMMENTS_VIDEOS_PATH), comment.getText());
-                case AUDIO_MP3, AUDIO_OGG -> FileUtils.delete(Path.of(COMMENTS_AUDIO_PATH), comment.getText());
-            }
+            deleteCommentFile(comment, COMMENTS_IMAGES_PATH, COMMENTS_VIDEOS_PATH, COMMENTS_AUDIO_PATH);
             commentsRepository.delete(comment);
             post.getComments().remove(comment);
             messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID() + "/post/" + post.getId() + "/comments",
@@ -410,17 +407,17 @@ public class ChannelsPostsService {
 
     static void deletePostFile(ChannelPostFile file, String imagesPath, String videosPath, String audioPath) {
         switch (file.getContentType()) {
-            case IMAGE -> FileUtils.delete(Path.of(imagesPath), file.getFileUUID());
-            case VIDEO -> FileUtils.delete(Path.of(videosPath), file.getFileUUID());
-            case AUDIO_MP3, AUDIO_OGG -> FileUtils.delete(Path.of(audioPath), file.getFileUUID());
+            case IMAGE -> FilesUtils.delete(Path.of(imagesPath), file.getFileUUID());
+            case VIDEO -> FilesUtils.delete(Path.of(videosPath), file.getFileUUID());
+            case AUDIO_MP3, AUDIO_OGG -> FilesUtils.delete(Path.of(audioPath), file.getFileUUID());
         }
     }
 
     static void deleteCommentFile(ChannelPostComment comment, String imagesPath, String videosPath, String audioPath) {
         switch (comment.getContentType()) {
-            case IMAGE -> FileUtils.delete(Path.of(imagesPath), comment.getText());
-            case VIDEO -> FileUtils.delete(Path.of(videosPath), comment.getText());
-            case AUDIO_OGG, AUDIO_MP3 -> FileUtils.delete(Path.of(audioPath), comment.getText());
+            case IMAGE -> FilesUtils.delete(Path.of(imagesPath), comment.getText());
+            case VIDEO -> FilesUtils.delete(Path.of(videosPath), comment.getText());
+            case AUDIO_OGG, AUDIO_MP3 -> FilesUtils.delete(Path.of(audioPath), comment.getText());
         }
     }
 }

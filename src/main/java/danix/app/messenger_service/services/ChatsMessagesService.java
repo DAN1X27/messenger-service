@@ -6,7 +6,7 @@ import danix.app.messenger_service.repositories.BlockedUsersRepository;
 import danix.app.messenger_service.repositories.ChatsMessagesRepository;
 import danix.app.messenger_service.repositories.ChatsRepository;
 import danix.app.messenger_service.util.ChatException;
-import danix.app.messenger_service.util.FileUtils;
+import danix.app.messenger_service.util.FilesUtils;
 import danix.app.messenger_service.util.MessageException;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -48,17 +48,18 @@ public class ChatsMessagesService {
     @Transactional
     public long sendFile(MultipartFile file, int chatId, ContentType contentType) {
         String uuid = UUID.randomUUID().toString();
-        switch (contentType) {
-            case IMAGE -> FileUtils.upload(Path.of(CHATS_IMAGES_PATH), file, uuid, contentType);
-            case VIDEO -> FileUtils.upload(Path.of(CHATS_VIDEOS_PATH), file, uuid, contentType);
-            case AUDIO_OGG, AUDIO_MP3 -> FileUtils.upload(Path.of(CHATS_AUDIO_PATH), file, uuid, contentType);
+        String path = switch (contentType) {
+            case IMAGE -> CHATS_IMAGES_PATH;
+            case VIDEO -> CHATS_VIDEOS_PATH;
+            case AUDIO_OGG, AUDIO_MP3 -> CHATS_AUDIO_PATH;
             default -> throw new MessageException("Unsupported content type");
-        }
+        };
+        FilesUtils.upload(Path.of(path), file, uuid, contentType);
         try {
             return sendMessage(uuid, contentType, chatId);
         } catch (MessageException e) {
-            FileUtils.delete(Path.of(CHATS_IMAGES_PATH), uuid);
-            FileUtils.delete(Path.of(CHATS_VIDEOS_PATH), uuid);
+            FilesUtils.delete(Path.of(CHATS_IMAGES_PATH), uuid);
+            FilesUtils.delete(Path.of(CHATS_VIDEOS_PATH), uuid);
             throw e;
         }
     }
@@ -95,9 +96,9 @@ public class ChatsMessagesService {
     public void deleteMessage(long messageId) {
         ChatMessage message = checkMessage(messageId);
         switch (message.getContentType()) {
-            case IMAGE -> FileUtils.delete(Path.of(CHATS_IMAGES_PATH), message.getText());
-            case VIDEO -> FileUtils.delete(Path.of(CHATS_VIDEOS_PATH), message.getText());
-            case AUDIO_MP3, AUDIO_OGG -> FileUtils.delete(Path.of(CHATS_AUDIO_PATH), message.getText());
+            case IMAGE -> FilesUtils.delete(Path.of(CHATS_IMAGES_PATH), message.getText());
+            case VIDEO -> FilesUtils.delete(Path.of(CHATS_VIDEOS_PATH), message.getText());
+            case AUDIO_MP3, AUDIO_OGG -> FilesUtils.delete(Path.of(CHATS_AUDIO_PATH), message.getText());
         }
         messagesRepository.delete(message);
         messagingTemplate.convertAndSend("/topic/chat/" + message.getChat().getWebSocketUUID(),
@@ -126,13 +127,13 @@ public class ChatsMessagesService {
         }
         switch (chatMessage.getContentType()) {
             case IMAGE -> {
-                return FileUtils.download(Path.of(CHATS_IMAGES_PATH), chatMessage.getText(), ContentType.IMAGE);
+                return FilesUtils.download(Path.of(CHATS_IMAGES_PATH), chatMessage.getText(), ContentType.IMAGE);
             }
             case VIDEO -> {
-                return FileUtils.download(Path.of(CHATS_VIDEOS_PATH), chatMessage.getText(), ContentType.VIDEO);
+                return FilesUtils.download(Path.of(CHATS_VIDEOS_PATH), chatMessage.getText(), ContentType.VIDEO);
             }
             case AUDIO_MP3, AUDIO_OGG -> {
-                return FileUtils.download(Path.of(CHATS_AUDIO_PATH), chatMessage.getText(), chatMessage.getContentType());
+                return FilesUtils.download(Path.of(CHATS_AUDIO_PATH), chatMessage.getText(), chatMessage.getContentType());
             }
             default -> throw new MessageException("Message is not file");
         }

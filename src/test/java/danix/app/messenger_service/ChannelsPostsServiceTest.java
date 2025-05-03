@@ -15,7 +15,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -47,7 +46,7 @@ public class ChannelsPostsServiceTest {
     private SimpMessagingTemplate messagingTemplate;
 
     @Mock
-    private ChannelsPostsFilesRepository imagesRepository;
+    private ChannelsPostsFilesRepository filesRepository;
 
     @Mock
     private ChannelsService channelsService;
@@ -118,7 +117,8 @@ public class ChannelsPostsServiceTest {
         channelUser.setIsAdmin(true);
         channelUser.setUser(currentUser);
         when(channelsService.getChannelUser(currentUser, testChannel)).thenReturn(channelUser);
-        when(commentsRepository.findAllByPost(eq(testPost), any())).thenReturn(Collections.emptyList());
+        when(commentsRepository.findAllByPostAndContentTypeIsNot(eq(testPost), eq(ContentType.TEXT), any()))
+                .thenReturn(Collections.emptyList());
         CompletableFuture<Void> future = postsService.deletePost(1L);
         future.join();
         verify(logsRepository, times(1)).save(any(ChannelLog.class));
