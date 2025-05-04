@@ -55,20 +55,22 @@ public class ChatsService {
         List<ChatMessage> messages = messagesRepository.findAllByChat(chat,
                 PageRequest.of(page, count, Sort.by(Sort.Direction.DESC, "id")));
         messages.forEach(message -> message.setRead(true));
-        ShowChatDTO showChatDTO = new ShowChatDTO();
-        showChatDTO.setMessages(messages.stream()
-                .map(message -> {
-                    ResponseChatMessageDTO messageDTO = modelMapper.map(message, ResponseChatMessageDTO.class);
-                    if (message.getContentType() != ContentType.TEXT) {
-                        messageDTO.setText(null);
-                    }
-                    messageDTO.setSender(modelMapper.map(message.getOwner(), ResponseUserDTO.class));
-                    return messageDTO;
-                })
-                .toList());
-        User user = chat.getUser1().getId() == getCurrentUser().getId() ? chat.getUser2() : chat.getUser1();
-        showChatDTO.setUser(modelMapper.map(user, ResponseUserDTO.class));
-        return showChatDTO;
+        return ShowChatDTO.builder()
+                .id(chat.getId())
+                .messages(messages.stream()
+                        .map(message -> {
+                            ResponseChatMessageDTO messageDTO = modelMapper.map(message, ResponseChatMessageDTO.class);
+                            if (message.getContentType() != ContentType.TEXT) {
+                                messageDTO.setText(null);
+                            }
+                            messageDTO.setSender(modelMapper.map(message.getOwner(), ResponseUserDTO.class));
+                            return messageDTO;
+                        })
+                        .toList())
+                .webSocketUUID(chat.getWebSocketUUID())
+                .user(modelMapper.map(chat.getUser1().getId() == getCurrentUser().getId() ? chat.getUser2() : chat.getUser1(),
+                        ResponseUserDTO.class))
+                .build();
     }
 
     @Transactional
