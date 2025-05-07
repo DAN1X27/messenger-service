@@ -262,11 +262,16 @@ You can change the user role in the database console with the command 'update ta
 -ACTION: Returns user groups.
 -HEADERS: 'Authorization' - 'Bearer ' + jwt token.
 ```
-* GET /group/{id}
+* GET /groups/{id}
 ```
--ACTION: Returns user group by id.
+-ACTION: Returns group info by group id.
 -HEADERS: 'Authorization' - 'Bearer ' + jwt token.
--PARAMS: page - page number of group messages, count - messages count per page. 
+```
+* GET /groups/{id}/messages
+```
+-ACTION: Returns group messages be group id.
+-HEADERS: 'Authorization' - 'Bearer ' + jwt token.
+-PARAMS: page - page number of messages (min value = 0), count - count messages for 1 page.
 ```
 * POST /groups
 ```
@@ -287,7 +292,6 @@ desription(new group description, not required), groupId.
 ```
 -ACTION: Delete group by id.
 -HEADERS: 'Authorization' - 'Bearer ' + jwt token.
--PARAMS: page - page number of messages (min value = 0), count - count messages for 1 page.
 -RETURNS: Http status 'OK'.
 ```
 * POST /groups/{id}/user/{id}/invite
