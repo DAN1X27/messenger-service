@@ -23,7 +23,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static danix.app.messenger_service.services.UserService.getCurrentUser;
@@ -399,10 +398,10 @@ public class ChannelsService {
             }
             ExecutorService executorService = Executors.newFixedThreadPool(3);
             return CompletableFuture.runAsync(() -> {
-                AtomicInteger postsPage = new AtomicInteger();
+                int postsPage = 0;
                 while (true) {
                     List<ChannelPost> posts = channelsPostsRepository.findAllByChannel(channel,
-                            PageRequest.of(postsPage.get(), 50));
+                            PageRequest.of(postsPage, 50));
                     if (posts.isEmpty()) {
                         break;
                     }
@@ -423,7 +422,7 @@ public class ChannelsService {
                         }
                     }, executorService);
                     CompletableFuture.allOf(deleteFilesTask, deleteCommentsTask).join();
-                    postsPage.incrementAndGet();
+                    postsPage++;
                 }
                 channelsRepository.deleteById(channel.getId());
                 messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(),
