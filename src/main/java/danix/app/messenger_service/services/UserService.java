@@ -298,6 +298,7 @@ public class UserService {
               .isPrivate(personDTO.getIsPrivate() != null && personDTO.getIsPrivate())
               .imageUUID(DEFAULT_IMAGE_UUID)
               .userStatus(User.Status.TEMPORALLY_REGISTERED)
+              .onlineStatus(User.OnlineStatus.OFFLINE)
               .webSocketUUID(UUID.randomUUID().toString())
               .build()
         );
