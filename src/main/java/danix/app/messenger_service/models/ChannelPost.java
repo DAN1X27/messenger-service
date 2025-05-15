@@ -32,7 +32,7 @@ public class ChannelPost {
     @JoinColumn(name = "owner_id", referencedColumnName = "id")
     private ChannelUser owner;
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "post")
     private List<ChannelPostComment> comments;
 
     @Column(name = "created_at")
@@ -42,12 +42,9 @@ public class ChannelPost {
     @Column(name = "content_type")
     private ContentType contentType;
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "post")
     private List<ChannelPostFile> files;
 
-    @ManyToMany
-    @JoinTable(name = "channels_posts_likes",
-            joinColumns = @JoinColumn(name = "post_id"),
-            inverseJoinColumns = @JoinColumn(name = "user_id"))
-    private List<User> likes;
+    @OneToMany(mappedBy = "post")
+    private List<ChannelPostLike> likes;
 }

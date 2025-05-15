@@ -37,6 +37,7 @@ public class ChannelsPostsService {
     private final ChannelsPostsCommentsRepository commentsRepository;
     private final ChannelsService channelsService;
     private final ChannelsPostsFilesRepository filesRepository;
+    private final ChannelsPostsLikesRepository likesRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final UserService userService;
 
@@ -57,17 +58,12 @@ public class ChannelsPostsService {
         User currentUser = getCurrentUser();
         Channel channel = channelsService.getById(id);
         channelsService.getChannelUser(currentUser, channel);
-        List<ChannelPost> posts = channelsPostsRepository.findAllByChannel(channel, PageRequest.of(page, count,
-                Sort.by(Sort.Direction.DESC, "id")));
-        List<ChannelPostFile> files = filesRepository.findAllByPostIn(posts);
-        return posts.stream()
-                .map(post -> {
-                    post.setFiles(files.stream()
-                            .filter(file -> file.getPost().getId() == post.getId())
-                            .toList());
-                    return convertToResponseChannelPostDTO(post);
-                })
-                .toList();
+        Sort sort = Sort.by(Sort.Direction.DESC, "id");
+        List<Long> ids = channelsPostsRepository.findAllByChannel(channel, PageRequest.of(page, count, sort)).stream()
+                                 .map(IdProjection::getId)
+                                 .toList();
+        List<ChannelPost> posts = channelsPostsRepository.findAllByIdIn(ids, sort);
+        return posts.stream().map(this::convertToResponseChannelPostDTO).toList();
     }
 
     @Transactional
@@ -181,22 +177,26 @@ public class ChannelsPostsService {
             messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(),
                     Map.of("deleted_post_id", postId));
             ExecutorService executorService = Executors.newFixedThreadPool(2);
-            CompletableFuture<Void> deleteFilesTask = CompletableFuture
-                    .runAsync(() -> post.getFiles().forEach(file -> deletePostFile(file, POSTS_IMAGES_PATH,
-                            POSTS_VIDEOS_PATH, POSTS_AUDIO_PATH)), executorService);
-            CompletableFuture<Void> deleteCommentsTask = CompletableFuture.runAsync(() -> {
-                List<ChannelPostComment> comments;
-                int page = 0;
-                do {
-                    comments = commentsRepository.findAllByPostAndContentTypeIsNot(post, ContentType.TEXT,
-                            PageRequest.of(page, 50));
-                    comments.forEach(comment -> deleteCommentFile(comment, COMMENTS_IMAGES_PATH, COMMENTS_VIDEOS_PATH,
-                            COMMENTS_AUDIO_PATH));
-                    page++;
-                } while (!comments.isEmpty());
-            }, executorService);
-            return CompletableFuture.allOf(deleteFilesTask, deleteCommentsTask)
-                    .thenRun(() -> channelsPostsRepository.deleteById(postId));
+            try {
+                CompletableFuture<Void> deleteFilesTask = CompletableFuture
+                        .runAsync(() -> post.getFiles().forEach(file -> deletePostFile(file, POSTS_IMAGES_PATH,
+                                POSTS_VIDEOS_PATH, POSTS_AUDIO_PATH)), executorService);
+                CompletableFuture<Void> deleteCommentsTask = CompletableFuture.runAsync(() -> {
+                    List<ChannelPostComment> comments;
+                    int page = 0;
+                    do {
+                        comments = commentsRepository.findAllByPostAndContentTypeIsNot(post, ContentType.TEXT,
+                                PageRequest.of(page, 50));
+                        comments.forEach(comment -> deleteCommentFile(comment, COMMENTS_IMAGES_PATH, COMMENTS_VIDEOS_PATH,
+                                COMMENTS_AUDIO_PATH));
+                        page++;
+                    } while (!comments.isEmpty());
+                }, executorService);
+                return CompletableFuture.allOf(deleteFilesTask, deleteCommentsTask)
+                        .thenRun(() -> channelsPostsRepository.deleteById(postId));
+            } finally {
+                executorService.shutdown();
+            }
         } else {
             throw new ChannelException("Current user is not admin of this channel");
         }
@@ -204,24 +204,26 @@ public class ChannelsPostsService {
 
     @Transactional
     public void addPostLike(long postId) {
-        User currentUser = userService.getById(getCurrentUser().getId());
+        User currentUser = getCurrentUser();
         ChannelPost post = getById(postId);
         channelsService.getChannelUser(currentUser, post.getChannel());
-        if (post.getLikes().contains(currentUser)) {
+        if (likesRepository.existsByPostAndUser(post, currentUser)) {
             throw new ChannelException("Post already liked");
         }
-        post.getLikes().add(currentUser);
+        likesRepository.save(ChannelPostLike.builder()
+                .post(post)
+                .user(currentUser)
+                .build());
     }
 
     @Transactional
     public void deletePostLike(long postId) {
-        User currentUser = userService.getById(getCurrentUser().getId());
+        User currentUser = getCurrentUser();
         ChannelPost post = getById(postId);
         channelsService.getChannelUser(currentUser, post.getChannel());
-        if (!post.getLikes().contains(currentUser)) {
+        likesRepository.findByPostAndUser(post, currentUser).ifPresentOrElse(likesRepository::delete, () -> {
             throw new ChannelException("Post is not liked");
-        }
-        post.getLikes().remove(currentUser);
+        });
     }
 
     @Transactional
@@ -387,21 +389,20 @@ public class ChannelsPostsService {
                 .orElseThrow(() -> new ChannelException("Post not found"));
     }
 
-    private ResponseChannelPostDTO convertToResponseChannelPostDTO(ChannelPost channelPost) {
+    private ResponseChannelPostDTO convertToResponseChannelPostDTO(ChannelPost post) {
         User currentUser = userService.getById(getCurrentUser().getId());
         return ResponseChannelPostDTO.builder()
-                .text(channelPost.getText())
-                .id(channelPost.getId())
-                .owner(modelMapper.map(channelPost.getOwner(), ResponseUserDTO.class))
-                .commentsCount(channelPost.getComments() != null && channelPost.getChannel().isPostsCommentsAllowed()
-                        ? channelPost.getComments().size() : 0)
-                .likes(channelPost.getLikes() != null ? channelPost.getLikes().size() : 0)
-                .isLiked(channelPost.getLikes() != null && channelPost.getLikes().contains(currentUser))
-                .contentType(channelPost.getContentType())
-                .files(channelPost.getFiles() != null ? channelPost.getFiles().stream()
+                .text(post.getText())
+                .id(post.getId())
+                .owner(modelMapper.map(post.getOwner(), ResponseUserDTO.class))
+                .commentsCount(commentsRepository.countByPost(post))
+                .likes(likesRepository.countByPost(post))
+                .isLiked(likesRepository.existsByPostAndUser(post, currentUser))
+                .contentType(post.getContentType())
+                .files(post.getFiles() != null ? post.getFiles().stream()
                         .map(file -> new ResponseChannelPostFilesDTO(file.getId()))
                         .toList() : Collections.emptyList())
-                .createdAt(channelPost.getCreatedAt())
+                .createdAt(post.getCreatedAt())
                 .build();
     }
 

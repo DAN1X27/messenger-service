@@ -15,4 +15,6 @@ public interface ChannelsPostsCommentsRepository extends JpaRepository<ChannelPo
     List<ChannelPostComment> findAllByPost(ChannelPost post, Pageable pageable);
 
     List<ChannelPostComment> findAllByPostAndContentTypeIsNot(ChannelPost post, ContentType contentType, Pageable pageable);
+
+    int countByPost(ChannelPost post);
 }
