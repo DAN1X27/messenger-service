@@ -49,6 +49,9 @@ public class ChannelsPostsServiceTest {
     private ChannelsPostsFilesRepository filesRepository;
 
     @Mock
+    private ChannelsPostsLikesRepository likesRepository;
+
+    @Mock
     private ChannelsService channelsService;
 
     @Mock
@@ -154,6 +157,7 @@ public class ChannelsPostsServiceTest {
         testPost.setText("test text");
         testPost.setOwner(channelUser);
         testPost.setContentType(ContentType.TEXT);
+        testPost.setFiles(Collections.emptyList());
         when(postsRepository.findById(1L)).thenReturn(Optional.of(testPost));
         when(channelsService.getChannelUser(currentUser, testChannel)).thenReturn(channelUser);
         UpdateChannelPostDTO updateChannelPostDTO = new UpdateChannelPostDTO();
@@ -199,22 +203,20 @@ public class ChannelsPostsServiceTest {
     public void addPostLike() {
         ChannelPost testPost = new ChannelPost();
         testPost.setChannel(testChannel);
-        testPost.setLikes(new ArrayList<>());
-        when(userService.getById(currentUser.getId())).thenReturn(currentUser);
         when(postsRepository.findById(1L)).thenReturn(Optional.of(testPost));
         when(channelsService.getChannelUser(currentUser, testChannel)).thenReturn(new ChannelUser());
+        when(likesRepository.existsByPostAndUser(testPost, currentUser)).thenReturn(false);
         postsService.addPostLike(1L);
-        assertFalse(testPost.getLikes().isEmpty());
+        verify(likesRepository).save(any());
     }
 
     @Test
     public void addPostLikeWhenPostAlreadyLiked() {
         ChannelPost testPost = new ChannelPost();
         testPost.setChannel(testChannel);
-        testPost.setLikes(Collections.singletonList(currentUser));
-        when(userService.getById(currentUser.getId())).thenReturn(currentUser);
         when(postsRepository.findById(1L)).thenReturn(Optional.of(testPost));
         when(channelsService.getChannelUser(currentUser, testChannel)).thenReturn(new ChannelUser());
+        when(likesRepository.existsByPostAndUser(testPost, currentUser)).thenReturn(true);
         assertThrows(ChannelException.class, () -> postsService.addPostLike(1L));
     }
 
@@ -228,20 +230,19 @@ public class ChannelsPostsServiceTest {
     public void deletePostLike() {
         ChannelPost testPost = new ChannelPost();
         testPost.setChannel(testChannel);
-        testPost.setLikes(new ArrayList<>());
-        testPost.getLikes().add(currentUser);
-        when(userService.getById(currentUser.getId())).thenReturn(currentUser);
+        ChannelPostLike like = new ChannelPostLike();
         when(postsRepository.findById(1L)).thenReturn(Optional.of(testPost));
+        when(likesRepository.findByPostAndUser(testPost, currentUser)).thenReturn(Optional.of(like));
         postsService.deletePostLike(1L);
-        assertTrue(testPost.getLikes().isEmpty());
+        verify(likesRepository).delete(like);
     }
 
     @Test
-    public void deletePostLikeWhenPostNotLiked() {
+    public void deletePostLikeWhenPostIsNotLiked() {
         ChannelPost testPost = new ChannelPost();
         testPost.setChannel(testChannel);
-        testPost.setLikes(Collections.emptyList());
         when(postsRepository.findById(1L)).thenReturn(Optional.of(testPost));
+        when(likesRepository.findByPostAndUser(testPost, currentUser)).thenReturn(Optional.empty());
         assertThrows(ChannelException.class, () -> postsService.deletePostLike(1L));
     }
 

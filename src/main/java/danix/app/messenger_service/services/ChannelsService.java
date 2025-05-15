@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -44,7 +45,6 @@ public class ChannelsService {
     private final ChannelsPostsRepository channelsPostsRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final ChannelsPostsCommentsRepository postsCommentsRepository;
-    private final ChannelsPostsFilesRepository postsFilesRepository;
 
     @Value("${default_channels_image_uuid}")
     private String DEFAULT_IMAGE_UUID;
@@ -398,35 +398,48 @@ public class ChannelsService {
             }
             ExecutorService executorService = Executors.newFixedThreadPool(3);
             return CompletableFuture.runAsync(() -> {
-                int postsPage = 0;
-                while (true) {
-                    List<ChannelPost> posts = channelsPostsRepository.findAllByChannel(channel,
-                            PageRequest.of(postsPage, 50));
-                    if (posts.isEmpty()) {
-                        break;
-                    }
-                    CompletableFuture<Void> deleteFilesTask = CompletableFuture.runAsync(() -> postsFilesRepository
-                          .findAllByPostIn(posts).forEach(file -> ChannelsPostsService.deletePostFile(file, POSTS_IMAGES_PATH,
-                                  POSTS_VIDEOS_PATH, POSTS_AUDIO_PATH)), executorService);
-                    CompletableFuture<Void> deleteCommentsTask = CompletableFuture.runAsync(() -> {
-                        for (ChannelPost post : posts) {
-                            int commentsPage = 0;
-                            List<ChannelPostComment> comments;
-                            do {
-                                comments = postsCommentsRepository.findAllByPostAndContentTypeIsNot(post, ContentType.TEXT,
-                                        PageRequest.of(commentsPage, 50));
-                                comments.forEach(comment -> ChannelsPostsService.deleteCommentFile(comment, COMMENTS_IMAGES_PATH,
-                                        COMMENTS_VIDEOS_PATH, COMMENTS_AUDIO_PATH));
-                                commentsPage++;
-                            } while (!comments.isEmpty());
+                try {
+                    int postsPage = 0;
+                    while (true) {
+                        Sort sort = Sort.by(Sort.Direction.DESC, "id");
+                        List<Long> ids = channelsPostsRepository.findAllByChannel(channel,
+                                PageRequest.of(postsPage, 50, sort)).stream()
+                                                 .map(IdProjection::getId)
+                                                 .toList();
+                        if (ids.isEmpty()) {
+                            break;
                         }
-                    }, executorService);
-                    CompletableFuture.allOf(deleteFilesTask, deleteCommentsTask).join();
-                    postsPage++;
+                        List<ChannelPost> posts = channelsPostsRepository.findAllByIdIn(ids, sort);
+                        CompletableFuture<Void> deleteFilesTask = CompletableFuture.runAsync(() -> {
+                            for (ChannelPost post : posts) {
+                                for (ChannelPostFile file : post.getFiles()) {
+                                    ChannelsPostsService.deletePostFile(file, POSTS_IMAGES_PATH, POSTS_VIDEOS_PATH,
+                                            POSTS_AUDIO_PATH);
+                                }
+                            }
+                        });
+                        CompletableFuture<Void> deleteCommentsTask = CompletableFuture.runAsync(() -> {
+                            for (ChannelPost post : posts) {
+                                int commentsPage = 0;
+                                List<ChannelPostComment> comments;
+                                do {
+                                    comments = postsCommentsRepository.findAllByPostAndContentTypeIsNot(post, ContentType.TEXT,
+                                            PageRequest.of(commentsPage, 50));
+                                    comments.forEach(comment -> ChannelsPostsService.deleteCommentFile(comment, COMMENTS_IMAGES_PATH,
+                                            COMMENTS_VIDEOS_PATH, COMMENTS_AUDIO_PATH));
+                                    commentsPage++;
+                                } while (!comments.isEmpty());
+                            }
+                        }, executorService);
+                        CompletableFuture.allOf(deleteFilesTask, deleteCommentsTask).join();
+                        postsPage++;
+                    }
+                    channelsRepository.deleteById(channel.getId());
+                    messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(),
+                            Map.of("deleted", true));
+                } finally {
+                    executorService.shutdown();
                 }
-                channelsRepository.deleteById(channel.getId());
-                messagingTemplate.convertAndSend("/topic/channel/" + channel.getWebSocketUUID(),
-                        Map.of("deleted", true));
             }, executorService);
         } else {
             throw new ChannelException("Current user must be owner of channel");

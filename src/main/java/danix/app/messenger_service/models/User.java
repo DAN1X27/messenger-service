@@ -95,9 +95,6 @@ public class User {
     @Column(name = "web_socket_uuid")
     private String webSocketUUID;
 
-    @ManyToMany(mappedBy = "likes")
-    private List<ChannelPost> postsLikes;
-
     @Column(name = "is_banned")
     private boolean isBanned;
 
