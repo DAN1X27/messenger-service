@@ -11,6 +11,7 @@ Download and launch 'Docker Desktop' and use commands: 'docker network create me
 Use command 'docker-compose down' to turn off project.
 The database is available at 'jdbc:postgresql://localhost:5433/messenger_service_db'.
 ```
+For more info open - http://localhost:8080/swagger-ui/index.html
 # ENDPOINTS
 
 ```
