@@ -458,7 +458,7 @@ public class UsersServiceTest {
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(currentUser));
         when(usersFriendsRepository.findByOwnerOrFriend(currentUser, currentUser)).thenReturn(testFriends);
-        List<ShowUserDTO> testResponseFriends = userService.getAllUserFriends();
+        List<ResponseUserDTO> testResponseFriends = userService.getAllUserFriends();
         assertNotNull(testResponseFriends);
         assertNotEquals(testResponseFriends.size(), testFriends.size());
         assertEquals(2, testResponseFriends.size());

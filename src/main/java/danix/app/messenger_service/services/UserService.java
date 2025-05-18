@@ -118,14 +118,14 @@ public class UserService {
                 }).collect(Collectors.toList());
     }
 
-    public List<ShowUserDTO> getAllUserFriends() {
+    public List<ResponseUserDTO> getAllUserFriends() {
         User currentUser = getCurrentUser();
         return usersFriendsRepository.findByOwnerOrFriend(currentUser, currentUser).stream()
                 .filter(user -> user.getStatus() == UserFriend.FriendsStatus.ACCEPTED)
                 .map(user -> {
                     User friend = user.getFriend().getId() != currentUser.getId() ? user.getFriend()
                             : user.getOwner();
-                    return modelMapper.map(friend, ShowUserDTO.class);
+                    return modelMapper.map(friend, ResponseUserDTO.class);
                 })
                 .collect(Collectors.toList());
     }
@@ -172,10 +172,11 @@ public class UserService {
         User friend = getById(id);
         User currentUser = getCurrentUser();
         usersFriendsRepository.findByOwnerAndFriend(currentUser, friend)
-                .ifPresentOrElse(usersFriendsRepository::delete, () -> usersFriendsRepository.findByOwnerAndFriend(friend, currentUser)
-                        .ifPresentOrElse(usersFriendsRepository::delete, () -> {
-                            throw new UserException("User is not exist in your friends");
-                        }));
+                .ifPresentOrElse(usersFriendsRepository::delete,
+                        () -> usersFriendsRepository.findByOwnerAndFriend(friend, currentUser)
+                                .ifPresentOrElse(usersFriendsRepository::delete, () -> {
+                                    throw new UserException("User is not exist in your friends");
+                                }));
     }
 
     @Transactional
@@ -187,8 +188,9 @@ public class UserService {
             User currentUser = getCurrentUser();
             blockedUsersRepository.save(new BlockedUser(currentUser, user));
             usersFriendsRepository.findByOwnerAndFriend(currentUser, user)
-                    .ifPresentOrElse(usersFriendsRepository::delete, () -> usersFriendsRepository.findByOwnerAndFriend(user, currentUser)
-                            .ifPresent(usersFriendsRepository::delete));
+                    .ifPresentOrElse(usersFriendsRepository::delete,
+                            () -> usersFriendsRepository.findByOwnerAndFriend(user, currentUser)
+                                    .ifPresent(usersFriendsRepository::delete));
         });
     }
 
@@ -289,18 +291,18 @@ public class UserService {
     @Transactional
     public void temporalRegister(RegistrationUserDTO personDTO) {
         usersRepository.save(User.builder()
-              .username(personDTO.getUsername())
-              .createdAt(LocalDateTime.now())
-              .description(personDTO.getDescription())
-              .email(personDTO.getEmail())
-              .role(User.Roles.ROLE_USER)
-              .password(passwordEncoder.encode(personDTO.getPassword()))
-              .isPrivate(personDTO.getIsPrivate() != null && personDTO.getIsPrivate())
-              .imageUUID(DEFAULT_IMAGE_UUID)
-              .userStatus(User.Status.TEMPORALLY_REGISTERED)
-              .onlineStatus(User.OnlineStatus.OFFLINE)
-              .webSocketUUID(UUID.randomUUID().toString())
-              .build()
+                .username(personDTO.getUsername())
+                .createdAt(LocalDateTime.now())
+                .description(personDTO.getDescription())
+                .email(personDTO.getEmail())
+                .role(User.Roles.ROLE_USER)
+                .password(passwordEncoder.encode(personDTO.getPassword()))
+                .isPrivate(personDTO.getIsPrivate() != null && personDTO.getIsPrivate())
+                .imageUUID(DEFAULT_IMAGE_UUID)
+                .userStatus(User.Status.TEMPORALLY_REGISTERED)
+                .onlineStatus(User.OnlineStatus.OFFLINE)
+                .webSocketUUID(UUID.randomUUID().toString())
+                .build()
         );
     }
 

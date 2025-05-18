@@ -6,7 +6,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ChannelsOptionsDTO {
+public class ChannelOptionsDTO {
     @JsonProperty("private")
     private Boolean isPrivate;
     @JsonProperty("posts_comments_allowed")

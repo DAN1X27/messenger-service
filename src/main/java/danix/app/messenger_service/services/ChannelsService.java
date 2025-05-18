@@ -373,7 +373,7 @@ public class ChannelsService {
     }
 
     @Transactional
-    public void updateChannelOptions(int id, ChannelsOptionsDTO options) {
+    public void updateChannelOptions(int id, ChannelOptionsDTO options) {
         Channel channel = getById(id);
         if (channel.getOwner().getId() == getCurrentUser().getId()) {
             channel.setPrivate(options.getIsPrivate() != null && options.getIsPrivate());
@@ -506,10 +506,10 @@ public class ChannelsService {
         channelsUsersRepository.save(channelUser);
     }
 
-    public ChannelsOptionsDTO getChannelOptions(int id) {
+    public ChannelOptionsDTO getChannelOptions(int id) {
         Channel channel = getById(id);
         if (channel.getOwner().getId() == getCurrentUser().getId()) {
-            return modelMapper.map(channel, ChannelsOptionsDTO.class);
+            return modelMapper.map(channel, ChannelOptionsDTO.class);
         }
         throw new ChannelException("Current user must be owner of channel");
     }

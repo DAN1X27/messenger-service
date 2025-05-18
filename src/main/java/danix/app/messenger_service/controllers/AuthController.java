@@ -1,9 +1,7 @@
 package danix.app.messenger_service.controllers;
 
-import danix.app.messenger_service.dto.AcceptRequestEmailKeyDTO;
-import danix.app.messenger_service.dto.AuthDTO;
-import danix.app.messenger_service.dto.RegistrationUserDTO;
-import danix.app.messenger_service.dto.RecoverPasswordDTO;
+import danix.app.messenger_service.api.AuthenticationAPI;
+import danix.app.messenger_service.dto.*;
 import danix.app.messenger_service.models.*;
 import danix.app.messenger_service.repositories.BannedUsersRepository;
 import danix.app.messenger_service.repositories.EmailsKeysRepository;
@@ -11,6 +9,7 @@ import danix.app.messenger_service.security.JWTUtil;
 import danix.app.messenger_service.services.UserService;
 import danix.app.messenger_service.services.TokensService;
 import danix.app.messenger_service.util.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,7 +26,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
-public class AuthController {
+@Tag(name = "Authentication", description = "Authentication API")
+public class AuthController implements AuthenticationAPI {
     private final UserService userService;
     private final AuthenticationProvider authenticationProvider;
     private final JWTUtil jwtUtil;
@@ -37,8 +37,9 @@ public class AuthController {
     private final EmailsKeysRepository emailsKeysRepository;
     private final EmailKeyValidator emailKeyValidator;
 
+    @Override
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> login(@RequestBody @Valid AuthDTO authDTO,
+    public ResponseEntity<ResponseJWTTokenDTO> login(@RequestBody @Valid AuthDTO authDTO,
                                                      BindingResult bindingResult) {
         ErrorHandler.handleException(bindingResult, ExceptionType.AUTHENTICATION_EXCEPTION);
         User user = userService.getByEmail(authDTO.getEmail());
@@ -58,9 +59,10 @@ public class AuthController {
         }
         String jwtToken = jwtUtil.generateToken(authDTO.getEmail());
         tokensService.create(jwtToken, userService.getByEmail(authDTO.getEmail()));
-        return ResponseEntity.ok(Map.of("jwt-token", jwtToken));
+        return new ResponseEntity<>(new ResponseJWTTokenDTO(jwtToken), HttpStatus.CREATED);
     }
 
+    @Override
     @PostMapping("/logout")
     public ResponseEntity<HttpStatus> logout() {
         User currentUser = UserService.getCurrentUser();
@@ -68,6 +70,7 @@ public class AuthController {
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
+    @Override
     @PostMapping("/registration")
     public ResponseEntity<HttpStatus> registration(@RequestBody @Valid RegistrationUserDTO registrationUserDTO,
                                                BindingResult bindingResult) {
@@ -80,8 +83,9 @@ public class AuthController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
+    @Override
     @PostMapping("/password")
-    public ResponseEntity<HttpStatus> forgotPassword(@RequestParam String email) {
+    public ResponseEntity<HttpStatus> sendRecoverPasswordKey(@RequestParam String email) {
         userService.getByEmail(email);
         emailsKeysRepository.findByEmail(email).ifPresent(key -> {
             if (key.getExpiredTime().isAfter(LocalDateTime.now())) {
@@ -93,8 +97,9 @@ public class AuthController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
+    @Override
     @PatchMapping("/registration/accept")
-    public ResponseEntity<Map<String, String>> acceptRegistrationKey(@RequestBody @Valid AcceptRequestEmailKeyDTO acceptEmailDTO,
+    public ResponseEntity<ResponseJWTTokenDTO> acceptRegistration(@RequestBody @Valid AcceptRequestEmailKeyDTO acceptEmailDTO,
                                                         BindingResult bindingResult) {
         ErrorHandler.handleException(bindingResult, ExceptionType.AUTHENTICATION_EXCEPTION);
         emailKeyValidator.validate(acceptEmailDTO, bindingResult);
@@ -102,9 +107,10 @@ public class AuthController {
         userService.registerUser(acceptEmailDTO.getEmail());
         String jwtToken = jwtUtil.generateToken(acceptEmailDTO.getEmail());
         tokensService.create(jwtToken, userService.getByEmail(acceptEmailDTO.getEmail()));
-        return new ResponseEntity<>(Map.of("jwt-token", jwtToken), HttpStatus.CREATED);
+        return new ResponseEntity<>(new ResponseJWTTokenDTO(jwtToken), HttpStatus.CREATED);
     }
 
+    @Override
     @PatchMapping("/password")
     public ResponseEntity<HttpStatus> recoverPassword(@RequestBody @Valid RecoverPasswordDTO recoverPasswordDTO,
                                                  BindingResult bindingResult) {
